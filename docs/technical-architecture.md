@@ -19,6 +19,49 @@ The architecture is intentionally cloud-portable, but the reference implementati
 9. **Privacy and compliance by design**: Build consent, data minimization, regional storage controls, retention, encryption, audit, and subject-right workflows into the platform.
 10. **Product velocity without sacrificing safety**: Use domain-oriented services, typed APIs, event contracts, feature flags, experimentation, policy engines, and automated governance checks.
 
+
+## Principal architecture stance
+
+This design combines architectural patterns proven at large-scale technology companies:
+
+- **Google-style reliability**: SLO-first engineering, error budgets, globally distributed control planes, automated capacity management, and progressive rollout safety.
+- **Amazon-style ownership**: Small domain teams own services, APIs, data contracts, runbooks, cost, and operational metrics end to end.
+- **Uber-style marketplace locality**: Regional cells optimize for local liquidity, geospatial matching, fraud patterns, regulatory constraints, and realtime dispatch-like coordination.
+- **Stripe-style financial correctness**: Escrow, ledger, payout, reconciliation, disputes, and compliance are treated as regulated financial systems with immutable audit trails and idempotent APIs.
+- **Airbnb-style trust and marketplace quality**: Identity, reputation, reviews, messaging safety, content quality, dispute workflows, and human escalation are first-class product infrastructure.
+
+## Scale, SLO, and capacity targets
+
+The reference design assumes the following initial global targets. Actual values should be recalibrated using production telemetry and marketplace mix.
+
+| Area | Target architecture assumption |
+| --- | --- |
+| Registered users | 100 million global users across multiple legal and residency regions. |
+| Monthly active users | 30-50 million MAU with regional traffic skew and event-driven campaign spikes. |
+| Peak read traffic | Millions of requests per minute across edge, search, listing, profile, recommendation, and media paths. |
+| Peak write traffic | Hundreds of thousands of writes per minute across listings, messages, offers, payments, fraud events, and telemetry. |
+| Messaging latency | p95 under 300 ms for send acknowledgement within a region; p95 under 1 second for cross-region delivery. |
+| Search freshness | p95 under 10 seconds for listing creates and updates to appear in regional search; under 60 seconds for global projections. |
+| Payment correctness | Zero tolerated ledger imbalance; every payment and escrow mutation is idempotent, auditable, and reconciled. |
+| Availability | 99.99% for browse/search/messaging, 99.95% for checkout and escrow APIs, and explicit degraded modes during partner outages. |
+| Recovery | RPO near zero for ledger and escrow; RTO under 30 minutes for critical regional failover after executive/regulatory approval. |
+| AI safety | 100% tool calls policy-checked, logged, reversible where possible, and bounded by user consent and transaction policy. |
+
+## Reference technology choices
+
+The platform is cloud-portable, but the default modern stack is:
+
+- **Compute**: Kubernetes on AWS EKS, Google GKE, or both; Karpenter or Cluster Autoscaler; GPU pools for model inference.
+- **Edge**: Cloudflare, Fastly, Akamai, AWS CloudFront, or Google Cloud CDN with bot defense, WAF, and global load balancing.
+- **Services**: Go, Java/Kotlin, Rust, Python, and TypeScript; gRPC internally; REST and GraphQL externally.
+- **Events**: Apache Kafka-compatible streaming with Schema Registry, Flink for realtime processing, and transactional outbox for reliable publication.
+- **Workflow**: Temporal for orders, escrow, payout, dispute, moderation, KYC, and AI agent workflows.
+- **Datastores**: PostgreSQL/Aurora/Cloud SQL for service OLTP, Spanner/CockroachDB/YugabyteDB for ledger-grade distributed SQL, Redis/Valkey for cache, object storage for media and audit artifacts.
+- **Search and AI retrieval**: OpenSearch, Elasticsearch, Vespa, pgvector, Milvus, Weaviate, Pinecone, or vector-enabled OpenSearch/Vespa depending on latency and operational preference.
+- **AI**: OpenAI, Anthropic, Gemini, approved regional providers, and self-hosted open-weight models served by vLLM, Triton, KServe, Ray Serve, or TensorRT-LLM.
+- **Data**: Iceberg, Delta Lake, or Hudi lakehouse; BigQuery, Snowflake, Databricks SQL, or Redshift warehouse; DataHub/OpenMetadata catalog; dbt, Great Expectations, Soda, or Deequ quality checks.
+- **Security**: OIDC, WebAuthn/passkeys, SPIFFE/SPIRE workload identity, mTLS service mesh, Vault/cloud KMS/HSM, OPA/Cedar policy, SAST/DAST/SCA, SBOMs, and signed containers.
+
 ## 1. System architecture
 
 ### 1.1 High-level system view
@@ -107,6 +150,23 @@ Indicative design targets:
 - Petabyte-scale media and event history.
 
 ## 2. Service architecture
+
+### 2.0 Domain ownership model
+
+Services are grouped around business capabilities rather than technical layers. Each domain has a single accountable team that owns API contracts, event contracts, data quality, SLOs, dashboards, incident response, and cost controls.
+
+| Domain | Primary responsibilities | Strong consistency boundary |
+| --- | --- | --- |
+| Identity and trust | Accounts, sessions, devices, verification, reputation, trust profiles, access recovery. | Identity mutations, credential changes, verification state. |
+| Marketplace catalog | Listings, categories, attributes, availability, media metadata, seller inventory. | Listing lifecycle and inventory ownership. |
+| Discovery | Search, ranking, recommendations, personalization, ads quality, saved searches. | Mostly eventual consistency; source of truth remains domain services. |
+| Messaging and realtime | Conversations, presence, typing indicators, read receipts, notifications, safety interlocks. | Conversation membership and message ordering per conversation. |
+| Orders and escrow | Offers, checkout, escrow contracts, order state, fulfillment milestones, release eligibility. | Order and escrow state transitions. |
+| Financial platform | Payment orchestration, ledger, payouts, refunds, chargebacks, reconciliation, tax. | Ledger postings, money movement, payout state. |
+| Risk and compliance | Fraud scoring, policy decisions, sanctions, KYC/KYB, reviews, investigations, holds. | Risk holds, compliance blocks, case outcomes. |
+| AI platform | Agent runtime, model gateway, RAG, tools, memory, evaluations, safety policy. | Tool authorization, memory consent, audited agent actions. |
+| Data platform | Streaming, lakehouse, warehouse, metrics, experimentation, governance, lineage. | Dataset access policy and governed derived data products. |
+| Platform engineering | Kubernetes, service mesh, CI/CD, observability, developer platform, infrastructure. | Production deployment and infrastructure control planes. |
 
 ### 2.1 Service taxonomy
 
@@ -210,6 +270,20 @@ Examples:
 
 ## 3. Event-driven architecture
 
+### 3.0 Event taxonomy and ownership
+
+Every durable business fact is emitted as a versioned event by the service that owns the source-of-truth state. Consumers may build projections, but may not treat projections as authoritative for financial, trust, or compliance decisions.
+
+| Event family | Example topics | Primary consumers |
+| --- | --- | --- |
+| Identity and trust | `identity.user.created`, `trust.verification.completed`, `device.registered` | Fraud, personalization, support, compliance. |
+| Catalog | `listing.created`, `listing.updated`, `listing.published`, `listing.removed`, `media.processed` | Search, recommendations, safety, analytics, notifications. |
+| Messaging | `message.sent`, `message.delivered`, `message.flagged`, `conversation.created` | Realtime delivery, moderation, fraud, notifications, AI assistants. |
+| Commerce | `offer.created`, `order.created`, `order.cancelled`, `fulfillment.confirmed` | Escrow, fraud, seller tools, buyer tools, analytics. |
+| Financial | `payment.authorized`, `escrow.funded`, `ledger.posted`, `payout.scheduled`, `refund.completed` | Reconciliation, risk, compliance, support, reporting. |
+| Risk and compliance | `risk.decision.created`, `case.opened`, `hold.applied`, `hold.released` | Product services, support, audit, human review. |
+| AI | `agent.task.started`, `agent.tool.called`, `agent.task.completed`, `model.evaluation.completed` | AI observability, safety, billing, quality analytics. |
+
 ### 3.1 Event backbone
 
 Use Apache Kafka, Redpanda, Google Pub/Sub, Amazon MSK, or Amazon Kinesis depending on cloud strategy. The reference architecture uses Kafka-compatible streaming with regional clusters and cross-region replication.
@@ -299,6 +373,22 @@ Recommended sagas:
 Sagas must support retries, compensation, timeout handling, idempotency, auditability, and manual intervention.
 
 ## 4. Database architecture
+
+### 4.0 Storage placement matrix
+
+Use separate storage technologies by access pattern and correctness requirements. Do not force all domains into one database topology.
+
+| Workload | Preferred store | Partitioning model | Consistency model |
+| --- | --- | --- | --- |
+| Identity profile | Distributed SQL or regional PostgreSQL with global directory metadata | User home region and user ID | Strong for account mutations, eventual for public profile projections. |
+| Listings and inventory | Regional PostgreSQL plus object storage for media | Marketplace region, category, seller ID | Strong per listing, eventual to search and recommendations. |
+| Conversations | Wide-column or sharded PostgreSQL plus Redis/Valkey hot cache | Conversation ID with home-region affinity | Ordered per conversation, eventual cross-device receipts. |
+| Orders and escrow | Distributed SQL or tightly controlled regional PostgreSQL | Legal entity, currency, region, order ID | Serializable state transitions. |
+| Ledger | Distributed SQL with immutable append-only journal | Legal entity, currency, account ID, transaction ID | Strict double-entry correctness and reconciliation. |
+| Fraud features | Online feature store over Redis/Bigtable/DynamoDB plus offline lakehouse | Entity ID, feature namespace | Fresh online reads with point-in-time offline correctness. |
+| Search | OpenSearch/Elasticsearch/Vespa indexes | Region, category, geo tile, listing ID | Eventually consistent from events. |
+| Vector retrieval | Vespa/OpenSearch vector/Milvus/Weaviate/Pinecone/pgvector | Region, embedding namespace, document ID | Eventually consistent with source document lineage. |
+| Analytics | Lakehouse plus warehouse | Region, date, event type, governed domain | Append-only raw data with curated certified models. |
 
 ### 4.1 Polyglot persistence model
 
