@@ -8,12 +8,13 @@ const links = [
   { href: "/admin/listings", label: "Listings" },
   { href: "/admin/transactions", label: "Transactions" },
   { href: "/admin/disputes", label: "Disputes" },
-  { href: "/admin/fraud-alerts", label: "Fraud alerts" }
+  { href: "/admin/fraud-alerts", label: "Fraud alerts" },
+  { href: "/admin/review-queue", label: "Review queue" }
 ];
 
 const queues = [
-  { icon: Users, title: "Identity review", value: "18", text: "Profiles awaiting verification or appeal review." },
-  { icon: AlertTriangle, title: "Risk queue", value: "6", text: "Listings and payments flagged by rules or AI moderation." },
+  { icon: Users, title: "Identity review", value: "18", text: "Email, phone, identity, and optional ID checks awaiting verification or appeal review." },
+  { icon: AlertTriangle, title: "Risk queue", value: "6", text: "Listings, messages, images, and payments flagged by automated trust rules or AI moderation." },
   { icon: BadgeCheck, title: "Trust actions", value: "42", text: "Resolved reports, dispute outcomes, and seller quality checks." },
   { icon: LineChart, title: "Marketplace GMV", value: "$128k", text: "Weekly protected commerce moving through the platform." }
 ];
@@ -32,7 +33,7 @@ export default function AdminDashboardPage() {
       <Card className="mt-6">
         <CardHeader><CardTitle>Operational priorities</CardTitle></CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3">
-          {["Review high-risk seller onboarding", "Audit pending escrow releases", "Tune AI moderation thresholds"].map((item) => (
+          {["Review high-risk seller onboarding", "Audit duplicate images and suspicious pricing", "Tune scam message thresholds"].map((item) => (
             <div key={item} className="rounded-xl bg-secondary px-4 py-3 text-sm font-medium">{item}</div>
           ))}
         </CardContent>
