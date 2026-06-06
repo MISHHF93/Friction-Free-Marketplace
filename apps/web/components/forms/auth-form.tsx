@@ -1,65 +1,65 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useFormState, useFormStatus } from "react-dom";
+import { loginAction, signupAction, type AuthActionState } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/browser";
-import { authSchema, type AuthFormValues } from "@/lib/validations/auth";
 
-export function AuthForm({ mode }: { mode: "login" | "signup" }) {
-  const [message, setMessage] = useState<string | null>(null);
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting }
-  } = useForm<AuthFormValues>({ resolver: zodResolver(authSchema) });
+const initialState: AuthActionState = { status: "idle", message: null };
 
-  async function onSubmit(values: AuthFormValues) {
-    setMessage(null);
-
-    try {
-      const supabase = createClient();
-      const response =
-        mode === "login"
-          ? await supabase.auth.signInWithPassword(values)
-          : await supabase.auth.signUp({
-              ...values,
-              options: { emailRedirectTo: `${window.location.origin}/dashboard` }
-            });
-
-      if (response.error) {
-        setMessage(response.error.message);
-        return;
-      }
-
-      setMessage(mode === "login" ? "Signed in. Redirecting..." : "Check your email to confirm your account.");
-      if (mode === "login") {
-        window.location.assign("/dashboard");
-      }
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Authentication is not configured yet.");
-    }
-  }
+function SubmitButton({ mode }: { mode: "login" | "signup" }) {
+  const { pending } = useFormStatus();
 
   return (
-    <form className="grid gap-5" onSubmit={handleSubmit(onSubmit)}>
+    <Button disabled={pending} type="submit">
+      {pending ? "Please wait..." : mode === "login" ? "Log in" : "Create account"}
+    </Button>
+  );
+}
+
+export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: string }) {
+  const action = mode === "login" ? loginAction : signupAction;
+  const [state, formAction] = useFormState(action, initialState);
+
+  return (
+    <form className="grid gap-5" action={formAction}>
+      {mode === "signup" ? (
+        <div className="grid gap-2">
+          <Label htmlFor="displayName">Display name</Label>
+          <Input id="displayName" name="displayName" placeholder="Alex Marketplace" required minLength={2} maxLength={80} />
+        </div>
+      ) : null}
       <div className="grid gap-2">
         <Label htmlFor="email">Email</Label>
-        <Input id="email" type="email" placeholder="you@example.com" {...register("email")} />
-        {errors.email ? <p className="text-sm text-destructive">{errors.email.message}</p> : null}
+        <Input id="email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required />
       </div>
       <div className="grid gap-2">
         <Label htmlFor="password">Password</Label>
-        <Input id="password" type="password" placeholder="At least 8 characters" {...register("password")} />
-        {errors.password ? <p className="text-sm text-destructive">{errors.password.message}</p> : null}
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          placeholder="At least 8 characters"
+          autoComplete={mode === "login" ? "current-password" : "new-password"}
+          required
+          minLength={8}
+        />
       </div>
-      {message ? <p className="rounded-lg bg-secondary p-3 text-sm text-muted-foreground">{message}</p> : null}
-      <Button disabled={isSubmitting} type="submit">
-        {isSubmitting ? "Please wait..." : mode === "login" ? "Log in" : "Create account"}
-      </Button>
+      {next ? <input type="hidden" name="next" value={next} /> : null}
+      {state.message ? (
+        <p
+          className={
+            state.status === "error"
+              ? "rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+              : "rounded-lg border border-primary/20 bg-primary/10 p-3 text-sm text-foreground"
+          }
+          role={state.status === "error" ? "alert" : "status"}
+        >
+          {state.message}
+        </p>
+      ) : null}
+      <SubmitButton mode={mode} />
     </form>
   );
 }

@@ -2,7 +2,12 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { publicEnv } from "@/lib/env";
 
-const protectedPrefixes = ["/dashboard", "/seller", "/admin"];
+const protectedPrefixes = ["/dashboard", "/seller", "/admin", "/account"];
+const authRoutes = new Set(["/login", "/signup"]);
+
+function getSafeRedirectPath(value: string | null) {
+  return value && value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
+}
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -29,7 +34,14 @@ export async function updateSession(request: NextRequest) {
   if (isProtected && !user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("next", pathname);
+    redirectUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  if (user && authRoutes.has(pathname)) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = getSafeRedirectPath(request.nextUrl.searchParams.get("next"));
+    redirectUrl.search = "";
     return NextResponse.redirect(redirectUrl);
   }
 
