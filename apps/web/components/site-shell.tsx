@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ShieldCheck, Store } from "lucide-react";
+import { logoutAction } from "@/app/auth/actions";
 import { buttonVariants } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -11,6 +13,39 @@ const navLinks = [
   { href: "/seller", label: "Sell" },
   { href: "/admin", label: "Admin" }
 ];
+
+async function AuthNav() {
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return (
+      <>
+        <Link href="/login" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden sm:inline-flex")}>
+          Log in
+        </Link>
+        <Link href="/signup" className={buttonVariants({ size: "sm" })}>
+          Get started
+        </Link>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Link href="/account/settings" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden sm:inline-flex")}>
+        Account
+      </Link>
+      <form action={logoutAction}>
+        <button className={buttonVariants({ size: "sm" })} type="submit">
+          Log out
+        </button>
+      </form>
+    </>
+  );
+}
 
 export function SiteShell({ children }: { children: ReactNode }) {
   return (
@@ -31,12 +66,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <Link href="/login" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden sm:inline-flex")}>
-              Log in
-            </Link>
-            <Link href="/signup" className={buttonVariants({ size: "sm" })}>
-              Get started
-            </Link>
+            <AuthNav />
           </div>
         </div>
       </header>
