@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -48,7 +50,7 @@ export async function POST() {
     requirements_eventually_due: requirements?.eventually_due ?? [],
     onboarding_started_at: new Date().toISOString(),
     onboarding_completed_at: account.charges_enabled && account.payouts_enabled ? new Date().toISOString() : null,
-    metadata: { default_currency: account.default_currency, livemode: account.livemode }
+    metadata: { default_currency: account.default_currency, livemode: (account as { livemode?: boolean }).livemode ?? false }
   });
 
   await recordTransactionEvent(supabase, {

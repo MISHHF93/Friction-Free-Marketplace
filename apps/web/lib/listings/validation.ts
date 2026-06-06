@@ -25,8 +25,7 @@ export const imageSchema = z.object({
   sortOrder: z.number().int().min(0).max(50).default(0)
 });
 
-export const listingFormSchema = z
-  .object({
+const listingFormBaseSchema = z.object({
     title: z.string().trim().min(3, "Title must be at least 3 characters.").max(160),
     description: z.string().trim().min(20, "Description must be at least 20 characters.").max(5000),
     category: z.enum(LISTING_CATEGORIES),
@@ -55,13 +54,14 @@ export const listingFormSchema = z
     moderationNotes: z.string().max(1000).optional(),
     images: z.array(imageSchema).max(12).default([]),
     publish: z.boolean().default(false)
-  })
-  .refine((data) => data.fulfillmentOptions.includes("shipping") || data.fulfillmentOptions.includes("pickup") || data.fulfillmentOptions.includes("local_delivery"), {
-    message: "Choose at least one fulfillment option.",
-    path: ["fulfillmentOptions"]
   });
 
-export const listingPatchSchema = listingFormSchema.partial().extend({ publish: z.boolean().optional() });
+export const listingFormSchema = listingFormBaseSchema.refine((data) => data.fulfillmentOptions.includes("shipping") || data.fulfillmentOptions.includes("pickup") || data.fulfillmentOptions.includes("local_delivery"), {
+  message: "Choose at least one fulfillment option.",
+  path: ["fulfillmentOptions"]
+});
+
+export const listingPatchSchema = listingFormBaseSchema.partial().extend({ publish: z.boolean().optional() });
 
 export const aiListingResponseSchema = z.object({
   title: z.string().min(3).max(160),

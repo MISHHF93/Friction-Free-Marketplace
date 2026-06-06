@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -98,7 +100,7 @@ export async function POST(request: Request) {
     currency: currency.toUpperCase(),
     platform_fee_amount: centsToDollars(platformFeeCents),
     seller_net_amount: centsToDollars(totalCents - platformFeeCents),
-    capture_before: (paymentIntent as { capture_before?: number }).capture_before ? new Date((paymentIntent as { capture_before: number }).capture_before * 1000).toISOString() : null,
+    capture_before: (paymentIntent as unknown as { capture_before?: number }).capture_before ? new Date((paymentIntent as unknown as { capture_before: number }).capture_before * 1000).toISOString() : null,
     metadata: { client_secret_last4: paymentIntent.client_secret?.slice(-4) }
   });
 

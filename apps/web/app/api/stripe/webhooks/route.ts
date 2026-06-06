@@ -25,7 +25,7 @@ async function updateSellerAccount(account: Stripe.Account) {
     requirements_currently_due: account.requirements?.currently_due ?? [],
     requirements_eventually_due: account.requirements?.eventually_due ?? [],
     onboarding_completed_at: status === "active" ? new Date().toISOString() : null,
-    metadata: { default_currency: account.default_currency, livemode: account.livemode }
+    metadata: { default_currency: account.default_currency, livemode: (account as { livemode?: boolean }).livemode ?? false }
   });
   if (status === "active") await recordTransactionEvent(supabase, { actor_id: sellerId, type: "seller_onboarding_completed", provider_object_id: account.id, message: "Seller completed Stripe Connect onboarding." });
 }
@@ -94,7 +94,7 @@ async function upsertStripeDispute(dispute: Stripe.Dispute) {
     provider_payment_id: paymentIntentId,
     status: dispute.status === "won" || dispute.status === "lost" ? "closed" : "under_review",
     reason: dispute.reason,
-    evidence: dispute.evidence as Record<string, unknown>,
+    evidence: dispute.evidence as unknown as Record<string, unknown>,
     metadata: { stripe_status: dispute.status, amount: dispute.amount, currency: dispute.currency }
   }, { onConflict: "provider_dispute_id" });
   await supabase.from("transactions").update({ status: "disputed" }).eq("id", payment.transaction_id);
