@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/how-it-works", label: "How it works" },
   { href: "/trust-and-safety", label: "Safety" },
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/customer-portal", label: "Customer portal" },
   { href: "/assistant", label: "AI agents" },
   { href: "/seller", label: "Sell" },
   { href: "/admin", label: "Admin" }
@@ -84,6 +85,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <Link href="/how-it-works">How it works</Link>
             <Link href="/trust-and-safety">Trust & safety</Link>
             <Link href="/seller">Seller dashboard</Link>
+            <Link href="/customer-portal">Customer portal</Link>
             <Link href="/admin">Admin console</Link>
           </div>
         </div>
