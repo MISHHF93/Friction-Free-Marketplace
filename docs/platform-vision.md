@@ -6,6 +6,8 @@ We are designing the future operating system for local and peer-to-peer commerce
 
 This is not a listings website. It is commerce infrastructure for neighborhoods, cities, and cross-border communities. It should make selling feel automatic, buying feel guided, trust feel measurable, and fulfillment feel effortless.
 
+For a detailed design of the ecosystem layer that lets retailers, pawn shops, estate sales, local businesses, liquidation companies, dealerships, and peer-to-peer sellers plug into shared commerce infrastructure, see [Commerce Operating System Design](commerce-operating-system.md).
+
 ## 1. Mission
 
 Make local and peer-to-peer commerce effortless, trusted, intelligent, and economically empowering for every person, household, creator, reseller, small business, and community in the world.
