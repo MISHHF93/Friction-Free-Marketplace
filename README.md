@@ -16,4 +16,4 @@ This repository is structured as a domain-aligned monorepo:
 - `ops/`: runbooks, playbooks, and operational policies.
 - `docs/`: product, technical, data, trust, AI, commerce, UX, and implementation blueprints.
 
-See `docs/product-requirements-document.md` for the complete product requirements document and `docs/implementation-blueprint.md` for the complete implementation blueprint and the intended build sequence.
+See `docs/product-requirements-document.md` for the complete product requirements document and `docs/implementation-blueprint.md` for the complete implementation blueprint and the intended build sequence. See `docs/backend-architecture-supabase-nextjs.md` for the implementation-ready backend design using Next.js Server Actions, Supabase, Stripe Connect, OpenAI, search, Resend, and PostHog.

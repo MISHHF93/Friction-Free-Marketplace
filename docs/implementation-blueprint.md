@@ -6,6 +6,8 @@ This blueprint converts the previously designed platform vision, UX flows, techn
 
 The recommended build strategy is a **domain-aligned modular monorepo** that starts as a deployable MVP while preserving the service, data, AI, security, and cloud boundaries required to scale into a global, AI-powered commerce operating system.
 
+For the Supabase-first MVP backend architecture using Next.js Server Actions, API routes, Supabase Auth/Postgres/Storage/Realtime, Stripe Connect, OpenAI, Meilisearch or Typesense, Resend, and PostHog, see [Backend Architecture: Next.js, Supabase, Stripe Connect, AI, and Realtime](backend-architecture-supabase-nextjs.md).
+
 ## 1. Recommended technology stack
 
 ### 1.1 Product surfaces
