@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Json } from "@/types/database";
-import { listingFormSchema, listingPatchSchema, slugifyListingTitle, type ListingFormInput } from "@/lib/listings/validation";
+import { listingFormSchema, listingPatchSchema, listingStatusSchema, slugifyListingTitle, type ListingFormInput } from "@/lib/listings/validation";
 
 type Db = SupabaseClient<any>;
 
@@ -139,4 +139,34 @@ export async function updateListing(supabase: Db, listingId: string, rawInput: u
   }
 
   return listing;
+}
+
+
+export async function setListingStatus(supabase: Db, listingId: string, rawStatus: unknown) {
+  const status = listingStatusSchema.parse(rawStatus);
+  const now = new Date().toISOString();
+  const { data: listing, error } = await supabase
+    .from("listings")
+    .update({
+      status,
+      ...(status === "active" ? { published_at: now } : {})
+    })
+    .eq("id", listingId)
+    .is("deleted_at", null)
+    .select("*")
+    .single();
+
+  if (error) throw error;
+  return listing;
+}
+
+export async function deleteListing(supabase: Db, listingId: string, sellerId: string) {
+  const { error } = await supabase
+    .from("listings")
+    .update({ status: "removed", deleted_at: new Date().toISOString() })
+    .eq("id", listingId)
+    .eq("seller_id", sellerId)
+    .is("deleted_at", null);
+
+  if (error) throw error;
 }

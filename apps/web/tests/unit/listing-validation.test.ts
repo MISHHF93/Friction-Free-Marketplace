@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildMeiliSearchPayload } from "@/lib/search/meilisearch";
-import { listingFormSchema, slugifyListingTitle } from "@/lib/listings/validation";
+import { listingFormSchema, listingStatusSchema, slugifyListingTitle } from "@/lib/listings/validation";
 
 describe("listing validation", () => {
   it("accepts a complete listing payload", () => {
@@ -23,6 +23,13 @@ describe("listing validation", () => {
 
   it("generates URL-safe listing slugs", () => {
     expect(slugifyListingTitle("AI-Curated Camera Kit!!!")).toBe("ai-curated-camera-kit");
+  });
+
+  it("accepts lifecycle statuses used by seller listing management", () => {
+    expect(listingStatusSchema.parse("draft")).toBe("draft");
+    expect(listingStatusSchema.parse("active")).toBe("active");
+    expect(listingStatusSchema.parse("sold")).toBe("sold");
+    expect(() => listingStatusSchema.parse("deleted")).toThrow();
   });
 });
 
