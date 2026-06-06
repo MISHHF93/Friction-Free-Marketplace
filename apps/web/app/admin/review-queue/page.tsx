@@ -3,17 +3,8 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { adminLinks } from "@/lib/admin/navigation";
 import { scoringFormulas } from "@/lib/trust-safety/engine";
-
-const links = [
-  { href: "/admin", label: "Admin overview" },
-  { href: "/admin/review-queue", label: "Review queue" },
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/listings", label: "Listings" },
-  { href: "/admin/reports", label: "Reports" },
-  { href: "/admin/disputes", label: "Disputes" },
-  { href: "/admin/fraud-alerts", label: "Fraud alerts" }
-];
 
 const queueCards = [
   { icon: UserCheck, title: "Identity verification", value: "24", detail: "Pending identity, email, phone, and optional ID checks", sla: "12 due today" },
@@ -42,7 +33,7 @@ const riskFlags = [
 
 export default function AdminReviewQueuePage() {
   return (
-    <DashboardShell title="Trust & safety review queue" description="A unified analyst workspace for verification, reports, disputes, fraud signals, automated flags, and marketplace trust decisions." links={links}>
+    <DashboardShell title="Trust & safety review queue" description="A unified analyst workspace for verification, reports, disputes, fraud signals, automated flags, and marketplace trust decisions." links={adminLinks}>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {queueCards.map((queue) => {
           const Icon = queue.icon;

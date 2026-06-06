@@ -3,7 +3,7 @@ import { AdminFeaturePage } from "@/components/admin/admin-page";
 import { getAdminPageConfig } from "@/lib/admin/platform";
 
 export default function Page() {
-  const config = getAdminPageConfig("fraud-alerts");
+  const config = getAdminPageConfig("audit-logs");
   if (!config) notFound();
   return <AdminFeaturePage config={config} />;
 }
