@@ -20,6 +20,7 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["users"]["Row"]> & { id: string };
         Update: Partial<Database["public"]["Tables"]["users"]["Row"]>;
+        Relationships: [];
       };
       profiles: {
         Row: {
@@ -39,6 +40,7 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["profiles"]["Row"]> & { user_id: string; display_name: string };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Row"]>;
+        Relationships: [];
       };
       categories: {
         Row: {
@@ -56,6 +58,7 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["categories"]["Row"]> & { slug: string; name: string };
         Update: Partial<Database["public"]["Tables"]["categories"]["Row"]>;
+        Relationships: [];
       };
       listings: {
         Row: {
@@ -89,6 +92,7 @@ export type Database = {
           price_amount: number;
         };
         Update: Partial<Database["public"]["Tables"]["listings"]["Row"]>;
+        Relationships: [];
       };
 
       conversations: {
@@ -107,6 +111,7 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["conversations"]["Row"]> & { buyer_id: string; seller_id: string };
         Update: Partial<Database["public"]["Tables"]["conversations"]["Row"]>;
+        Relationships: [];
       };
       messages: {
         Row: {
@@ -128,6 +133,7 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["messages"]["Row"]> & { conversation_id: string; sender_id: string; body: string };
         Update: Partial<Database["public"]["Tables"]["messages"]["Row"]>;
+        Relationships: [];
       };
       message_attachments: {
         Row: {
@@ -150,16 +156,19 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["message_attachments"]["Row"]> & { message_id: string; conversation_id: string; uploader_id: string; storage_path: string; file_name: string; content_type: string; byte_size: number };
         Update: Partial<Database["public"]["Tables"]["message_attachments"]["Row"]>;
+        Relationships: [];
       };
       message_read_receipts: {
         Row: { message_id: string; conversation_id: string; user_id: string; read_at: string };
         Insert: Partial<Database["public"]["Tables"]["message_read_receipts"]["Row"]> & { message_id: string; conversation_id: string; user_id: string };
         Update: Partial<Database["public"]["Tables"]["message_read_receipts"]["Row"]>;
+        Relationships: [];
       };
       conversation_typing_indicators: {
         Row: { conversation_id: string; user_id: string; is_typing: boolean; typed_at: string; expires_at: string };
         Insert: Partial<Database["public"]["Tables"]["conversation_typing_indicators"]["Row"]> & { conversation_id: string; user_id: string };
         Update: Partial<Database["public"]["Tables"]["conversation_typing_indicators"]["Row"]>;
+        Relationships: [];
       };
       offers: {
         Row: {
@@ -170,6 +179,7 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["offers"]["Row"]> & { listing_id: string; buyer_id: string; seller_id: string; amount: number };
         Update: Partial<Database["public"]["Tables"]["offers"]["Row"]>;
+        Relationships: [];
       };
       pickup_schedules: {
         Row: {
@@ -180,6 +190,7 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["pickup_schedules"]["Row"]> & { conversation_id: string; buyer_id: string; seller_id: string; proposed_by_id: string; starts_at: string; location_label: string };
         Update: Partial<Database["public"]["Tables"]["pickup_schedules"]["Row"]>;
+        Relationships: [];
       };
       reservation_deposits: {
         Row: {
@@ -189,16 +200,19 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["reservation_deposits"]["Row"]> & { conversation_id: string; buyer_id: string; seller_id: string; amount: number };
         Update: Partial<Database["public"]["Tables"]["reservation_deposits"]["Row"]>;
+        Relationships: [];
       };
       anti_ghosting_penalties: {
         Row: { id: string; conversation_id: string | null; pickup_schedule_id: string | null; deposit_id: string | null; penalized_user_id: string; reported_by_id: string | null; status: "pending" | "applied" | "waived" | "appealed" | "reversed"; reason: string; penalty_points: number; penalty_amount: number; currency: string; evidence: Json; applied_at: string | null; waived_at: string | null; metadata: Json; created_at: string; updated_at: string };
         Insert: Partial<Database["public"]["Tables"]["anti_ghosting_penalties"]["Row"]> & { penalized_user_id: string; reason: string };
         Update: Partial<Database["public"]["Tables"]["anti_ghosting_penalties"]["Row"]>;
+        Relationships: [];
       };
       user_blocks: {
         Row: { blocker_id: string; blocked_id: string; conversation_id: string | null; reason: string | null; created_at: string };
         Insert: Partial<Database["public"]["Tables"]["user_blocks"]["Row"]> & { blocker_id: string; blocked_id: string };
         Update: Partial<Database["public"]["Tables"]["user_blocks"]["Row"]>;
+        Relationships: [];
       };
       listing_images: {
         Row: {
@@ -217,6 +231,7 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["listing_images"]["Row"]> & { listing_id: string; storage_path: string };
         Update: Partial<Database["public"]["Tables"]["listing_images"]["Row"]>;
+        Relationships: [];
       };
       ai_agents: {
         Row: {
@@ -234,6 +249,7 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["ai_agents"]["Row"]> & { name: string; agent_type: "buyer" | "seller" | "listing_creation" | "pricing" | "fraud_detection" | "negotiation" | "support" | "recommendation" | "moderation" | "search" };
         Update: Partial<Database["public"]["Tables"]["ai_agents"]["Row"]>;
+        Relationships: [];
       };
       ai_tasks: {
         Row: {
@@ -253,6 +269,7 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["ai_tasks"]["Row"]> & { agent_id: string; task_type: string };
         Update: Partial<Database["public"]["Tables"]["ai_tasks"]["Row"]>;
+        Relationships: [];
       };
       ai_agent_audit_events: {
         Row: {
@@ -273,6 +290,7 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["ai_agent_audit_events"]["Row"]> & { agent_type: "buyer" | "seller" | "listing_creation" | "pricing" | "fraud_detection" | "negotiation" | "support" | "recommendation" | "moderation" | "search"; action: string; status: "queued" | "running" | "succeeded" | "failed" };
         Update: Partial<Database["public"]["Tables"]["ai_agent_audit_events"]["Row"]>;
+        Relationships: [];
       };
       audit_logs: {
         Row: {
@@ -291,6 +309,7 @@ export type Database = {
         };
         Insert: Partial<Database["public"]["Tables"]["audit_logs"]["Row"]> & { action: string };
         Update: Partial<Database["public"]["Tables"]["audit_logs"]["Row"]>;
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

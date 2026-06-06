@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { ConversationMessage, ConversationOffer, ConversationSummary } from "@/lib/messaging/types";
+import type { ConversationMessage, ConversationOffer, ConversationSummary, MessageAttachment } from "@/lib/messaging/types";
 import {
   blockUserAction,
   createReservationDepositAction,
@@ -64,7 +64,7 @@ export function CommunicationHub({ userId, initialConversations }: { userId: str
         setConversations((current) => current.map((conversation) => conversation.id === message.conversation_id ? { ...conversation, messages: mergeById(conversation.messages, message), last_message_at: message.created_at } : conversation));
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_attachments" }, (payload) => {
-        const attachment = payload.new as ConversationMessage["message_attachments"] extends Array<infer U> ? U : never;
+        const attachment = payload.new as MessageAttachment;
         setConversations((current) => current.map((conversation) => conversation.id === attachment.conversation_id ? {
           ...conversation,
           messages: conversation.messages.map((message) => message.id === attachment.message_id ? { ...message, message_attachments: mergeById(message.message_attachments ?? [], attachment) } : message)

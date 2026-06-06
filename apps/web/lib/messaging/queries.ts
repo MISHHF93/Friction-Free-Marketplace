@@ -1,5 +1,4 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/database";
 import type { ConversationSummary, MessagingUser } from "./types";
 
 type EmbeddedUser = {
@@ -17,7 +16,7 @@ function normalizeProfile(user: EmbeddedUser): MessagingUser | null {
   };
 }
 
-export async function getConversationSummaries(supabase: SupabaseClient<Database>, userId: string) {
+export async function getConversationSummaries(supabase: SupabaseClient<any>, userId: string) {
   const { data, error } = await (supabase as any)
     .from("conversations")
     .select(`

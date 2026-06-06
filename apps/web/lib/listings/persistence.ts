@@ -1,8 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, Json } from "@/types/database";
+import type { Json } from "@/types/database";
 import { listingFormSchema, listingPatchSchema, slugifyListingTitle, type ListingFormInput } from "@/lib/listings/validation";
 
-type Db = SupabaseClient<Database>;
+type Db = SupabaseClient<any>;
 
 async function getCategoryId(supabase: Db, category: string, categoryId?: string | null) {
   if (categoryId) return categoryId;
