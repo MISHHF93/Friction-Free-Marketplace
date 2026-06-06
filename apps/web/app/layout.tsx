@@ -4,8 +4,8 @@ import "./globals.css";
 import { SiteShell } from "@/components/site-shell";
 
 export const metadata: Metadata = {
-  title: "Friction-Free Marketplace UX",
-  description: "Complete mobile-first marketplace frontend experience for buyers, sellers, and admins."
+  title: "Friction-Free Marketplace",
+  description: "A production-ready marketplace starter with Supabase, Stripe, OpenAI, and shadcn/ui."
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
