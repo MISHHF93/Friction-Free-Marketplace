@@ -20,6 +20,36 @@ Build the safest, smartest, and most efficient marketplace for real-world commer
 6. **Support scalable operations** with admin moderation, analytics, policy tooling, fraud queues, user support, and marketplace health dashboards.
 7. **Create defensible data advantages** through structured catalog data, local supply-demand graphs, pricing intelligence, user behavior models, and trust graphs.
 
+### 3.1 Production-grade scope declaration
+
+This PRD assumes the product must launch as a full marketplace platform rather than a thin classified-listing MVP. Production readiness requires these capabilities to work together as one governed commerce system:
+
+- Multi-role web and mobile experiences for guests, buyers, sellers, business sellers, support teams, trust and safety teams, marketplace operators, and super admins.
+- Complete commerce lifecycle coverage from intent capture, listing creation, discovery, chat, offer, escrow, fulfillment, inspection, dispute, payout, review, and analytics.
+- Governed AI agents with configurable permissions, audit logs, safety policies, evaluation metrics, fallback behavior, and explicit user approval for binding actions.
+- Risk-based identity, trust, payments, moderation, fulfillment, and dispute controls that adapt by category, geography, value, behavior, verification level, and transaction history.
+- Operational systems for policy management, case management, admin queues, fraud analytics, support tooling, experimentation, observability, compliance, and incident response.
+
+### 3.2 Competitive differentiation
+
+| Competitor pattern | Market weakness | Required product advantage |
+| --- | --- | --- |
+| Facebook Marketplace social graph discovery | High scam exposure, inconsistent buyer intent, limited protected transaction depth | Verified trust graph, risk-aware search, escrow-by-default recommendations, safe handoff flows, AI buyer qualification. |
+| Craigslist lightweight classifieds | Low structure, weak identity, limited payments, no managed transaction lifecycle | Structured listings, verified profiles, built-in chat, offers, protected payments, moderation, and analytics. |
+| Kijiji local classified browsing | Limited automation, fragmented trust and fulfillment | AI-generated listings, local demand intelligence, pickup scheduling, trust score explanations, guided delivery and shipping. |
+| OfferUp mobile local selling | Basic trust signals and uneven transaction protection | Transaction-aware trust scoring, AI negotiation, escrow rules, proof-of-ownership, dispute evidence packages. |
+| eBay managed commerce | Strong shipping commerce but less local, social, and agentic | Hybrid local and shippable commerce with safe pickup, delivery orchestration, AI buyer/seller agents, local market intelligence. |
+
+### 3.3 Explicit non-goals
+
+The product should avoid patterns that undermine trust or long-term marketplace quality:
+
+- No anonymous high-risk selling for protected categories.
+- No unmoderated off-platform payment steering.
+- No opaque AI automation that can bind users without configured permission and auditability.
+- No single global trust score used without transaction context.
+- No growth tactic that materially increases scam, counterfeit, stolen-good, harassment, or chargeback risk.
+
 ## 4. Target users
 
 ### 4.1 Buyers
