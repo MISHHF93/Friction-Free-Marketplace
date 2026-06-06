@@ -6,6 +6,8 @@ This document designs a global AI-powered marketplace platform for 100 million u
 
 The architecture is intentionally cloud-portable, but the reference implementation assumes a modern Kubernetes-based platform running across AWS, Google Cloud, or a hybrid of both. The design favors managed primitives where they create operational leverage, and open standards where portability, governance, and long-term platform control matter.
 
+For the detailed logical and physical data model, see [Database Architecture](database-architecture.md).
+
 ## Architecture principles
 
 1. **Cell-based global architecture**: Partition the platform into independently operated regional cells to limit blast radius, support data residency, and scale operationally.
