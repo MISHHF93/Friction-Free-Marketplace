@@ -6,6 +6,8 @@ This document designs a global AI-powered marketplace platform for 100 million u
 
 The architecture is intentionally cloud-portable, but the reference implementation assumes a modern Kubernetes-based platform running across AWS, Google Cloud, or a hybrid of both. The design favors managed primitives where they create operational leverage, and open standards where portability, governance, and long-term platform control matter.
 
+For the partner-facing commerce operating system design, including APIs, integrations, synchronization, federation, onboarding, and the third-party developer ecosystem, see [Commerce Operating System Design](commerce-operating-system.md).
+
 For the detailed logical and physical data model, see [Database Architecture](database-architecture.md). For the marketplace agent roles, workflows, tools, memory, and permissions, see [AI Agent Ecosystem](ai-agent-ecosystem.md). For realtime supply, demand, pricing, forecasting, recommendations, anomaly detection, and economic intelligence, see [Market Intelligence Platform Architecture](market-intelligence-platform.md).
 
 ## Architecture principles
