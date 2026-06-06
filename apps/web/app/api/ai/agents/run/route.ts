@@ -7,7 +7,6 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 async function getActorId() {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return null;
   const supabase = createClient();
   const result = await supabase.auth.getUser();
   return result.data.user?.id ?? null;

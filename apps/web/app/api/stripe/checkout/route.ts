@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { env } from "@/lib/env";
+import { env } from "@/lib/env.server";
 import { getStripe } from "@/lib/stripe/server";
 
 const checkoutRequestSchema = z.object({

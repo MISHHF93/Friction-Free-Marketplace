@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { env } from "@/lib/env";
+import { env } from "@/lib/env.server";
 
 export async function startCheckoutAction(listingId: string) {
   const response = await fetch(`${env.NEXT_PUBLIC_APP_URL}/api/stripe/checkout`, {

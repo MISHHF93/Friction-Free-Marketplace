@@ -56,8 +56,6 @@ function normalizeToolPlan(value: unknown): AgentRunResult["toolPlan"] {
 }
 
 export async function runMarketplaceAgent(input: AgentRunInput): Promise<AgentRunResult> {
-  if (!process.env.OPENAI_API_KEY) return fallbackRun(input);
-
   const agent = marketplaceAgentsById[input.agent];
   const model = "gpt-4o-mini";
   const completion = await getOpenAI().chat.completions.create({

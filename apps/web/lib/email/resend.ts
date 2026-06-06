@@ -1,4 +1,4 @@
-import { env } from "@/lib/env";
+import { env } from "@/lib/env.server";
 
 export type MarketplaceEmail = {
   to: string | string[];

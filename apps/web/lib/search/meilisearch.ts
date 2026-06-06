@@ -1,3 +1,4 @@
+import { env } from "@/lib/env.server";
 import { DISCOVERY_INDEX_UID, discoveryFilterableAttributes, discoveryRankingRules, discoverySearchableAttributes, discoverySortableAttributes, type DiscoveryDocument, type DiscoverySearchParams } from "@/lib/search/schema";
 
 type MeiliSearchHit = DiscoveryDocument & { _formatted?: Partial<Record<keyof DiscoveryDocument, string>>; _rankingScore?: number };
@@ -12,18 +13,14 @@ type MeiliSearchResponse = {
 };
 
 export function isSearchConfigured() {
-  return Boolean(process.env.MEILISEARCH_HOST && process.env.MEILISEARCH_API_KEY);
+  return Boolean(env.MEILISEARCH_HOST && env.MEILISEARCH_API_KEY);
 }
 
 async function meiliRequest<T>(path: string, init: RequestInit = {}) {
-  const host = process.env.MEILISEARCH_HOST;
-  const apiKey = process.env.MEILISEARCH_API_KEY;
-  if (!host || !apiKey) throw new Error("Missing MEILISEARCH_HOST or MEILISEARCH_API_KEY.");
-
-  const response = await fetch(`${host.replace(/\/$/, "")}${path}`, {
+  const response = await fetch(`${env.MEILISEARCH_HOST.replace(/\/$/, "")}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${env.MEILISEARCH_API_KEY}`,
       "Content-Type": "application/json",
       ...(init.headers ?? {})
     },

@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
-import { env } from "@/lib/env";
+import { env } from "@/lib/env.server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/payments/auth";
 import { recordTransactionEvent } from "@/lib/payments/audit";
