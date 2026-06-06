@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MapPin, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { TrustScoreBadge } from "@/components/trust-safety/trust-badges";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { listings } from "@/lib/marketplace-data";
@@ -22,8 +23,9 @@ export function ListingCard({ listing }: { listing: (typeof listings)[number] })
         </div>
         <div className="flex items-center justify-between rounded-xl bg-secondary px-3 py-2 text-sm">
           <span className="flex items-center gap-1 font-medium">
-            <ShieldCheck className="h-4 w-4 text-primary" /> Trust {listing.trustScore}
+            <ShieldCheck className="h-4 w-4 text-primary" /> Protected seller
           </span>
+          <TrustScoreBadge score={listing.trustScore} />
           <span className="text-muted-foreground">{listing.condition}</span>
         </div>
         <Button asChild className="w-full">
