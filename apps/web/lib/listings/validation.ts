@@ -17,6 +17,7 @@ export const LISTING_CATEGORIES = [
 export const LISTING_CONDITIONS = ["new", "like-new", "excellent", "good", "fair", "for-parts"] as const;
 export const MODERATION_STATUSES = ["pending", "approved", "needs_review", "rejected"] as const;
 export const FULFILLMENT_OPTIONS = ["shipping", "pickup", "local_delivery"] as const;
+export const LISTING_STATUSES = ["draft", "active", "reserved", "sold", "paused", "expired", "removed"] as const;
 
 export const imageSchema = z.object({
   storagePath: z.string().min(3),
@@ -62,6 +63,7 @@ export const listingFormSchema = listingFormBaseSchema.refine((data) => data.ful
 });
 
 export const listingPatchSchema = listingFormBaseSchema.partial().extend({ publish: z.boolean().optional() });
+export const listingStatusSchema = z.enum(LISTING_STATUSES);
 
 export const aiListingResponseSchema = z.object({
   title: z.string().min(3).max(160),
