@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { listings } from "@/lib/marketplace-data";
+import { CheckoutCard } from "@/components/payments/checkout-card";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ type DbListing = {
   condition: string | null;
   price_amount: number;
   currency: string;
+  seller_id: string;
   location_city: string | null;
   location_region: string | null;
   ships_to: string[];
@@ -33,7 +35,7 @@ async function getDatabaseListing(id: string) {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("listings")
-      .select("id,title,description,condition,price_amount,currency,location_city,location_region,ships_to,pickup_available,metadata,listing_images(public_url,alt_text)")
+      .select("id,title,description,condition,price_amount,currency,seller_id,location_city,location_region,ships_to,pickup_available,metadata,listing_images(public_url,alt_text)")
       .eq("id", id)
       .eq("status", "active")
       .is("deleted_at", null)
@@ -82,7 +84,7 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
                 <p className="mt-1 flex items-center gap-1 text-muted-foreground"><ShieldCheck className="h-4 w-4 text-primary" /> {fraudScore === null ? "Fraud screening pending" : `AI fraud risk ${fraudScore}/100`}</p>
               </div>
               <div className="grid gap-3">
-                <Button size="lg">Buy with escrow</Button>
+                <CheckoutCard listingId={dbListing.id} priceAmount={Number(dbListing.price_amount)} currency={dbListing.currency} />
                 <Button variant="outline" size="lg"><MessageSquare className="h-4 w-4" /> Message seller</Button>
                 <Button variant="ghost"><Heart className="h-4 w-4" /> Save listing</Button>
               </div>
