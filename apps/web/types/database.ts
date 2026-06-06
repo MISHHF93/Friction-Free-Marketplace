@@ -97,8 +97,11 @@ export type Database = {
           storage_path: string;
           public_url: string | null;
           alt_text: string | null;
+          width: number | null;
+          height: number | null;
           sort_order: number;
           status: "pending" | "ready" | "rejected" | "deleted";
+          moderation_result: Json;
           created_at: string;
           updated_at: string;
         };
@@ -111,6 +114,7 @@ export type Database = {
     Enums: {
       user_role: "buyer" | "seller" | "admin" | "super_admin";
       listing_status: "draft" | "active" | "reserved" | "sold" | "paused" | "expired" | "removed";
+      media_status: "pending" | "ready" | "rejected" | "deleted";
     };
     CompositeTypes: Record<string, never>;
   };
