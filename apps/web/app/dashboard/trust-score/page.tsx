@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AlertTriangle, CheckCircle2, ShieldCheck, Star, TrendingUp, UserCheck } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { TrustBadgeStrip, TrustScoreBadge } from "@/components/trust-safety/trust-badges";
@@ -5,13 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { defaultTrustBadges, scoringFormulas } from "@/lib/trust-safety/engine";
-
-const links = [
-  { href: "/dashboard/buyer", label: "Buyer dashboard" },
-  { href: "/dashboard/seller", label: "Seller dashboard" },
-  { href: "/dashboard/trust-score", label: "Trust score" },
-  { href: "/dashboard/payments", label: "Payments" }
-];
 
 const factors = [
   { label: "Identity verification", value: 72, detail: "Email and phone verified; optional ID adds high-value limits.", icon: UserCheck },
@@ -29,7 +23,7 @@ const actions = [
 
 export default function TrustScorePage() {
   return (
-    <DashboardShell title="Trust score" description="Transparent trust, seller, and buyer reliability signals with badges and improvement actions." links={links}>
+    <DashboardShell title="Trust score" description="Transparent trust, seller, and buyer reliability signals with badges and improvement actions.">
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <Card className="overflow-hidden">
           <CardHeader className="bg-slate-950 text-white">
@@ -75,7 +69,7 @@ export default function TrustScorePage() {
                   {action}
                 </div>
               ))}
-              <Button className="w-full">Open verification center</Button>
+              <Button asChild className="w-full"><Link href="/dashboard/verification">Open verification center</Link></Button>
             </CardContent>
           </Card>
 

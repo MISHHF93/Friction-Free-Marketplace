@@ -6,13 +6,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getConversationSummaries } from "@/lib/messaging/queries";
 import type { ConversationSummary } from "@/lib/messaging/types";
 
-const links = [
-  { href: "/dashboard/messages", label: "Messages" },
-  { href: "/dashboard/offers", label: "Offers" },
-  { href: "/dashboard/purchases", label: "Purchases" },
-  { href: "/dashboard/sales", label: "Sales" }
-];
-
 export default async function MessagesPage() {
   let userId = "";
   let conversations: ConversationSummary[] = [];
@@ -30,7 +23,7 @@ export default async function MessagesPage() {
   }
 
   return (
-    <DashboardShell title="Communication hub" description="Real-time buyer/seller conversations with negotiation, pickup, deposits, and trust tooling." links={links}>
+    <DashboardShell title="Communication hub" description="Real-time buyer/seller conversations with negotiation, pickup, deposits, and trust tooling.">
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-base"><Zap className="h-4 w-4 text-primary" />Realtime messages</CardTitle></CardHeader>
