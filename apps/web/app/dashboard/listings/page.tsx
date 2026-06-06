@@ -1,5 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Edit, Plus, ShieldAlert, Trash2 } from "lucide-react";
+import { DashboardEmptyState, DashboardShell } from "@/components/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,13 +43,8 @@ export default async function ListingsDashboardPage() {
   const { listings, authRequired, error } = await getListings();
 
   return (
-    <section className="mx-auto max-w-7xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <Badge>Seller workspace</Badge>
-          <h1 className="mt-3 text-3xl font-black tracking-tight">My listings</h1>
-          <p className="mt-2 max-w-2xl text-muted-foreground">Manage drafts, active listings, AI-generated recommendations, and moderation status from one place.</p>
-        </div>
+    <DashboardShell title="My listings" description="Manage drafts, active listings, AI-generated recommendations, and moderation status from one place.">
+      <div className="flex justify-end">
         <Button asChild><Link href="/dashboard/listings/create"><Plus className="h-4 w-4" /> Create listing</Link></Button>
       </div>
 
@@ -58,7 +55,7 @@ export default async function ListingsDashboardPage() {
         <Card><CardContent className="p-6 text-destructive">{error}</CardContent></Card>
       )}
       {!authRequired && !error && listings.length === 0 && (
-        <Card><CardContent className="p-6">No listings yet. Start with photos or create one manually.</CardContent></Card>
+        <DashboardEmptyState title="No listings yet" description="Start with photos or create one manually to publish your first marketplace listing." action={<Button asChild><Link href="/dashboard/listings/create"><Plus className="h-4 w-4" /> Create listing</Link></Button>} />
       )}
 
       <div className="grid gap-4">
@@ -69,7 +66,7 @@ export default async function ListingsDashboardPage() {
             <Card key={listing.id}>
               <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
-                  {listing.listing_images?.[0]?.public_url ? <img src={listing.listing_images[0].public_url} alt="" className="h-20 w-20 rounded-xl object-cover" /> : <div className="h-20 w-20 rounded-xl bg-secondary" />}
+                  {listing.listing_images?.[0]?.public_url ? <Image src={listing.listing_images[0].public_url} alt="" width={80} height={80} unoptimized className="h-20 w-20 rounded-xl object-cover" /> : <div className="h-20 w-20 rounded-xl bg-secondary" />}
                   <div>
                     <CardTitle className="text-xl">{listing.title}</CardTitle>
                     <p className="mt-1 text-sm text-muted-foreground">{listing.currency} ${Number(listing.price_amount).toLocaleString()} · {listing.condition ?? "condition not set"}</p>
@@ -85,6 +82,6 @@ export default async function ListingsDashboardPage() {
           );
         })}
       </div>
-    </section>
+    </DashboardShell>
   );
 }
