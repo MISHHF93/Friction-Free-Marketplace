@@ -16,13 +16,11 @@ type AgentAuditEvent = {
 };
 
 function getAdminClientIfConfigured() {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
   return createAdminClient();
 }
 
 export async function recordAgentAuditEvent(event: AgentAuditEvent) {
   const supabase = getAdminClientIfConfigured() as any;
-  if (!supabase) return;
 
   await Promise.allSettled([
     supabase.from("audit_logs").insert({

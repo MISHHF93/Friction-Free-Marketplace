@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { env } from "@/lib/env";
+import { env } from "@/lib/env.server";
 
 export function getOpenAI() {
   if (!env.OPENAI_API_KEY) {

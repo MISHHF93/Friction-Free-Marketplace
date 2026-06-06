@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { publicEnv } from "@/lib/env";
 
 type StripeJs = {
   elements: () => { create: (type: "card", options?: Record<string, unknown>) => { mount: (selector: string) => void; destroy: () => void } };
@@ -36,14 +37,14 @@ export function CheckoutCard({ listingId, priceAmount, currency, disabled = fals
   const cardRef = useRef<{ destroy: () => void } | null>(null);
 
   useEffect(() => {
-    if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+    if (!publicEnv.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
       setStatus("Stripe publishable key is not configured.");
       return;
     }
 
     const setupStripe = () => {
-      if (!window.Stripe || !process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) return;
-      const stripeClient = window.Stripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+      if (!window.Stripe || !publicEnv.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) return;
+      const stripeClient = window.Stripe(publicEnv.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
       const elements = stripeClient.elements();
       const card = elements.create("card", {
         style: { base: { fontSize: "16px", color: "#0f172a", "::placeholder": { color: "#94a3b8" } } }

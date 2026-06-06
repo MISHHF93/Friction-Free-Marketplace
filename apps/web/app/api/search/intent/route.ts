@@ -25,18 +25,16 @@ export async function POST(request: Request) {
   const input = intentSchema.parse(await request.json());
   let intent = fallbackIntent(input.query);
 
-  if (process.env.OPENAI_API_KEY) {
-    const completion = await getOpenAI().chat.completions.create({
-      model: "gpt-4o-mini",
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: "Extract marketplace buyer intent as JSON with rewrittenQuery, filters(category,maxPrice,minPrice,minSellerTrust,condition array), and explanation. Keep filters conservative." },
-        { role: "user", content: JSON.stringify(input) }
-      ]
-    });
-    const content = completion.choices[0]?.message.content;
-    if (content) intent = { ...intent, ...JSON.parse(content) };
-  }
+  const completion = await getOpenAI().chat.completions.create({
+    model: "gpt-4o-mini",
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: "Extract marketplace buyer intent as JSON with rewrittenQuery, filters(category,maxPrice,minPrice,minSellerTrust,condition array), and explanation. Keep filters conservative." },
+      { role: "user", content: JSON.stringify(input) }
+    ]
+  });
+  const content = completion.choices[0]?.message.content;
+  if (content) intent = { ...intent, ...JSON.parse(content) };
 
   const results = await searchMarketplace({ q: intent.rewrittenQuery, ...(intent.filters ?? {}), sort: "recommended", limit: 12 });
   return NextResponse.json({ intent, results });

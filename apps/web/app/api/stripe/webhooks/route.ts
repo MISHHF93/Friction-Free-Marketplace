@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { env } from "@/lib/env";
+import { env } from "@/lib/env.server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { recordTransactionEvent } from "@/lib/payments/audit";
 import { centsToDollars } from "@/lib/payments/money";
