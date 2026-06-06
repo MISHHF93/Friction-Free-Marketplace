@@ -218,6 +218,80 @@ export type Database = {
         Insert: Partial<Database["public"]["Tables"]["listing_images"]["Row"]> & { listing_id: string; storage_path: string };
         Update: Partial<Database["public"]["Tables"]["listing_images"]["Row"]>;
       };
+      ai_agents: {
+        Row: {
+          id: string;
+          owner_user_id: string | null;
+          name: string;
+          agent_type: "buyer" | "seller" | "listing_creation" | "pricing" | "fraud_detection" | "negotiation" | "support" | "recommendation" | "moderation" | "search";
+          status: "active" | "paused" | "disabled" | "deleted";
+          instructions: string | null;
+          permissions: Json;
+          configuration: Json;
+          last_run_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["ai_agents"]["Row"]> & { name: string; agent_type: "buyer" | "seller" | "listing_creation" | "pricing" | "fraud_detection" | "negotiation" | "support" | "recommendation" | "moderation" | "search" };
+        Update: Partial<Database["public"]["Tables"]["ai_agents"]["Row"]>;
+      };
+      ai_tasks: {
+        Row: {
+          id: string;
+          agent_id: string;
+          requested_by: string | null;
+          task_type: string;
+          status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+          input: Json;
+          output: Json | null;
+          error_message: string | null;
+          scheduled_at: string | null;
+          started_at: string | null;
+          completed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["ai_tasks"]["Row"]> & { agent_id: string; task_type: string };
+        Update: Partial<Database["public"]["Tables"]["ai_tasks"]["Row"]>;
+      };
+      ai_agent_audit_events: {
+        Row: {
+          id: string;
+          actor_id: string | null;
+          agent_type: "buyer" | "seller" | "listing_creation" | "pricing" | "fraud_detection" | "negotiation" | "support" | "recommendation" | "moderation" | "search";
+          task_id: string | null;
+          action: string;
+          status: "queued" | "running" | "succeeded" | "failed";
+          input_summary: Json;
+          output_summary: Json;
+          safety_flags: string[];
+          tool_calls: Json;
+          token_usage: Json;
+          latency_ms: number | null;
+          error_message: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["ai_agent_audit_events"]["Row"]> & { agent_type: "buyer" | "seller" | "listing_creation" | "pricing" | "fraud_detection" | "negotiation" | "support" | "recommendation" | "moderation" | "search"; action: string; status: "queued" | "running" | "succeeded" | "failed" };
+        Update: Partial<Database["public"]["Tables"]["ai_agent_audit_events"]["Row"]>;
+      };
+      audit_logs: {
+        Row: {
+          id: string;
+          actor_id: string | null;
+          actor_type: "user" | "admin" | "system" | "ai_agent";
+          action: string;
+          table_name: string | null;
+          record_id: string | null;
+          ip_hash: string | null;
+          user_agent: string | null;
+          old_values: Json | null;
+          new_values: Json | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["audit_logs"]["Row"]> & { action: string };
+        Update: Partial<Database["public"]["Tables"]["audit_logs"]["Row"]>;
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -232,6 +306,7 @@ export type Database = {
       pickup_schedule_status: "proposed" | "confirmed" | "reschedule_requested" | "completed" | "cancelled" | "no_show";
       reservation_deposit_status: "pending" | "authorized" | "held" | "released" | "forfeited" | "refunded" | "failed" | "cancelled";
       ghosting_penalty_status: "pending" | "applied" | "waived" | "appealed" | "reversed";
+      ai_task_status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
     };
     CompositeTypes: Record<string, never>;
   };
