@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { href: "/browse", label: "Browse" },
+  { href: "/how-it-works", label: "How it works" },
+  { href: "/trust-and-safety", label: "Safety" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/assistant", label: "AI agents" },
   { href: "/seller", label: "Sell" },
@@ -78,7 +80,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex flex-wrap gap-4">
             <Link href="/browse">Browse listings</Link>
-            <Link href="/dashboard">Buyer dashboard</Link>
+            <Link href="/search">Search</Link>
+            <Link href="/how-it-works">How it works</Link>
+            <Link href="/trust-and-safety">Trust & safety</Link>
             <Link href="/seller">Seller dashboard</Link>
             <Link href="/admin">Admin console</Link>
           </div>

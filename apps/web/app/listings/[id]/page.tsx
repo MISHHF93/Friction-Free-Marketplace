@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Heart, MessageSquare, ShieldCheck, Truck } from "lucide-react";
@@ -7,11 +8,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { listings } from "@/lib/marketplace-data";
 import { CheckoutCard } from "@/components/payments/checkout-card";
+import { getListingById } from "@/lib/public-marketplace";
 
 export const dynamic = "force-dynamic";
 
 export function generateStaticParams() {
   return listings.map((listing) => ({ id: listing.id }));
+}
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const listing = await getListingById(params.id);
+
+  if (!listing) {
+    return {
+      title: "Listing not found | Friction-Free Marketplace",
+      description: "This marketplace listing could not be found or is no longer active."
+    };
+  }
+
+  const description = listing.description.length > 155 ? `${listing.description.slice(0, 152)}...` : listing.description;
+
+  return {
+    title: `${listing.title} | Friction-Free Marketplace`,
+    description,
+    alternates: { canonical: `/listings/${params.id}` },
+    openGraph: {
+      title: listing.title,
+      description,
+      url: `/listings/${params.id}`,
+      images: listing.image_url ? [{ url: listing.image_url, alt: listing.title }] : undefined
+    }
+  };
 }
 
 type DbListing = {
