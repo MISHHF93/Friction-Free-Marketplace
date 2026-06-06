@@ -1,3 +1,9 @@
-import { ExperiencePage } from "@/components/experience-page";
-import { pageByKey } from "@/lib/page-data";
-export default function Page() { return <ExperiencePage page={pageByKey["admin-transactions"]} related={[pageByKey["admin-disputes"], pageByKey["admin-analytics"], pageByKey["admin-users"]]} />; }
+import { notFound } from "next/navigation";
+import { AdminFeaturePage } from "@/components/admin/admin-page";
+import { getAdminPageConfig } from "@/lib/admin/platform";
+
+export default function Page() {
+  const config = getAdminPageConfig("transactions");
+  if (!config) notFound();
+  return <AdminFeaturePage config={config} />;
+}

@@ -40,5 +40,20 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  if (user && pathname.startsWith("/admin")) {
+    const { data: appUser } = await supabase
+      .from("users")
+      .select("role,status")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!appUser || appUser.status !== "active" || !["admin", "super_admin"].includes(appUser.role)) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/dashboard";
+      redirectUrl.searchParams.set("adminDenied", "1");
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
   return response;
 }
