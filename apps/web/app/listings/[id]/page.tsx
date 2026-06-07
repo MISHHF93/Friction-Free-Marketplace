@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Heart, MessageSquare, ShieldCheck, Truck } from "lucide-react";
+import { MessageSquare, ShieldCheck, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { listings } from "@/lib/marketplace-data";
+import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { CheckoutCard } from "@/components/payments/checkout-card";
 import { getListingById } from "@/lib/public-marketplace";
+import { getFavoriteListingIds } from "@/lib/saves/user-saves";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +77,9 @@ async function getDatabaseListing(id: string) {
 }
 
 export default async function ListingDetailPage({ params }: { params: { id: string } }) {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const favoriteIds = user ? await getFavoriteListingIds(user.id) : new Set<string>();
   const dbListing = await getDatabaseListing(params.id);
 
   if (dbListing) {
@@ -113,7 +118,7 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
               <div className="grid gap-3">
                 <CheckoutCard listingId={dbListing.id} priceAmount={Number(dbListing.price_amount)} currency={dbListing.currency} />
                 <Button variant="outline" size="lg"><MessageSquare className="h-4 w-4" /> Message seller</Button>
-                <Button variant="ghost"><Heart className="h-4 w-4" /> Save listing</Button>
+                <FavoriteToggleForm listingId={dbListing.id} isFavorited={favoriteIds.has(dbListing.id)} variant="ghost" className="w-full" />
               </div>
               <p className="flex items-center gap-2 text-sm text-muted-foreground"><Truck className="h-4 w-4" /> {dbListing.pickup_available ? "Pickup available." : "Pickup not selected."} {dbListing.ships_to.length ? `Ships to ${dbListing.ships_to.join(", ")}.` : "Shipping not selected."}</p>
               <Button asChild variant="outline" className="w-full"><Link href="/browse">Back to browse</Link></Button>
@@ -158,7 +163,7 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
             <div className="grid gap-3">
               <Button size="lg">Buy with escrow</Button>
               <Button variant="outline" size="lg"><MessageSquare className="h-4 w-4" /> Message seller</Button>
-              <Button variant="ghost"><Heart className="h-4 w-4" /> Save listing</Button>
+              <Button variant="ghost" disabled>Favorites are available for live listings</Button>
             </div>
             <p className="flex items-center gap-2 text-sm text-muted-foreground"><Truck className="h-4 w-4" /> Shipping, pickup, and payout protection are coordinated after checkout.</p>
             <Button asChild variant="outline" className="w-full"><Link href="/browse">Back to browse</Link></Button>

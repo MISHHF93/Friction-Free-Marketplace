@@ -1,10 +1,14 @@
 import type React from "react";
 import Link from "next/link";
 import { Bell, BrainCircuit, Clock, Flame, MapPin, Search, ShieldCheck, SlidersHorizontal, Sparkles } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
+import { SaveSearchForm } from "@/components/saved-searches/save-search-form";
+import { getFavoriteListingIds } from "@/lib/saves/user-saves";
 import { searchMarketplace } from "@/lib/search/discovery";
 import type { DiscoveryDocument, DiscoverySearchParams, DiscoverySort } from "@/lib/search/schema";
 
@@ -63,10 +67,13 @@ function hiddenInputs(params: DiscoverySearchParams, omit: Array<keyof Discovery
 
 export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchParams: SearchParams; mode?: "browse" | "search" }) {
   const params = parseDiscoveryParams(searchParams);
-  const [results, recommended, trending] = await Promise.all([
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const [results, recommended, trending, favoriteIds] = await Promise.all([
     searchMarketplace(params),
     searchMarketplace({ ...params, sort: "recommended", limit: 3 }),
-    searchMarketplace({ category: params.category, sort: "trending", limit: 3 })
+    searchMarketplace({ category: params.category, sort: "trending", limit: 3 }),
+    user ? getFavoriteListingIds(user.id) : Promise.resolve(new Set<string>())
   ]);
 
   return (
@@ -129,8 +136,8 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" /> Save this search</CardTitle></CardHeader>
             <CardContent className="space-y-3 text-sm text-muted-foreground">
-              <p>POST /api/saved-searches stores this query and the alert job notifies buyers when new matching listings publish.</p>
-              <Button variant="outline" className="w-full">Create alert</Button>
+              <p>Save this query and the alert job will notify you when newly published listings match your filters.</p>
+              {user ? <SaveSearchForm params={params} /> : <Button asChild variant="outline" className="w-full"><Link href="/login?next=/search">Sign in to create alert</Link></Button>}
             </CardContent>
           </Card>
         </aside>
@@ -147,7 +154,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
           </div>
 
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {results.listings.map((listing) => <DiscoveryListingCard key={listing.id} listing={listing} />)}
+            {results.listings.map((listing) => <DiscoveryListingCard key={listing.id} listing={listing} isFavorited={favoriteIds.has(listing.id)} />)}
           </div>
 
           {results.listings.length === 0 && (
@@ -175,7 +182,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
   );
 }
 
-function DiscoveryListingCard({ listing }: { listing: DiscoveryDocument }) {
+function DiscoveryListingCard({ listing, isFavorited }: { listing: DiscoveryDocument; isFavorited: boolean }) {
   return (
     <Card className="overflow-hidden">
       {listing.image_url ? <img src={listing.image_url} alt={listing.title} className="h-44 w-full object-cover" /> : <div className="h-44 bg-gradient-to-br from-emerald-100 via-sky-100 to-white" />}
@@ -192,7 +199,10 @@ function DiscoveryListingCard({ listing }: { listing: DiscoveryDocument }) {
           <span className="flex items-center gap-1 font-medium"><ShieldCheck className="h-4 w-4 text-primary" /> Trust {listing.seller_trust_score}</span>
           <span className="text-muted-foreground">{listing.condition} · value {Math.round(listing.value_score)} · trending {Math.round(listing.trend_score)}</span>
         </div>
-        <Button asChild className="w-full"><Link href={`/listings/${listing.id}`}>View details</Link></Button>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Button asChild className="w-full"><Link href={`/listings/${listing.id}`}>View details</Link></Button>
+          <FavoriteToggleForm listingId={listing.id} isFavorited={isFavorited} variant="outline" className="w-full" labelWhenOn="Saved" labelWhenOff="Favorite" />
+        </div>
       </CardContent>
     </Card>
   );
