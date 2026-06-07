@@ -29,11 +29,18 @@ export async function createConversationAction(input: unknown) {
   const { supabase, user } = await requireUser();
   const { data: listing, error: listingError } = await (supabase as any)
     .from("listings")
-    .select("id,seller_id")
+    .select("id,seller_id,title,price_amount,currency")
     .eq("id", payload.listingId)
     .single();
   if (listingError || !listing) throw new Error("Listing not found.");
   if (listing.seller_id === user.id) throw new Error("Sellers cannot open buyer conversations with themselves.");
+
+  const { data: block } = await (supabase as any)
+    .from("user_blocks")
+    .select("id")
+    .or(`and(blocker_id.eq.${user.id},blocked_id.eq.${listing.seller_id}),and(blocker_id.eq.${listing.seller_id},blocked_id.eq.${user.id})`)
+    .maybeSingle();
+  if (block) throw new Error("This seller is not available for chat.");
 
   const { data: existing } = await (supabase as any)
     .from("conversations")
@@ -48,7 +55,18 @@ export async function createConversationAction(input: unknown) {
   if (!conversation) {
     const { data: created, error } = await (supabase as any)
       .from("conversations")
-      .insert({ listing_id: listing.id, buyer_id: user.id, seller_id: listing.seller_id })
+      .insert({
+        listing_id: listing.id,
+        buyer_id: user.id,
+        seller_id: listing.seller_id,
+        metadata: {
+          listing_context: {
+            title: listing.title,
+            price_amount: listing.price_amount,
+            currency: listing.currency
+          }
+        }
+      })
       .select("*")
       .single();
     if (error) throw error;

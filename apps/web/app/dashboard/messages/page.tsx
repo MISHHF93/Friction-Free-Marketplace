@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getConversationSummaries } from "@/lib/messaging/queries";
 import type { ConversationSummary } from "@/lib/messaging/types";
 
-export default async function MessagesPage() {
+export default async function MessagesPage({ searchParams }: { searchParams?: { conversation?: string } }) {
   let userId = "";
   let conversations: ConversationSummary[] = [];
   let setupError: string | null = null;
@@ -49,7 +49,7 @@ export default async function MessagesPage() {
       )}
 
       {userId ? (
-        <CommunicationHub userId={userId} initialConversations={conversations} />
+        <CommunicationHub userId={userId} initialConversations={conversations} initialConversationId={searchParams?.conversation} />
       ) : (
         <Card>
           <CardHeader>

@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { ConversationMessage, ConversationOffer, ConversationSummary, MessageAttachment } from "@/lib/messaging/types";
+import type { ConversationMessage, ConversationOffer, ConversationSummary, MessageAttachment, MessageReadReceipt } from "@/lib/messaging/types";
 import {
   blockUserAction,
   createReservationDepositAction,
@@ -32,9 +32,9 @@ function mergeById<T extends { id: string }>(items: T[], item: T) {
   return exists ? items.map((candidate) => (candidate.id === item.id ? { ...candidate, ...item } : candidate)) : [...items, item];
 }
 
-export function CommunicationHub({ userId, initialConversations }: { userId: string; initialConversations: ConversationSummary[] }) {
+export function CommunicationHub({ userId, initialConversations, initialConversationId }: { userId: string; initialConversations: ConversationSummary[]; initialConversationId?: string }) {
   const [conversations, setConversations] = useState(initialConversations);
-  const [activeId, setActiveId] = useState(initialConversations[0]?.id ?? "");
+  const [activeId, setActiveId] = useState(initialConversationId ?? initialConversations[0]?.id ?? "");
   const [body, setBody] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState("");
   const [offerAmount, setOfferAmount] = useState("");
@@ -62,6 +62,21 @@ export function CommunicationHub({ userId, initialConversations }: { userId: str
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
         const message = payload.new as ConversationMessage;
         setConversations((current) => current.map((conversation) => conversation.id === message.conversation_id ? { ...conversation, messages: mergeById(conversation.messages, message), last_message_at: message.created_at } : conversation));
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {
+        const message = payload.new as ConversationMessage;
+        setConversations((current) => current.map((conversation) => conversation.id === message.conversation_id ? {
+          ...conversation,
+          messages: conversation.messages.map((candidate) => candidate.id === message.id ? { ...candidate, ...message } : candidate)
+        } : conversation));
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_read_receipts" }, (payload) => {
+        const receipt = payload.new as MessageReadReceipt;
+        if (receipt.user_id === userId) return;
+        setConversations((current) => current.map((conversation) => conversation.id === receipt.conversation_id ? {
+          ...conversation,
+          messages: conversation.messages.map((message) => message.id === receipt.message_id && message.sender_id === userId ? { ...message, read_at: receipt.read_at } : message)
+        } : conversation));
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_attachments" }, (payload) => {
         const attachment = payload.new as MessageAttachment;
@@ -142,13 +157,13 @@ export function CommunicationHub({ userId, initialConversations }: { userId: str
   const latestPickup = activeConversation.pickup_schedules[0];
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-      <Card className="overflow-hidden">
+    <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <Card className="overflow-hidden lg:sticky lg:top-24 lg:h-fit">
         <CardHeader>
           <CardTitle>Conversations</CardTitle>
           <CardDescription>Supabase Realtime keeps every thread, receipt, and negotiation update live.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-2 p-3">
+        <CardContent className="grid max-h-72 gap-2 overflow-y-auto p-3 lg:max-h-[calc(100vh-14rem)]">
           {conversations.map((conversation) => {
             const participant = conversation.buyer_id === userId ? conversation.seller : conversation.buyer;
             const latestMessage = conversation.messages[conversation.messages.length - 1];
@@ -168,12 +183,12 @@ export function CommunicationHub({ userId, initialConversations }: { userId: str
 
       <div className="grid gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-start justify-between gap-4">
+          <CardHeader className="grid gap-4 sm:flex sm:flex-row sm:items-start sm:justify-between">
             <div>
               <CardTitle>{activeConversation.listing?.title ?? "Conversation"}</CardTitle>
               <CardDescription>With {otherParticipant?.display_name ?? "marketplace user"} · {activeConversation.listing ? money(activeConversation.listing.price_amount, activeConversation.listing.currency) : "No listing attached"}</CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:flex">
               <Button variant="outline" size="sm" onClick={() => runAction(() => reportMessageAction({ conversationId: activeConversation.id, messageId: activeConversation.messages.at(-1)?.id, reason: reportReason || "Unsafe or inappropriate message" }))} disabled={!activeConversation.messages.length || isPending}><Flag className="mr-2 h-4 w-4" />Report</Button>
               <Button variant="destructive" size="sm" onClick={() => otherParticipantId && runAction(() => blockUserAction({ conversationId: activeConversation.id, blockedId: otherParticipantId, reason: "Blocked from chat UI" }))} disabled={!otherParticipantId || isPending}><UserX className="mr-2 h-4 w-4" />Block</Button>
             </div>
@@ -185,7 +200,7 @@ export function CommunicationHub({ userId, initialConversations }: { userId: str
                 const own = message.sender_id === userId;
                 return (
                   <div key={message.id} className={cn("flex", own ? "justify-end" : "justify-start")}>
-                    <div className={cn("max-w-[78%] rounded-2xl px-4 py-3 text-sm", own ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground")}>
+                    <div className={cn("max-w-[90%] rounded-2xl px-4 py-3 text-sm sm:max-w-[78%]", own ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground")}>
                       <div className="mb-1 flex items-center gap-2 text-xs opacity-80">
                         <Badge className="bg-background/70">{message.kind}</Badge>
                         <span>{new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
