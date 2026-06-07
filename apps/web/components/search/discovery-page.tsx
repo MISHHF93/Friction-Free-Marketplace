@@ -11,6 +11,8 @@ import type { DiscoveryDocument, DiscoverySearchParams, DiscoverySort } from "@/
 const sortOptions: Array<{ value: DiscoverySort; label: string; description: string }> = [
   { value: "newest", label: "Newest", description: "Latest active listings first" },
   { value: "closest", label: "Closest", description: "Uses radius when coordinates are supplied" },
+  { value: "price_low", label: "Price: low", description: "Lowest price first" },
+  { value: "price_high", label: "Price: high", description: "Highest price first" },
   { value: "best_value", label: "Best value", description: "Price advantage plus seller quality" },
   { value: "safest_seller", label: "Safest seller", description: "Trust, low risk, completed sales" }
 ];
@@ -79,6 +81,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
           <div className="rounded-2xl bg-secondary p-4 text-sm text-muted-foreground">
             <p className="font-semibold text-foreground">Source: {results.source}</p>
             <p>{results.total} matching listings with recommendations, trending inventory, and saved-search alert support.</p>
+            <p className="mt-2">Filters: price, category, location, condition, and seller trust score.</p>
           </div>
         </div>
 
@@ -118,6 +121,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
                 </label>
                 <label className="grid gap-2 text-sm font-semibold">Minimum seller trust<Input name="minSellerTrust" defaultValue={params.minSellerTrust} type="number" min="0" max="100" placeholder="90" /></label>
                 <Button className="w-full">Apply filters</Button>
+                <Button asChild variant="ghost" className="w-full"><Link href={mode === "search" ? "/search" : "/browse"}>Clear filters</Link></Button>
               </form>
             </CardContent>
           </Card>
