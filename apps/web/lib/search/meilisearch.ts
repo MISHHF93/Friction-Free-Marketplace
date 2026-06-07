@@ -1,4 +1,4 @@
-import { LISTINGS_INDEX_UID, listingFilterableAttributes, listingRankingRules, listingSearchableAttributes, listingSortableAttributes, type DiscoveryDocument, type DiscoverySearchParams } from "@/lib/search/schema";
+import { LISTINGS_INDEX_UID, listingFacets, listingFilterableAttributes, listingRankingRules, listingSearchableAttributes, listingSortableAttributes, type DiscoveryDocument, type DiscoverySearchParams } from "@/lib/search/schema";
 
 type MeiliSearchHit = DiscoveryDocument & { _formatted?: Partial<Record<keyof DiscoveryDocument, string>>; _rankingScore?: number };
 
@@ -9,6 +9,7 @@ type MeiliSearchResponse = {
   offset: number;
   processingTimeMs: number;
   facetDistribution?: Record<string, Record<string, number>>;
+  facetStats?: Record<string, { min: number; max: number }>;
 };
 
 export function isSearchConfigured() {
@@ -108,7 +109,7 @@ export function buildMeiliSearchPayload(params: DiscoverySearchParams) {
     filter,
     sort,
     attributesToHighlight: ["title", "description"],
-    facets: ["category_slug", "condition", "seller_fraud_risk_level", "pickup_available"],
+    facets: listingFacets,
     showRankingScore: true
   };
 }
@@ -126,6 +127,7 @@ export async function configureDiscoveryIndex() {
       filterableAttributes: listingFilterableAttributes,
       sortableAttributes: listingSortableAttributes,
       rankingRules: listingRankingRules,
+      displayedAttributes: ["*"],
       typoTolerance: { enabled: true, minWordSizeForTypos: { oneTypo: 4, twoTypos: 8 } },
       faceting: { maxValuesPerFacet: 100 },
       pagination: { maxTotalHits: 5000 }

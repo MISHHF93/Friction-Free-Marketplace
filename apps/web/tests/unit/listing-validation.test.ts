@@ -69,5 +69,7 @@ describe("Meilisearch payload builder", () => {
     expect(payload.filter).toContain('category_slug = "electronics"');
     expect(payload.filter).toContain("price_amount >= 100");
     expect(payload.filter).toContain("seller_trust_score >= 80");
+    expect(payload.facets).toContain("price_amount");
+    expect(payload.facets).toContain("seller_trust_score");
   });
 });

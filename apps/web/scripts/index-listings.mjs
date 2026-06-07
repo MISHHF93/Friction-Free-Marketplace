@@ -15,6 +15,7 @@ const searchableAttributes = ["title", "description", "category_name", "category
 const filterableAttributes = ["status", "category_id", "category_slug", "condition", "currency", "price_amount", "seller_trust_score", "seller_completed_transactions", "seller_fraud_risk_level", "pickup_available", "ships_to", "location_city", "location_region", "location_country", "published_at", "created_at", "saved_count", "view_count", "conversion_score", "safety_score", "trend_score", "value_score", "_geo"];
 const sortableAttributes = ["published_at", "created_at", "updated_at", "price_amount", "seller_trust_score", "seller_completed_transactions", "view_count", "saved_count", "trend_score", "value_score", "safety_score", "conversion_score", "_geo"];
 const rankingRules = ["words", "typo", "proximity", "attribute", "sort", "exactness", "desc(safety_score)", "desc(seller_trust_score)", "desc(value_score)", "desc(trend_score)", "desc(published_at)"];
+const facets = ["category_slug", "condition", "location_city", "location_region", "location_country", "seller_fraud_risk_level", "pickup_available", "price_amount", "seller_trust_score"];
 
 async function request(url, options = {}) {
   const response = await fetch(url, options);
@@ -70,10 +71,11 @@ await meili(`/indexes/${indexUid}/settings`, {
   method: "PATCH",
   body: JSON.stringify({
     searchableAttributes,
-    filterableAttributes,
+    filterableAttributes: Array.from(new Set([...filterableAttributes, ...facets])),
     sortableAttributes,
     rankingRules,
     typoTolerance: { enabled: true, minWordSizeForTypos: { oneTypo: 4, twoTypos: 8 } },
+    displayedAttributes: ["*"],
     faceting: { maxValuesPerFacet: 100 },
     pagination: { maxTotalHits: 5000 }
   })

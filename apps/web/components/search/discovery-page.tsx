@@ -18,7 +18,8 @@ const sortOptions: Array<{ value: DiscoverySort; label: string; description: str
   { value: "price_low", label: "Price: low", description: "Lowest price first" },
   { value: "price_high", label: "Price: high", description: "Highest price first" },
   { value: "best_value", label: "Best value", description: "Price advantage plus seller quality" },
-  { value: "safest_seller", label: "Safest seller", description: "Trust, low risk, completed sales" }
+  { value: "safest_seller", label: "Safest seller", description: "Trust, low risk, completed sales" },
+  { value: "trending", label: "Trending", description: "Views, saves, and freshness signals" }
 ];
 
 const conditions = ["New", "Like new", "Excellent", "Good", "Fair"];
@@ -57,6 +58,62 @@ function parseDiscoveryParams(searchParams: SearchParams): DiscoverySearchParams
   };
 }
 
+
+function titleize(value: string) {
+  return value.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function topFacetEntries(facets: Record<string, Record<string, number>>, field: string, limit = 5) {
+  return Object.entries(facets[field] ?? {})
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, limit);
+}
+
+function ActiveFilterChips({ params }: { params: DiscoverySearchParams }) {
+  const chips = [
+    params.q ? ["Query", params.q] : undefined,
+    params.category ? ["Category", titleize(params.category)] : undefined,
+    params.location ? ["Location", params.location] : undefined,
+    params.minPrice !== undefined ? ["Min price", `$${params.minPrice}`] : undefined,
+    params.maxPrice !== undefined ? ["Max price", `$${params.maxPrice}`] : undefined,
+    params.condition?.length ? ["Condition", params.condition.join(", ")] : undefined,
+    params.minSellerTrust !== undefined ? ["Seller trust", `${params.minSellerTrust}+`] : undefined
+  ].filter(Boolean) as string[][];
+
+  if (chips.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {chips.map(([label, value]) => (
+        <Badge key={`${label}-${value}`}>{label}: {value}</Badge>
+      ))}
+    </div>
+  );
+}
+
+function FacetLinkList({ title, field, facets, currentHref }: { title: string; field: "category" | "condition" | "location"; facets: Record<string, Record<string, number>>; currentHref: string }) {
+  const facetField = field === "category" ? "category_slug" : field === "location" ? "location_city" : "condition";
+  const entries = topFacetEntries(facets, facetField);
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">{title}</p>
+      <div className="grid gap-1">
+        {entries.map(([value, count]) => {
+          const params = new URLSearchParams(currentHref);
+          params.set(field, value);
+          return (
+            <Link key={value} href={`?${params.toString()}`} className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm transition hover:bg-secondary">
+              <span>{titleize(value)}</span>
+              <span className="text-muted-foreground">{count}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function hiddenInputs(params: DiscoverySearchParams, omit: Array<keyof DiscoverySearchParams> = []) {
   return Object.entries(params).flatMap(([key, value]) => {
     if (omit.includes(key as keyof DiscoverySearchParams) || value === undefined || value === "") return [];
@@ -76,6 +133,15 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
     user ? getFavoriteListingIds(user.id) : Promise.resolve(new Set<string>())
   ]);
 
+  const currentHref = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined || value === "") continue;
+    currentHref.set(key, Array.isArray(value) ? value.join(",") : String(value));
+  }
+
+  const priceStats = results.facetStats.price_amount;
+  const trustStats = results.facetStats.seller_trust_score;
+
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
@@ -89,6 +155,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
             <p className="font-semibold text-foreground">Source: {results.source}</p>
             <p>{results.total} matching listings with recommendations, trending inventory, and saved-search alert support.</p>
             <p className="mt-2">Filters: price, category, location, condition, and seller trust score.</p>
+            {priceStats ? <p className="mt-2">Indexed price range: ${Math.round(priceStats.min).toLocaleString()}–${Math.round(priceStats.max).toLocaleString()}</p> : null}
           </div>
         </div>
 
@@ -109,12 +176,15 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
             <CardHeader><CardTitle>Filters</CardTitle></CardHeader>
             <CardContent>
               <form className="space-y-4" action={mode === "search" ? "/search" : "/browse"}>
-                {hiddenInputs(params, ["category", "minPrice", "maxPrice", "condition", "minSellerTrust", "sort"])}
+                {hiddenInputs(params, ["category", "location", "minPrice", "maxPrice", "condition", "minSellerTrust", "sort"])}
                 <label className="grid gap-2 text-sm font-semibold">Category
                   <select name="category" defaultValue={params.category ?? ""} className="h-11 rounded-lg border border-input bg-background px-3 text-sm">
                     <option value="">All categories</option>
                     {categories.map((category) => <option key={category} value={category}>{category}</option>)}
                   </select>
+                </label>
+                <label className="grid gap-2 text-sm font-semibold">Location
+                  <Input name="location" defaultValue={params.location} placeholder="City, state, or country" />
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <label className="grid gap-2 text-sm font-semibold">Min price<Input name="minPrice" defaultValue={params.minPrice} type="number" min="0" /></label>
@@ -127,9 +197,19 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
                   </select>
                 </label>
                 <label className="grid gap-2 text-sm font-semibold">Minimum seller trust<Input name="minSellerTrust" defaultValue={params.minSellerTrust} type="number" min="0" max="100" placeholder="90" /></label>
+                {trustStats ? <p className="text-xs text-muted-foreground">Current seller trust range: {Math.round(trustStats.min)}–{Math.round(trustStats.max)}.</p> : null}
                 <Button className="w-full">Apply filters</Button>
                 <Button asChild variant="ghost" className="w-full"><Link href={mode === "search" ? "/search" : "/browse"}>Clear filters</Link></Button>
               </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle>Indexed facets</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <FacetLinkList title="Popular categories" field="category" facets={results.facets} currentHref={currentHref.toString()} />
+              <FacetLinkList title="Nearby cities" field="location" facets={results.facets} currentHref={currentHref.toString()} />
+              <FacetLinkList title="Top conditions" field="condition" facets={results.facets} currentHref={currentHref.toString()} />
             </CardContent>
           </Card>
 
@@ -143,6 +223,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
         </aside>
 
         <div className="space-y-6">
+          <ActiveFilterChips params={params} />
           <div className="flex flex-wrap gap-2">
             {sortOptions.map((option) => (
               <form key={option.value} action={mode === "search" ? "/search" : "/browse"}>
