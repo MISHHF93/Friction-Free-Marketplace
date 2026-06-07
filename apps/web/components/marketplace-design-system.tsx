@@ -8,6 +8,7 @@ import {
   AlertCircle,
   ArrowRight,
   Check,
+  CheckCircle2,
   ChevronDown,
   Clock,
   DollarSign,
@@ -37,6 +38,38 @@ export type AppNavLink = {
   current?: boolean;
 };
 
+const defaultFooterSections: AppFooterSection[] = [
+  {
+    title: "Marketplace",
+    links: [
+      { href: "/browse", label: "Browse listings" },
+      { href: "/search", label: "Search" },
+      { href: "/seller", label: "Start selling" }
+    ]
+  },
+  {
+    title: "Trust",
+    links: [
+      { href: "/how-it-works", label: "How it works" },
+      { href: "/trust-and-safety", label: "Trust & safety" },
+      { href: "/pricing", label: "Pricing" }
+    ]
+  },
+  {
+    title: "Account",
+    links: [
+      { href: "/dashboard", label: "Dashboard" },
+      { href: "/customer-portal", label: "Customer portal" },
+      { href: "/assistant", label: "AI assistant" }
+    ]
+  }
+];
+
+const defaultBottomLinks: AppNavLink[] = [
+  { href: "/trust-and-safety", label: "Safety" },
+  { href: "/pricing", label: "Pricing" }
+];
+
 export type AppHeaderProps = React.HTMLAttributes<HTMLElement> & {
   brand?: string;
   logoHref?: string;
@@ -64,11 +97,12 @@ export function AppHeader({
             </span>
             <span className="truncate text-base sm:text-lg">{brand}</span>
           </Link>
-          <nav className="hidden items-center gap-5 text-sm font-medium text-muted-foreground md:flex" aria-label="Primary navigation">
+          {search ? <div className="hidden min-w-0 flex-1 md:block lg:max-w-xl">{search}</div> : null}
+          <nav className="hidden items-center gap-5 text-sm font-medium text-muted-foreground lg:flex" aria-label="Primary navigation">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
-                className={cn("transition hover:text-foreground", link.current && "text-foreground")}
+                className={cn("whitespace-nowrap transition hover:text-foreground", link.current && "text-foreground")}
                 href={link.href}
                 aria-current={link.current ? "page" : undefined}
               >
@@ -78,6 +112,20 @@ export function AppHeader({
           </nav>
           {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
         </div>
+        {navLinks.length ? (
+          <nav className="flex gap-4 overflow-x-auto text-sm font-medium text-muted-foreground lg:hidden" aria-label="Primary navigation mobile">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                className={cn("shrink-0 pb-1 transition hover:text-foreground", link.current && "text-foreground")}
+                href={link.href}
+                aria-current={link.current ? "page" : undefined}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
         {search ? <div className="md:hidden">{search}</div> : null}
       </div>
     </header>
@@ -99,8 +147,8 @@ export type AppFooterProps = React.HTMLAttributes<HTMLElement> & {
 export function AppFooter({
   brand = "Friction-Free",
   tagline = "Escrow-ready marketplace infrastructure for trusted local commerce.",
-  sections = [],
-  bottomLinks = [],
+  sections = defaultFooterSections,
+  bottomLinks = defaultBottomLinks,
   className,
   ...props
 }: AppFooterProps) {
@@ -123,7 +171,7 @@ export function AppFooter({
               <ul className="space-y-2 text-sm text-muted-foreground">
                 {section.links.map((link) => (
                   <li key={link.href}>
-                    <Link className="transition hover:text-foreground" href={link.href}>
+                    <Link className="transition hover:text-foreground" href={link.href} aria-current={link.current ? "page" : undefined}>
                       {link.label}
                     </Link>
                   </li>
@@ -138,7 +186,7 @@ export function AppFooter({
           <p>© {new Date().getFullYear()} {brand}. All rights reserved.</p>
           <div className="flex flex-wrap gap-4">
             {bottomLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="hover:text-foreground">
+              <Link key={link.href} href={link.href} className="hover:text-foreground" aria-current={link.current ? "page" : undefined}>
                 {link.label}
               </Link>
             ))}
@@ -175,51 +223,52 @@ export function ListingCard({ listing, ctaLabel = "View details", className, ...
 
   return (
     <article className={className} {...props}>
-    <Card className="group overflow-hidden transition hover:-translate-y-0.5 hover:shadow-soft">
-      <Link href={href} className="block" aria-label={`${ctaLabel} for ${listing.title}`}>
-        <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-secondary to-accent">
-          {listing.imageUrl ? (
-            <img
-              src={listing.imageUrl}
-              alt={listing.imageAlt ?? listing.title}
-              className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-              <ImagePlus className="h-10 w-10" aria-hidden="true" />
-            </div>
-          )}
-          {listing.category ? <Badge className="absolute left-3 top-3 bg-card/90 backdrop-blur">{listing.category}</Badge> : null}
-        </div>
-      </Link>
-      <CardContent className="space-y-4 p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <h3 className="line-clamp-2 text-base font-bold tracking-tight sm:text-lg">
-              <Link href={href} className="hover:text-primary">
-                {listing.title}
-              </Link>
-            </h3>
-            {listing.location ? (
-              <p className="flex items-center gap-1 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">{listing.location}</span>
-              </p>
-            ) : null}
+      <Card className="group h-full overflow-hidden transition hover:-translate-y-0.5 hover:shadow-soft">
+        <Link href={href} className="block" aria-label={`${ctaLabel} for ${listing.title}`}>
+          <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-secondary to-accent">
+            {listing.imageUrl ? (
+              <img
+                src={listing.imageUrl}
+                alt={listing.imageAlt ?? listing.title}
+                className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                <ImagePlus className="h-10 w-10" aria-hidden="true" />
+              </div>
+            )}
+            {listing.category ? <Badge className="absolute left-3 top-3 bg-card/90 backdrop-blur">{listing.category}</Badge> : null}
           </div>
-          <PriceDisplay amount={listing.price} currency={listing.currency} size="sm" />
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          {listing.condition ? <Badge>{listing.condition}</Badge> : null}
-          {listing.isVerified ? <TrustBadge label="Verified seller" tone="success" /> : null}
-          {typeof listing.trustScore === "number" ? <TrustBadge label={`${listing.trustScore}% trust`} tone="info" /> : null}
-        </div>
-        <Button asChild className="w-full">
-          <Link href={href}>{ctaLabel}</Link>
-        </Button>
-      </CardContent>
-    </Card>
-  </article>
+        </Link>
+        <CardContent className="space-y-4 p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 space-y-1">
+              <h3 className="line-clamp-2 text-base font-bold tracking-tight sm:text-lg">
+                <Link href={href} className="hover:text-primary">
+                  {listing.title}
+                </Link>
+              </h3>
+              {listing.location ? (
+                <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{listing.location}</span>
+                </p>
+              ) : null}
+            </div>
+            <PriceDisplay amount={listing.price} currency={listing.currency} size="sm" />
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            {listing.condition ? <Badge>{listing.condition}</Badge> : null}
+            {listing.isVerified ? <TrustBadge label="Verified seller" tone="success" /> : null}
+            {typeof listing.trustScore === "number" ? <TrustBadge label={`${listing.trustScore}% trust`} tone="info" /> : null}
+          </div>
+          {listing.sellerName ? <p className="text-sm text-muted-foreground">Listed by {listing.sellerName}</p> : null}
+          <Button asChild className="w-full">
+            <Link href={href}>{ctaLabel}</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </article>
   );
 }
 
@@ -286,17 +335,24 @@ export type UserAvatarProps = React.HTMLAttributes<HTMLDivElement> & {
 };
 
 export function UserAvatar({ name, imageUrl, size = "md", status, className, ...props }: UserAvatarProps) {
-  const initials = name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "?";
+  const initials =
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "?";
 
   return (
     <div
-      className={cn("relative inline-flex shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary", size === "sm" && "h-8 w-8 text-xs", size === "md" && "h-10 w-10 text-sm", size === "lg" && "h-14 w-14 text-lg", className)}
-      aria-label={`${name} avatar`}
+      className={cn(
+        "relative inline-flex shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary ring-1 ring-border",
+        size === "sm" && "h-8 w-8 text-xs",
+        size === "md" && "h-10 w-10 text-sm",
+        size === "lg" && "h-14 w-14 text-lg",
+        className
+      )}
+      aria-label={`${name} avatar${status ? `, ${status}` : ""}`}
       role="img"
       {...props}
     >
@@ -310,9 +366,8 @@ export function UserAvatar({ name, imageUrl, size = "md", status, className, ...
             status === "away" && "bg-amber-500",
             status === "offline" && "bg-slate-300"
           )}
-        >
-          <span className="sr-only">{status}</span>
-        </span>
+          aria-hidden="true"
+        />
       ) : null}
     </div>
   );
@@ -322,13 +377,24 @@ export type SearchBarProps = Omit<React.FormHTMLAttributes<HTMLFormElement>, "on
   value?: string;
   placeholder?: string;
   submitLabel?: string;
+  label?: string;
   onValueChange?: (value: string) => void;
   onSubmit?: (value: string) => void;
 };
 
-export function SearchBar({ value, placeholder = "Search listings, sellers, or categories", submitLabel = "Search", onValueChange, onSubmit, className, ...props }: SearchBarProps) {
+export function SearchBar({
+  value,
+  placeholder = "Search listings, sellers, or categories",
+  submitLabel = "Search",
+  label = "Search marketplace",
+  onValueChange,
+  onSubmit,
+  className,
+  ...props
+}: SearchBarProps) {
   const [internalValue, setInternalValue] = React.useState(value ?? "");
   const inputValue = value ?? internalValue;
+  const inputId = React.useId();
 
   return (
     <form
@@ -340,13 +406,13 @@ export function SearchBar({ value, placeholder = "Search listings, sellers, or c
       }}
       {...props}
     >
-      <Label htmlFor="marketplace-search" className="sr-only">
-        Search marketplace
+      <Label htmlFor={inputId} className="sr-only">
+        {label}
       </Label>
       <div className="relative flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
         <Input
-          id="marketplace-search"
+          id={inputId}
           value={inputValue}
           placeholder={placeholder}
           className="border-0 pl-9 shadow-none focus-visible:ring-0"
@@ -475,6 +541,7 @@ export const ImageUploader = React.forwardRef<HTMLInputElement, ImageUploaderPro
   ({ id, label = "Upload listing photos", description = "Drag images here or choose files from your device.", helperText = "PNG, JPG, or WebP up to 10MB each.", className, ...props }, ref) => {
     const generatedId = React.useId();
     const inputId = id ?? generatedId;
+    const helperId = `${inputId}-helper`;
 
     return (
       <div className={cn("space-y-2", className)}>
@@ -485,8 +552,10 @@ export const ImageUploader = React.forwardRef<HTMLInputElement, ImageUploaderPro
         >
           <UploadCloud className="h-10 w-10 text-primary" aria-hidden="true" />
           <span className="mt-3 text-sm font-semibold text-foreground">{description}</span>
-          <span className="mt-1 text-xs text-muted-foreground">{helperText}</span>
-          <input ref={ref} id={inputId} type="file" accept="image/*" multiple className="sr-only" {...props} />
+          <span id={helperId} className="mt-1 text-xs text-muted-foreground">
+            {helperText}
+          </span>
+          <input ref={ref} id={inputId} type="file" accept="image/*" multiple className="sr-only" aria-describedby={helperId} {...props} />
         </label>
       </div>
     );
@@ -575,7 +644,7 @@ export function OfferCard({ title, buyerName, amount, currency, status = "pendin
         <span className={cn("rounded-full border px-2.5 py-1 text-xs font-semibold capitalize", offerStatusClasses[status])}>{status}</span>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-end justify-between gap-4 rounded-2xl bg-secondary p-4">
+        <div className="flex flex-col gap-3 rounded-2xl bg-secondary p-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Offer amount</p>
             <PriceDisplay amount={amount} currency={currency} size="md" />
@@ -611,7 +680,11 @@ export function MessageBubble({ body, senderName, timestamp, isOwn = false, avat
           <MessageCircle className="h-3 w-3" aria-hidden="true" />
           <span>{senderName}</span>
           {timestamp ? <span>· {timestamp}</span> : null}
-          {status ? <span className="capitalize">· {status}</span> : null}
+          {status ? (
+            <span className="inline-flex items-center gap-1 capitalize">
+              · <CheckCircle2 className="h-3 w-3" aria-hidden="true" /> {status}
+            </span>
+          ) : null}
         </div>
       </div>
       {isOwn ? <UserAvatar name={senderName} imageUrl={avatarUrl} size="sm" /> : null}
