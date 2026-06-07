@@ -47,7 +47,13 @@ const listingFormBaseSchema = z.object({
         priceMin: z.number().min(0).optional(),
         priceMax: z.number().min(0).optional(),
         fraudRiskScore: z.number().min(0).max(100).optional(),
+        scamRiskWarning: z.string().max(700).optional(),
+        riskFactors: z.array(z.string().max(180)).max(8).optional(),
         conditionConfidence: z.number().min(0).max(1).optional(),
+        conditionEvidence: z.array(z.string().max(180)).max(6).optional(),
+        categoryRationale: z.string().max(500).optional(),
+        priceRationale: z.string().max(700).optional(),
+        missingInformationQuestions: z.array(z.string().max(180)).max(8).optional(),
         rationale: z.string().max(1200).optional()
       })
       .default({ generated: false }),
@@ -69,10 +75,28 @@ export const aiListingResponseSchema = z.object({
   title: z.string().min(3).max(160),
   description: z.string().min(20).max(5000),
   category: z.enum(LISTING_CATEGORIES),
+  categoryRationale: z.string().max(500).optional(),
   condition: z.enum(LISTING_CONDITIONS),
-  priceRange: z.object({ min: z.number().min(0), max: z.number().min(0), currency: z.string().default("USD") }),
+  conditionConfidence: z.number().min(0).max(1).optional(),
+  conditionEvidence: z.array(z.string()).max(6).optional(),
+  priceRange: z.object({
+    min: z.number().min(0),
+    max: z.number().min(0),
+    currency: z.string().default("USD"),
+    confidence: z.number().min(0).max(1).optional(),
+    rationale: z.string().max(700).optional()
+  }),
   seoTags: z.array(z.string()).max(12),
-  fraudRiskScore: z.number().min(0).max(100),
+  scamRiskWarning: z
+    .object({
+      needed: z.boolean(),
+      riskScore: z.number().min(0).max(100),
+      warning: z.string().max(700),
+      riskFactors: z.array(z.string()).max(8)
+    })
+    .optional(),
+  fraudRiskScore: z.number().min(0).max(100).optional(),
+  missingInformationQuestions: z.array(z.string()).max(8).optional(),
   rationale: z.string().max(1200)
 });
 
