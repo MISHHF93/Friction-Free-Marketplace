@@ -1,4 +1,4 @@
-export const LISTINGS_INDEX_UID = "listings";
+export const LISTINGS_INDEX_UID = process.env.MEILISEARCH_LISTINGS_INDEX || "listings";
 export const DISCOVERY_INDEX_UID = LISTINGS_INDEX_UID;
 
 export const listingSearchableAttributes = [
@@ -69,6 +69,18 @@ export const listingRankingRules = [
   "desc(value_score)",
   "desc(trend_score)",
   "desc(published_at)"
+];
+
+export const listingFacets = [
+  "category_slug",
+  "condition",
+  "location_city",
+  "location_region",
+  "location_country",
+  "seller_fraud_risk_level",
+  "pickup_available",
+  "price_amount",
+  "seller_trust_score"
 ];
 
 export const discoverySearchableAttributes = listingSearchableAttributes;

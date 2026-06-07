@@ -7,6 +7,7 @@ export type DiscoveryResult = {
   listings: DiscoveryDocument[];
   total: number;
   facets: Record<string, Record<string, number>>;
+  facetStats: Record<string, { min: number; max: number }>;
   source: "meilisearch" | "database" | "demo";
 };
 
@@ -128,6 +129,37 @@ function matchesFallback(document: DiscoveryDocument, params: DiscoverySearchPar
     (params.minSellerTrust === undefined || document.seller_trust_score >= params.minSellerTrust);
 }
 
+function buildFallbackFacets(documents: DiscoveryDocument[]) {
+  const count = (field: keyof DiscoveryDocument) =>
+    documents.reduce<Record<string, number>>((acc, document) => {
+      const value = document[field];
+      if (value === null || value === undefined || value === "") return acc;
+      const key = String(value);
+      acc[key] = (acc[key] ?? 0) + 1;
+      return acc;
+    }, {});
+
+  const numericStats = (field: "price_amount" | "seller_trust_score") => {
+    const values = documents.map((document) => document[field]).filter((value) => Number.isFinite(value));
+    return values.length ? { min: Math.min(...values), max: Math.max(...values) } : undefined;
+  };
+
+  return {
+    facets: {
+      category_slug: count("category_slug"),
+      condition: count("condition"),
+      location_city: count("location_city"),
+      location_region: count("location_region"),
+      seller_fraud_risk_level: count("seller_fraud_risk_level"),
+      pickup_available: count("pickup_available")
+    },
+    facetStats: {
+      ...(numericStats("price_amount") ? { price_amount: numericStats("price_amount")! } : {}),
+      ...(numericStats("seller_trust_score") ? { seller_trust_score: numericStats("seller_trust_score")! } : {})
+    }
+  };
+}
+
 function sortFallback(documents: DiscoveryDocument[], params: DiscoverySearchParams) {
   return [...documents].sort((a, b) => {
     switch (params.sort) {
@@ -151,6 +183,7 @@ export async function searchMarketplace(params: DiscoverySearchParams): Promise<
       listings: response.hits,
       total: response.estimatedTotalHits ?? response.hits.length,
       facets: response.facetDistribution ?? {},
+      facetStats: response.facetStats ?? {},
       source: "meilisearch"
     };
   }
@@ -160,10 +193,12 @@ export async function searchMarketplace(params: DiscoverySearchParams): Promise<
     const { data, error } = await (supabase as any).from("listing_search_documents").select("*").eq("status", "active").limit(200);
     if (error) throw error;
     const filtered = sortFallback((data ?? []).map((row: Row) => rowToDiscoveryDocument(row)).filter((doc: DiscoveryDocument) => matchesFallback(doc, params)), params);
-    return { listings: filtered.slice(0, params.limit ?? 24), total: filtered.length, facets: {}, source: "database" };
+    const fallbackFacets = buildFallbackFacets(filtered);
+    return { listings: filtered.slice(0, params.limit ?? 24), total: filtered.length, ...fallbackFacets, source: "database" };
   } catch {
     const filtered = sortFallback(demoDocuments().filter((doc) => matchesFallback(doc, params)), params);
-    return { listings: filtered.slice(0, params.limit ?? 24), total: filtered.length, facets: {}, source: "demo" };
+    const fallbackFacets = buildFallbackFacets(filtered);
+    return { listings: filtered.slice(0, params.limit ?? 24), total: filtered.length, ...fallbackFacets, source: "demo" };
   }
 }
 
