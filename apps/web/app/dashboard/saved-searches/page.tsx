@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, Clock, Search, SlidersHorizontal } from "lucide-react";
+import { Bell, Clock, ExternalLink, Search, SlidersHorizontal } from "lucide-react";
 import { SavedSearchActions } from "@/components/saved-searches/saved-search-actions";
 import { DashboardActionCard, DashboardEmptyState, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
@@ -20,9 +20,9 @@ function searchHref(query: string | null, filters: Record<string, unknown>) {
 export default async function SavedSearchesPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const { searches, stats, source } = user
+  const { searches, recentMatches, stats, source } = user
     ? await getSavedSearchesDashboard(user.id)
-    : { searches: [], stats: { savedSearchCount: 0, newMatchCount: 0, digestCount: 0 }, source: "database" as const };
+    : { searches: [], recentMatches: [], stats: { savedSearchCount: 0, newMatchCount: 0, digestCount: 0 }, source: "database" as const };
 
   return (
     <DashboardShell title="Saved searches" description="Automate discovery with saved filters, alert cadence, market movement, and recommendation controls.">
@@ -60,6 +60,33 @@ export default async function SavedSearchesPage() {
           ))}
           {searches.length === 0 ? (
             <DashboardEmptyState title="No saved searches yet" description="Save any marketplace query to receive in-app notifications when new active listings match your filters." action={<Button asChild><Link href="/search">Create a saved search</Link></Button>} />
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex flex-wrap items-center justify-between gap-3">
+            <span>New matching listings</span>
+            <Badge>{recentMatches.filter((match) => match.is_unread).length} unread</Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3">
+          {recentMatches.map((match) => (
+            <div key={match.id} className="flex flex-col gap-3 rounded-2xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-semibold">{match.listing_title}</p>
+                  {match.is_unread ? <Badge>New</Badge> : null}
+                  <Badge>{match.saved_search_name}</Badge>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">${match.listing_price_amount.toLocaleString()} · {match.listing_location_label} · matched {new Date(match.delivered_at).toLocaleDateString()}</p>
+              </div>
+              <Button asChild variant="outline" size="sm"><Link href={match.action_url}><ExternalLink className="h-4 w-4" /> Open match</Link></Button>
+            </div>
+          ))}
+          {recentMatches.length === 0 ? (
+            <DashboardEmptyState title="No matches delivered yet" description="When a new active listing matches an enabled saved search, an in-app notification and match record will appear here." action={<Button asChild variant="outline"><Link href="/search">Tune a search</Link></Button>} />
           ) : null}
         </CardContent>
       </Card>
