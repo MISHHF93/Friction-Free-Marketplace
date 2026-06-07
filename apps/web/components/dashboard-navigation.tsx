@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Heart, Home, MessageSquare, ReceiptText, Search, Settings, ShieldCheck, ShoppingBag, Store, Tags, UserCheck, type LucideIcon } from "lucide-react";
-import type { DashboardLink } from "@/components/dashboard-shell";
+import type { DashboardLink } from "@/components/dashboard-config";
 import { cn } from "@/lib/utils";
 
 
@@ -26,7 +26,13 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function DashboardSidebar({ links }: { links: DashboardLink[] }) {
+export function DashboardSidebar({
+  links,
+  user
+}: {
+  links: DashboardLink[];
+  user?: { name: string; email: string; location: string };
+}) {
   const pathname = usePathname();
 
   return (
@@ -35,6 +41,13 @@ export function DashboardSidebar({ links }: { links: DashboardLink[] }) {
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-primary">User dashboard</p>
         <h2 className="mt-2 text-xl font-black tracking-tight">Your marketplace command center</h2>
         <p className="mt-2 text-sm leading-6 text-slate-300">Manage buying, selling, trust, verification, and account preferences from one protected workspace.</p>
+        {user ? (
+          <div className="mt-4 rounded-2xl bg-white/10 p-3 text-sm">
+            <p className="truncate font-bold">{user.name}</p>
+            <p className="truncate text-xs text-slate-300">{user.email}</p>
+            <p className="mt-1 truncate text-xs text-slate-400">{user.location}</p>
+          </div>
+        ) : null}
       </div>
       <nav className="grid gap-1" aria-label="Dashboard navigation">
         {links.map((link) => {

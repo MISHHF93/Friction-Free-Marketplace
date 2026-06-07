@@ -1,48 +1,14 @@
 import type { ComponentType, ReactNode } from "react";
-import {
-  Bell,
-  Heart,
-  Home,
-  ListChecks,
-  MessageSquare,
-  Package,
-  ReceiptText,
-  Search,
-  Settings,
-  ShieldCheck,
-  ShoppingBag,
-  Store,
-  Tags,
-  UserCheck
-} from "lucide-react";
-import { DashboardMobileNavigation, DashboardSidebar } from "@/components/dashboard-navigation";
+import { Bell, ListChecks, Package } from "lucide-react";
+import type { DashboardLink } from "@/components/dashboard-config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export type DashboardLink = {
-  href: string;
-  label: string;
-  description?: string;
-  icon?: ComponentType<{ className?: string }>;
-};
-
-export const dashboardLinks: DashboardLink[] = [
-  { href: "/dashboard", label: "Home", description: "Snapshot and next actions", icon: Home },
-  { href: "/dashboard/listings", label: "My listings", description: "Draft, publish, and manage inventory", icon: Tags },
-  { href: "/dashboard/favorites", label: "Favorites", description: "Saved listings and collections", icon: Heart },
-  { href: "/dashboard/saved-searches", label: "Saved searches", description: "Alerts and market tracking", icon: Search },
-  { href: "/dashboard/messages", label: "Messages", description: "Conversations and safety tools", icon: MessageSquare },
-  { href: "/dashboard/offers", label: "Offers", description: "Buyer and seller negotiations", icon: ReceiptText },
-  { href: "/dashboard/purchases", label: "Purchases", description: "Orders, delivery, and disputes", icon: ShoppingBag },
-  { href: "/dashboard/sales", label: "Sales", description: "Fulfillment and payouts", icon: Store },
-  { href: "/dashboard/trust-score", label: "Trust score", description: "Reliability and risk signals", icon: ShieldCheck },
-  { href: "/dashboard/verification", label: "Verification center", description: "Identity and account limits", icon: UserCheck },
-  { href: "/dashboard/settings", label: "Settings", description: "Profile, notifications, privacy", icon: Settings }
-];
+export type { DashboardLink } from "@/components/dashboard-config";
+export { dashboardLinks } from "@/components/dashboard-config";
 
 export function DashboardShell({
   title,
   description,
-  links = dashboardLinks,
   children
 }: {
   title: string;
@@ -50,23 +16,17 @@ export function DashboardShell({
   links?: DashboardLink[];
   children: ReactNode;
 }) {
-  const navigationLinks = links.map(({ icon: _icon, ...link }) => link);
-
   return (
-    <section className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[300px_1fr] lg:px-8">
-      <DashboardSidebar links={navigationLinks} />
-      <div className="min-w-0 space-y-6">
-        <DashboardMobileNavigation links={navigationLinks} />
-        <div className="rounded-3xl border border-border bg-card/90 p-5 shadow-sm sm:p-6">
-          <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
-            <Bell className="h-4 w-4" /> Protected workspace
-          </p>
-          <h1 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{title}</h1>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">{description}</p>
-        </div>
-        {children}
+    <div className="space-y-6">
+      <div className="rounded-3xl border border-border bg-card/90 p-5 shadow-sm sm:p-6">
+        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+          <Bell className="h-4 w-4" /> Protected workspace
+        </p>
+        <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{title}</h2>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">{description}</p>
       </div>
-    </section>
+      {children}
+    </div>
   );
 }
 
