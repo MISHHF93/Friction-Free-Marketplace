@@ -6,6 +6,7 @@ import {
   ReceiptText,
   Search,
   Settings,
+  Sparkles,
   ShieldCheck,
   ShoppingBag,
   Store,
@@ -23,6 +24,7 @@ export type DashboardLink = {
 export const dashboardLinks: DashboardLink[] = [
   { href: "/dashboard", label: "Home", description: "Snapshot and next actions", icon: Home },
   { href: "/dashboard/listings", label: "My listings", description: "Draft, publish, and manage inventory", icon: Tags },
+  { href: "/dashboard/ai-listing-creator", label: "AI listing creator", description: "Generate a trusted draft from photos", icon: Sparkles },
   { href: "/dashboard/favorites", label: "Favorites", description: "Saved listings and collections", icon: Heart },
   { href: "/dashboard/saved-searches", label: "Saved searches", description: "Alerts and market tracking", icon: Search },
   { href: "/dashboard/messages", label: "Messages", description: "Conversations and safety tools", icon: MessageSquare },
