@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Json } from "@/types/database";
 import { listingFormSchema, listingPatchSchema, listingStatusSchema, slugifyListingTitle, type ListingFormInput } from "@/lib/listings/validation";
+import { removeListingFromSearch, syncListingToSearch } from "@/lib/search/discovery";
 
 type Db = SupabaseClient<any>;
 
@@ -8,6 +9,15 @@ async function getCategoryId(supabase: Db, category: string, categoryId?: string
   if (categoryId) return categoryId;
   const { data } = await supabase.from("categories").select("id").eq("slug", category).maybeSingle();
   return data?.id ?? null;
+}
+
+async function syncListingChange(listingId: string, remove = false) {
+  try {
+    return remove ? await removeListingFromSearch(listingId) : await syncListingToSearch(listingId);
+  } catch (error) {
+    console.error("Unable to sync listing search document", { listingId, error });
+    return { skipped: true, reason: "sync_failed" };
+  }
 }
 
 function metadataFromInput(input: ListingFormInput) {
@@ -73,6 +83,7 @@ export async function createListing(supabase: Db, sellerId: string, rawInput: un
     if (imageError) throw imageError;
   }
 
+  await syncListingChange(listing.id);
   return listing;
 }
 
@@ -138,6 +149,7 @@ export async function updateListing(supabase: Db, listingId: string, rawInput: u
     }
   }
 
+  await syncListingChange(listing.id);
   return listing;
 }
 
@@ -157,6 +169,7 @@ export async function setListingStatus(supabase: Db, listingId: string, rawStatu
     .single();
 
   if (error) throw error;
+  await syncListingChange(listing.id, status !== "active");
   return listing;
 }
 
@@ -169,4 +182,5 @@ export async function deleteListing(supabase: Db, listingId: string, sellerId: s
     .is("deleted_at", null);
 
   if (error) throw error;
+  await syncListingChange(listingId, true);
 }

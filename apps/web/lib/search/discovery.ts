@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listings as demoListings } from "@/lib/marketplace-data";
-import { isSearchConfigured, searchDiscoveryIndex, upsertDiscoveryDocuments } from "@/lib/search/meilisearch";
+import { deleteDiscoveryDocuments, isSearchConfigured, searchDiscoveryIndex, upsertDiscoveryDocuments } from "@/lib/search/meilisearch";
 import type { DiscoveryDocument, DiscoverySearchParams } from "@/lib/search/schema";
 
 export type DiscoveryResult = {
@@ -117,7 +117,10 @@ function demoDocuments(): DiscoveryDocument[] {
 function matchesFallback(document: DiscoveryDocument, params: DiscoverySearchParams) {
   const q = (params.intent || params.q || "").toLowerCase();
   const haystack = [document.title, document.description, document.category_name, document.condition, document.seller_display_name, ...document.seo_tags].join(" ").toLowerCase();
+  const location = params.location?.toLowerCase();
+  const locationHaystack = [document.location_label, document.location_city, document.location_region, document.location_country].filter(Boolean).join(" ").toLowerCase();
   return (!q || haystack.includes(q)) &&
+    (!location || locationHaystack.includes(location)) &&
     (!params.category || document.category_slug === params.category) &&
     (params.minPrice === undefined || document.price_amount >= params.minPrice) &&
     (params.maxPrice === undefined || document.price_amount <= params.maxPrice) &&
@@ -128,6 +131,8 @@ function matchesFallback(document: DiscoveryDocument, params: DiscoverySearchPar
 function sortFallback(documents: DiscoveryDocument[], params: DiscoverySearchParams) {
   return [...documents].sort((a, b) => {
     switch (params.sort) {
+      case "price_low": return a.price_amount - b.price_amount;
+      case "price_high": return b.price_amount - a.price_amount;
       case "best_value": return b.value_score - a.value_score;
       case "safest_seller": return b.safety_score - a.safety_score;
       case "trending": return b.trend_score - a.trend_score;
@@ -169,4 +174,32 @@ export async function indexActiveListings(limit = 500) {
   const documents = (data ?? []).map((row: Row) => rowToDiscoveryDocument(row));
   const task = await upsertDiscoveryDocuments(documents);
   return { indexed: documents.length, task };
+}
+
+
+export async function syncListingToSearch(listingId: string) {
+  if (!isSearchConfigured()) return { skipped: true, reason: "search_not_configured" };
+
+  const supabase = createAdminClient();
+  const { data, error } = await (supabase as any)
+    .from("listing_search_documents")
+    .select("*")
+    .eq("id", listingId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data || data.status !== "active") {
+    const task = await deleteDiscoveryDocuments([listingId]);
+    return { synced: false, deleted: true, task };
+  }
+
+  const document = rowToDiscoveryDocument(data as Row);
+  const task = await upsertDiscoveryDocuments([document]);
+  return { synced: true, deleted: false, task };
+}
+
+export async function removeListingFromSearch(listingId: string) {
+  if (!isSearchConfigured()) return { skipped: true, reason: "search_not_configured" };
+  const task = await deleteDiscoveryDocuments([listingId]);
+  return { synced: false, deleted: true, task };
 }

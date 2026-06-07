@@ -1,6 +1,7 @@
-export const DISCOVERY_INDEX_UID = "marketplace_listings";
+export const LISTINGS_INDEX_UID = "listings";
+export const DISCOVERY_INDEX_UID = LISTINGS_INDEX_UID;
 
-export const discoverySearchableAttributes = [
+export const listingSearchableAttributes = [
   "title",
   "description",
   "category_name",
@@ -9,10 +10,12 @@ export const discoverySearchableAttributes = [
   "seller_display_name",
   "seo_tags",
   "attributes",
-  "location_label"
+  "location_label",
+  "location_city",
+  "location_region"
 ];
 
-export const discoveryFilterableAttributes = [
+export const listingFilterableAttributes = [
   "status",
   "category_id",
   "category_slug",
@@ -26,15 +29,19 @@ export const discoveryFilterableAttributes = [
   "ships_to",
   "location_city",
   "location_region",
+  "location_country",
   "published_at",
   "created_at",
   "saved_count",
   "view_count",
   "conversion_score",
+  "safety_score",
+  "trend_score",
+  "value_score",
   "_geo"
 ];
 
-export const discoverySortableAttributes = [
+export const listingSortableAttributes = [
   "published_at",
   "created_at",
   "updated_at",
@@ -46,10 +53,11 @@ export const discoverySortableAttributes = [
   "trend_score",
   "value_score",
   "safety_score",
-  "_geo_point"
+  "conversion_score",
+  "_geo"
 ];
 
-export const discoveryRankingRules = [
+export const listingRankingRules = [
   "words",
   "typo",
   "proximity",
@@ -57,12 +65,18 @@ export const discoveryRankingRules = [
   "sort",
   "exactness",
   "desc(safety_score)",
+  "desc(seller_trust_score)",
   "desc(value_score)",
   "desc(trend_score)",
   "desc(published_at)"
 ];
 
-export type DiscoverySort = "newest" | "closest" | "best_value" | "safest_seller" | "recommended" | "trending";
+export const discoverySearchableAttributes = listingSearchableAttributes;
+export const discoveryFilterableAttributes = listingFilterableAttributes;
+export const discoverySortableAttributes = listingSortableAttributes;
+export const discoveryRankingRules = listingRankingRules;
+
+export type DiscoverySort = "newest" | "closest" | "price_low" | "price_high" | "best_value" | "safest_seller" | "recommended" | "trending";
 
 export type DiscoverySearchParams = {
   q?: string;

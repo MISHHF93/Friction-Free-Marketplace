@@ -1,5 +1,4 @@
-import { env } from "@/lib/env.server";
-import { DISCOVERY_INDEX_UID, discoveryFilterableAttributes, discoveryRankingRules, discoverySearchableAttributes, discoverySortableAttributes, type DiscoveryDocument, type DiscoverySearchParams } from "@/lib/search/schema";
+import { LISTINGS_INDEX_UID, listingFilterableAttributes, listingRankingRules, listingSearchableAttributes, listingSortableAttributes, type DiscoveryDocument, type DiscoverySearchParams } from "@/lib/search/schema";
 
 type MeiliSearchHit = DiscoveryDocument & { _formatted?: Partial<Record<keyof DiscoveryDocument, string>>; _rankingScore?: number };
 
@@ -13,14 +12,22 @@ type MeiliSearchResponse = {
 };
 
 export function isSearchConfigured() {
-  return Boolean(env.MEILISEARCH_HOST && env.MEILISEARCH_API_KEY);
+  return Boolean(process.env.MEILISEARCH_HOST && process.env.MEILISEARCH_API_KEY);
+}
+
+function getSearchEnv() {
+  const host = process.env.MEILISEARCH_HOST;
+  const apiKey = process.env.MEILISEARCH_API_KEY;
+  if (!host || !apiKey) throw new Error("MEILISEARCH_HOST and MEILISEARCH_API_KEY are required for marketplace search.");
+  return { host: host.replace(/\/$/, ""), apiKey };
 }
 
 async function meiliRequest<T>(path: string, init: RequestInit = {}) {
-  const response = await fetch(`${env.MEILISEARCH_HOST.replace(/\/$/, "")}${path}`, {
+  const { host, apiKey } = getSearchEnv();
+  const response = await fetch(`${host}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${env.MEILISEARCH_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
       ...(init.headers ?? {})
     },
@@ -44,6 +51,18 @@ function quote(value: string) {
   return JSON.stringify(value);
 }
 
+function locationFilter(location?: string) {
+  if (!location) return undefined;
+  const parts = location.split(",").map((part) => part.trim()).filter(Boolean);
+  const terms = parts.length > 0 ? parts : [location.trim()];
+  const clauses = terms.flatMap((term) => [
+    `location_city = ${quote(term)}`,
+    `location_region = ${quote(term)}`,
+    `location_country = ${quote(term.toUpperCase())}`
+  ]);
+  return clauses.length ? `(${clauses.join(" OR ")})` : undefined;
+}
+
 export function buildMeiliSearchPayload(params: DiscoverySearchParams) {
   const limit = Math.min(Math.max(params.limit ?? 24, 1), 60);
   const page = Math.max(params.page ?? 1, 1);
@@ -53,6 +72,7 @@ export function buildMeiliSearchPayload(params: DiscoverySearchParams) {
     params.minPrice !== undefined ? `price_amount >= ${params.minPrice}` : undefined,
     params.maxPrice !== undefined ? `price_amount <= ${params.maxPrice}` : undefined,
     params.condition?.length ? `condition IN [${params.condition.map(quote).join(", ")}]` : undefined,
+    locationFilter(params.location),
     params.minSellerTrust !== undefined ? `seller_trust_score >= ${params.minSellerTrust}` : undefined,
     params.lat !== undefined && params.lng !== undefined && params.radiusMiles !== undefined
       ? `_geoRadius(${params.lat}, ${params.lng}, ${Math.round(params.radiusMiles * 1609.344)})`
@@ -63,6 +83,10 @@ export function buildMeiliSearchPayload(params: DiscoverySearchParams) {
     switch (params.sort) {
       case "closest":
         return params.lat !== undefined && params.lng !== undefined ? [`_geoPoint(${params.lat}, ${params.lng}):asc`] : ["published_at:desc"];
+      case "price_low":
+        return ["price_amount:asc", "seller_trust_score:desc"];
+      case "price_high":
+        return ["price_amount:desc", "seller_trust_score:desc"];
       case "best_value":
         return ["value_score:desc", "seller_trust_score:desc", "published_at:desc"];
       case "safest_seller":
@@ -90,18 +114,18 @@ export function buildMeiliSearchPayload(params: DiscoverySearchParams) {
 }
 
 export async function configureDiscoveryIndex() {
-  await meiliRequest(`/indexes/${DISCOVERY_INDEX_UID}`, {
+  await meiliRequest(`/indexes/${LISTINGS_INDEX_UID}`, {
     method: "PUT",
-    body: JSON.stringify({ uid: DISCOVERY_INDEX_UID, primaryKey: "id" })
+    body: JSON.stringify({ uid: LISTINGS_INDEX_UID, primaryKey: "id" })
   });
 
-  await meiliRequest(`/indexes/${DISCOVERY_INDEX_UID}/settings`, {
+  await meiliRequest(`/indexes/${LISTINGS_INDEX_UID}/settings`, {
     method: "PATCH",
     body: JSON.stringify({
-      searchableAttributes: discoverySearchableAttributes,
-      filterableAttributes: discoveryFilterableAttributes,
-      sortableAttributes: discoverySortableAttributes,
-      rankingRules: discoveryRankingRules,
+      searchableAttributes: listingSearchableAttributes,
+      filterableAttributes: listingFilterableAttributes,
+      sortableAttributes: listingSortableAttributes,
+      rankingRules: listingRankingRules,
       typoTolerance: { enabled: true, minWordSizeForTypos: { oneTypo: 4, twoTypos: 8 } },
       faceting: { maxValuesPerFacet: 100 },
       pagination: { maxTotalHits: 5000 }
@@ -110,7 +134,7 @@ export async function configureDiscoveryIndex() {
 }
 
 export async function searchDiscoveryIndex(params: DiscoverySearchParams) {
-  return meiliRequest<MeiliSearchResponse>(`/indexes/${DISCOVERY_INDEX_UID}/search`, {
+  return meiliRequest<MeiliSearchResponse>(`/indexes/${LISTINGS_INDEX_UID}/search`, {
     method: "POST",
     body: JSON.stringify(buildMeiliSearchPayload(params))
   });
@@ -118,7 +142,7 @@ export async function searchDiscoveryIndex(params: DiscoverySearchParams) {
 
 export async function upsertDiscoveryDocuments(documents: DiscoveryDocument[]) {
   if (documents.length === 0) return { taskUid: null };
-  return meiliRequest<{ taskUid: number }>(`/indexes/${DISCOVERY_INDEX_UID}/documents`, {
+  return meiliRequest<{ taskUid: number }>(`/indexes/${LISTINGS_INDEX_UID}/documents`, {
     method: "POST",
     body: JSON.stringify(documents)
   });
@@ -126,7 +150,7 @@ export async function upsertDiscoveryDocuments(documents: DiscoveryDocument[]) {
 
 export async function deleteDiscoveryDocuments(ids: string[]) {
   if (ids.length === 0) return { taskUid: null };
-  return meiliRequest<{ taskUid: number }>(`/indexes/${DISCOVERY_INDEX_UID}/documents/delete-batch`, {
+  return meiliRequest<{ taskUid: number }>(`/indexes/${LISTINGS_INDEX_UID}/documents/delete-batch`, {
     method: "POST",
     body: JSON.stringify(ids)
   });

@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { updateListing } from "@/lib/listings/persistence";
+import { deleteListing, updateListing } from "@/lib/listings/persistence";
 
 function errorResponse(error: unknown, status = 500) {
   const message = error instanceof Error ? error.message : "Unable to process listing request.";
@@ -52,13 +52,7 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: "Sign in to delete this listing." }, { status: 401 });
 
-    const { error } = await supabase
-      .from("listings")
-      .update({ status: "removed", deleted_at: new Date().toISOString() })
-      .eq("id", params.id)
-      .eq("seller_id", user.id);
-
-    if (error) throw error;
+    await deleteListing(supabase, params.id, user.id);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return errorResponse(error, 400);
