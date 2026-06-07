@@ -1,6 +1,5 @@
 import { ArrowRightLeft, CheckCircle2, Clock, DollarSign } from "lucide-react";
-import { DashboardActionCard, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
-import { Badge } from "@/components/ui/badge";
+import { DashboardActionCard, DashboardListItem, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -22,13 +21,9 @@ export default function OffersPage() {
         <CardHeader><CardTitle>Negotiation inbox</CardTitle></CardHeader>
         <CardContent className="grid gap-3">
           {offers.map((offer) => (
-            <div key={offer.item} className="flex flex-col gap-3 rounded-2xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{offer.item}</p><Badge>{offer.role}</Badge><Badge>{offer.status}</Badge></div>
-                <p className="mt-1 text-sm text-muted-foreground">Current offer: {offer.amount} · protected checkout available after acceptance.</p>
-              </div>
+            <DashboardListItem key={offer.item} title={offer.item} detail={`Current offer: ${offer.amount} · protected checkout available after acceptance.`} status={offer.status} meta={<span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-secondary-foreground">{offer.role}</span>}>
               <Button size="sm">Review</Button>
-            </div>
+            </DashboardListItem>
           ))}
         </CardContent>
       </Card>
