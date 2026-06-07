@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { listings } from "@/lib/marketplace-data";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { CheckoutCard } from "@/components/payments/checkout-card";
+import { StartConversationCard } from "@/components/messaging/start-conversation-card";
 import { getListingById } from "@/lib/public-marketplace";
 import { getFavoriteListingIds } from "@/lib/saves/user-saves";
 
@@ -117,7 +118,7 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
               </div>
               <div className="grid gap-3">
                 <CheckoutCard listingId={dbListing.id} priceAmount={Number(dbListing.price_amount)} currency={dbListing.currency} />
-                <Button variant="outline" size="lg"><MessageSquare className="h-4 w-4" /> Message seller</Button>
+                <StartConversationCard listingId={dbListing.id} disabled={!user || user.id === dbListing.seller_id} />
                 <FavoriteToggleForm listingId={dbListing.id} isFavorited={favoriteIds.has(dbListing.id)} variant="ghost" className="w-full" />
               </div>
               <p className="flex items-center gap-2 text-sm text-muted-foreground"><Truck className="h-4 w-4" /> {dbListing.pickup_available ? "Pickup available." : "Pickup not selected."} {dbListing.ships_to.length ? `Ships to ${dbListing.ships_to.join(", ")}.` : "Shipping not selected."}</p>

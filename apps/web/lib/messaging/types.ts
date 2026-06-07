@@ -50,6 +50,13 @@ export type ConversationMessage = {
   message_attachments?: MessageAttachment[];
 };
 
+export type MessageReadReceipt = {
+  message_id: string;
+  conversation_id: string;
+  user_id: string;
+  read_at: string;
+};
+
 export type ConversationOffer = {
   id: string;
   conversation_id: string | null;
