@@ -23,6 +23,20 @@ export type SavedSearchDashboardItem = {
   unread_notification_count: number;
 };
 
+export type SavedSearchMatchItem = {
+  id: string;
+  saved_search_id: string;
+  saved_search_name: string;
+  listing_id: string;
+  listing_title: string;
+  listing_price_amount: number;
+  listing_location_label: string;
+  notification_id: string | null;
+  delivered_at: string;
+  action_url: string;
+  is_unread: boolean;
+};
+
 export type SaveStats = {
   favoritesCount: number;
   alertCount: number;
@@ -121,7 +135,54 @@ export async function getFavoritesDashboard(userId: string): Promise<{ favorites
   }
 }
 
-export async function getSavedSearchesDashboard(userId: string): Promise<{ searches: SavedSearchDashboardItem[]; stats: Pick<SaveStats, "savedSearchCount" | "newMatchCount" | "digestCount">; source: "database" | "demo" }> {
+async function getRecentSavedSearchMatches(userId: string, searches: SavedSearchDashboardItem[]): Promise<SavedSearchMatchItem[]> {
+  const supabase = createClient();
+  const { data: deliveries, error } = await (supabase as any)
+    .from("saved_search_alert_deliveries")
+    .select("id, saved_search_id, listing_id, notification_id, delivered_at")
+    .eq("user_id", userId)
+    .order("delivered_at", { ascending: false })
+    .limit(6);
+  if (error) throw error;
+
+  const rows = (deliveries ?? []) as Row[];
+  if (!rows.length) return [];
+
+  const searchNameById = new Map(searches.map((search) => [search.id, search.name]));
+  const listingIds = Array.from(new Set(rows.map((row) => String(row.listing_id))));
+  const notificationIds = Array.from(new Set(rows.map((row) => row.notification_id).filter(Boolean).map(String)));
+
+  const [{ data: listings, error: listingsError }, { data: notifications, error: notificationsError }] = await Promise.all([
+    (supabase as any).from("listing_search_documents").select("id, title, price_amount, location_label").in("id", listingIds),
+    notificationIds.length
+      ? (supabase as any).from("notifications").select("id, action_url, read_at").in("id", notificationIds).eq("user_id", userId)
+      : Promise.resolve({ data: [], error: null })
+  ]);
+  if (listingsError || notificationsError) throw listingsError ?? notificationsError;
+
+  const listingsById = new Map(((listings ?? []) as Row[]).map((listing) => [String(listing.id), listing]));
+  const notificationsById = new Map(((notifications ?? []) as Row[]).map((notification) => [String(notification.id), notification]));
+
+  return rows.map((row) => {
+    const listing = listingsById.get(String(row.listing_id));
+    const notification = row.notification_id ? notificationsById.get(String(row.notification_id)) : undefined;
+    return {
+      id: String(row.id),
+      saved_search_id: String(row.saved_search_id),
+      saved_search_name: searchNameById.get(String(row.saved_search_id)) ?? "Saved search",
+      listing_id: String(row.listing_id),
+      listing_title: String(listing?.title ?? "Matched listing"),
+      listing_price_amount: Number(listing?.price_amount ?? 0),
+      listing_location_label: String(listing?.location_label ?? "Location available after contact"),
+      notification_id: row.notification_id ? String(row.notification_id) : null,
+      delivered_at: String(row.delivered_at),
+      action_url: typeof notification?.action_url === "string" ? notification.action_url : `/listings/${String(row.listing_id)}`,
+      is_unread: !notification?.read_at
+    };
+  });
+}
+
+export async function getSavedSearchesDashboard(userId: string): Promise<{ searches: SavedSearchDashboardItem[]; recentMatches: SavedSearchMatchItem[]; stats: Pick<SaveStats, "savedSearchCount" | "newMatchCount" | "digestCount">; source: "database" | "demo" }> {
   try {
     const supabase = createClient();
     const [{ data: searches, error: searchesError }, { data: deliveries, error: deliveriesError }, { data: notifications, error: notificationsError }] = await Promise.all([
@@ -159,8 +220,11 @@ export async function getSavedSearchesDashboard(userId: string): Promise<{ searc
       unread_notification_count: unreadCounts.get(String(row.id)) ?? 0
     })) as SavedSearchDashboardItem[];
 
+    const recentMatches = await getRecentSavedSearchMatches(userId, mapped);
+
     return {
       searches: mapped,
+      recentMatches,
       stats: {
         savedSearchCount: mapped.length,
         newMatchCount: mapped.reduce((sum, search) => sum + search.unread_notification_count, 0),
@@ -173,6 +237,10 @@ export async function getSavedSearchesDashboard(userId: string): Promise<{ searc
       { id: "00000000-0000-4000-8000-000000000001", name: "Carbon road bikes", query: "road bike carbon under 1500", filters: { maxPrice: 1500, category: "sports" }, alert_enabled: true, alert_frequency: "instant", last_notified_at: null, last_checked_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), match_count: 4, unread_notification_count: 2 },
       { id: "00000000-0000-4000-8000-000000000002", name: "Local MacBook pickup", query: "M1 MacBook Pro 14 local pickup", filters: { pickup_available: true }, alert_enabled: true, alert_frequency: "daily", last_notified_at: null, last_checked_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), match_count: 9, unread_notification_count: 1 }
     ];
-    return { searches, stats: { savedSearchCount: searches.length, newMatchCount: 3, digestCount: 1 }, source: "demo" };
+    const recentMatches: SavedSearchMatchItem[] = [
+      { id: "demo-match-1", saved_search_id: searches[0].id, saved_search_name: searches[0].name, listing_id: "demo-road-bike", listing_title: "Carbon endurance road bike", listing_price_amount: 1295, listing_location_label: "Portland, OR", notification_id: null, delivered_at: new Date().toISOString(), action_url: "/search?q=road+bike+carbon", is_unread: true },
+      { id: "demo-match-2", saved_search_id: searches[1].id, saved_search_name: searches[1].name, listing_id: "demo-macbook", listing_title: "MacBook Pro 14 local pickup", listing_price_amount: 1420, listing_location_label: "Seattle, WA", notification_id: null, delivered_at: new Date().toISOString(), action_url: "/search?q=M1+MacBook+Pro+14", is_unread: true }
+    ];
+    return { searches, recentMatches, stats: { savedSearchCount: searches.length, newMatchCount: 3, digestCount: 1 }, source: "demo" };
   }
 }
