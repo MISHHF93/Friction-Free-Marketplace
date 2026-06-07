@@ -8,12 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PriceDisplay, TrustBadge, UserAvatar } from "@/components/marketplace-design-system";
 import { PublicListingGrid } from "@/components/public-listing-grid";
-import { getSellerProfile } from "@/lib/public-marketplace";
+import { getPublicSellerParams, getSellerProfile } from "@/lib/public-marketplace";
 
 export const dynamic = "force-dynamic";
 
-export function generateStaticParams() {
-  return [{ id: "river-city-bikes" }, { id: "north-loop-home" }];
+export async function generateStaticParams() {
+  return getPublicSellerParams(50);
 }
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {

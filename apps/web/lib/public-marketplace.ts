@@ -68,6 +68,65 @@ export async function getFeaturedListings(limit = 6): Promise<DiscoveryResult> {
   return searchMarketplace({ sort: "recommended", limit });
 }
 
+export async function getPublicListingParams(limit = 50): Promise<Array<{ id: string }>> {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await (supabase as any)
+      .from("listing_search_documents")
+      .select("id")
+      .eq("status", "active")
+      .order("published_at", { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+    const params = ((data ?? []) as Row[])
+      .map((row) => ({ id: stringValue(row.id) }))
+      .filter((param) => param.id.length > 0);
+
+    if (params.length) return params;
+  } catch {
+    // Fall back below.
+  }
+
+  return demoListings.slice(0, limit).map((listing) => ({ id: listing.id }));
+}
+
+export async function getPublicSellerParams(limit = 50): Promise<Array<{ id: string }>> {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await (supabase as any)
+      .from("listing_search_documents")
+      .select("seller_id")
+      .eq("status", "active")
+      .order("published_at", { ascending: false })
+      .limit(limit * 3);
+
+    if (error) throw error;
+    const seen = new Set<string>();
+    const params: Array<{ id: string }> = [];
+
+    for (const row of (data ?? []) as Row[]) {
+      const id = stringValue(row.seller_id);
+      if (!id || seen.has(id)) continue;
+      seen.add(id);
+      params.push({ id });
+      if (params.length >= limit) break;
+    }
+
+    if (params.length) return params;
+  } catch {
+    // Fall back below.
+  }
+
+  const seen = new Set<string>();
+  return demoListings.flatMap((listing, index) => {
+    const id = `demo-seller-${index}`;
+    if (seen.has(id)) return [];
+    seen.add(id);
+    return [{ id }];
+  }).slice(0, limit);
+}
+
 export async function getPublicCategories(limit = 8): Promise<{ categories: PublicCategory[]; source: "database" | "demo" }> {
   try {
     const supabase = createAdminClient();
