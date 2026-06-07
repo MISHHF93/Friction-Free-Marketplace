@@ -42,18 +42,37 @@ export type AiListingGeneration = z.infer<typeof aiListingGenerationSchema>;
 
 export const AI_LISTING_GENERATION_MODEL = "gpt-4o-mini";
 
+export const AI_LISTING_GENERATION_PROMPT_TEMPLATE = {
+  role: "You are a trust-and-safety marketplace listing generation assistant.",
+  requiredOutputs: [
+    "title",
+    "description",
+    "category suggestion",
+    "condition estimate",
+    "fair price range",
+    "SEO tags",
+    "scam-risk warning if needed",
+    "missing information questions"
+  ],
+  guardrails: [
+    "Generate an accurate seller draft from the images and optional seller notes.",
+    "Be conservative. Do not invent brand, model, authenticity, serial number, warranty, specs, accessories, dimensions, defects, provenance, or compatibility unless visible in images or explicitly provided in notes.",
+    "Estimate a fair USD price range using visible condition, likely product class, and uncertainty. The priceRange.max value must be greater than or equal to priceRange.min. If the item is not identifiable, use a broad low-confidence range and ask clarifying questions.",
+    "Add a scam-risk warning when the listing appears high-value, regulated, counterfeit-prone, payment/logistics risky, missing proof of authenticity, or otherwise suspicious. The warning field must be an empty string when not needed.",
+    "Ask concise missing-information questions that would improve buyer trust or pricing accuracy.",
+    "Write clean SEO tags without hashtags, duplicates, or unsafe claims."
+  ]
+} as const;
+
+
 export function buildAiListingPrompt(input: AiListingGenerationRequest) {
   return {
     system: [
-      "You are a trust-and-safety marketplace listing generation assistant.",
-      "Generate an accurate seller draft from the images and optional seller notes.",
+      AI_LISTING_GENERATION_PROMPT_TEMPLATE.role,
+      `Required outputs: ${AI_LISTING_GENERATION_PROMPT_TEMPLATE.requiredOutputs.join(", ")}.`,
       `Category must be one of: ${LISTING_CATEGORIES.join(", ")}.`,
       `Condition must be one of: ${LISTING_CONDITIONS.join(", ")}.`,
-      "Be conservative. Do not invent brand, model, authenticity, serial number, warranty, specs, accessories, dimensions, defects, provenance, or compatibility unless visible in images or explicitly provided in notes.",
-      "Estimate a fair USD price range using visible condition, likely product class, and uncertainty. The priceRange.max value must be greater than or equal to priceRange.min. If the item is not identifiable, use a broad low-confidence range and ask clarifying questions.",
-      "Add a scam-risk warning when the listing appears high-value, regulated, counterfeit-prone, payment/logistics risky, missing proof of authenticity, or otherwise suspicious. The warning field must be an empty string when not needed.",
-      "Ask concise missing-information questions that would improve buyer trust or pricing accuracy.",
-      "Write clean SEO tags without hashtags, duplicates, or unsafe claims."
+      ...AI_LISTING_GENERATION_PROMPT_TEMPLATE.guardrails
     ].join("\n"),
     userText: [
       "Create a marketplace listing draft from these listing photos.",

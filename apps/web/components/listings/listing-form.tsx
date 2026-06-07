@@ -287,6 +287,12 @@ export function ListingForm({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [generationTrace, setGenerationTrace] = useState<{
+    taskId: string | null;
+    latencyMs: number;
+    totalTokens?: number;
+    model?: string;
+  } | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<FormState>({
@@ -392,6 +398,17 @@ export function ListingForm({
     }
 
     const suggestion = result.data.suggestion as AiListingResponse;
+    const usage = result.data.usage as {
+      total_tokens?: number;
+      totalTokens?: number;
+      model?: string;
+    };
+    setGenerationTrace({
+      taskId: result.data.taskId,
+      latencyMs: result.data.latencyMs,
+      totalTokens: usage.total_tokens ?? usage.totalTokens,
+      model: usage.model,
+    });
     setValue("title", suggestion.title, {
       shouldDirty: true,
       shouldValidate: true,
@@ -987,11 +1004,38 @@ export function ListingForm({
                     {Math.round(watched.ai.conditionConfidence * 100)}%
                   </p>
                 )}
+                {generationTrace && (
+                  <div className="rounded-xl border border-border bg-background p-3 text-xs text-muted-foreground">
+                    <p className="font-medium text-foreground">Usage logging</p>
+                    <p>Task: {generationTrace.taskId ?? "audit event only"}</p>
+                    <p>Latency: {generationTrace.latencyMs.toLocaleString()}ms</p>
+                    {generationTrace.totalTokens !== undefined && (
+                      <p>Tokens: {generationTrace.totalTokens.toLocaleString()}</p>
+                    )}
+                    {generationTrace.model && <p>Model: {generationTrace.model}</p>}
+                  </div>
+                )}
+                {watched.ai.categoryRationale && (
+                  <p className="text-muted-foreground">
+                    Category rationale: {watched.ai.categoryRationale}
+                  </p>
+                )}
                 {watched.ai.priceRationale && (
                   <p className="text-muted-foreground">
                     Price rationale: {watched.ai.priceRationale}
                   </p>
                 )}
+                {watched.ai.conditionEvidence &&
+                  watched.ai.conditionEvidence.length > 0 && (
+                    <div>
+                      <p className="font-medium">Condition evidence</p>
+                      <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
+                        {watched.ai.conditionEvidence.map((evidence) => (
+                          <li key={evidence}>{evidence}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 {watched.ai.riskFactors &&
                   watched.ai.riskFactors.length > 0 && (
                     <div>

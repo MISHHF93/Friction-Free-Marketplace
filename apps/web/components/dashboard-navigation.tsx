@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronRight, Heart, Home, MessageSquare, ReceiptText, Search, Settings, ShieldCheck, ShoppingBag, Store, Tags, UserCheck, type LucideIcon } from "lucide-react";
+import { ChevronRight, Heart, Home, MessageSquare, ReceiptText, Search, Settings, ShieldCheck, ShoppingBag, Sparkles, Store, Tags, UserCheck, type LucideIcon } from "lucide-react";
 import type { DashboardLink } from "@/components/dashboard-config";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 const iconByHref: Record<string, LucideIcon> = {
   "/dashboard": Home,
   "/dashboard/listings": Tags,
+  "/dashboard/ai-listing-creator": Sparkles,
   "/dashboard/favorites": Heart,
   "/dashboard/saved-searches": Search,
   "/dashboard/messages": MessageSquare,
