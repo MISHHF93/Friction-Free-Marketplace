@@ -1,13 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { publicEnv } from "@/lib/env";
-
-const protectedPrefixes = ["/dashboard", "/seller", "/admin", "/account"];
-const authRoutes = new Set(["/login", "/signup"]);
-
-function getSafeRedirectPath(value: string | null) {
-  return value && value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
-}
+import { getAuthenticatedRedirectUrl, getLoginRedirectUrl, isAuthRoute, isProtectedRoute } from "@/lib/auth/protected-routes";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -29,20 +23,12 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
-
-  if (isProtected && !user) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    redirectUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
-    return NextResponse.redirect(redirectUrl);
+  if (isProtectedRoute(pathname) && !user) {
+    return NextResponse.redirect(getLoginRedirectUrl(request));
   }
 
-  if (user && authRoutes.has(pathname)) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = getSafeRedirectPath(request.nextUrl.searchParams.get("next"));
-    redirectUrl.search = "";
-    return NextResponse.redirect(redirectUrl);
+  if (user && isAuthRoute(pathname)) {
+    return NextResponse.redirect(getAuthenticatedRedirectUrl(request));
   }
 
   if (user && pathname.startsWith("/admin")) {

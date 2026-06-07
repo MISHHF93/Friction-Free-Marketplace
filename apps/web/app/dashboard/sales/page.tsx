@@ -1,6 +1,5 @@
 import { Banknote, Box, Send, Store } from "lucide-react";
-import { DashboardActionCard, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
-import { Badge } from "@/components/ui/badge";
+import { DashboardActionCard, DashboardListItem, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -22,10 +21,9 @@ export default function SalesPage() {
         <CardHeader><CardTitle>Seller fulfillment queue</CardTitle></CardHeader>
         <CardContent className="grid gap-3">
           {sales.map((sale) => (
-            <div key={sale.item} className="flex flex-col gap-3 rounded-2xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div><div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{sale.item}</p><Badge>{sale.status}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{sale.payout}</p></div>
+            <DashboardListItem key={sale.item} title={sale.item} detail={sale.payout} status={sale.status}>
               <Button size="sm">Manage</Button>
-            </div>
+            </DashboardListItem>
           ))}
         </CardContent>
       </Card>

@@ -1,6 +1,5 @@
 import { LifeBuoy, PackageCheck, RotateCcw, ShoppingBag } from "lucide-react";
-import { DashboardActionCard, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
-import { Badge } from "@/components/ui/badge";
+import { DashboardActionCard, DashboardListItem, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -22,10 +21,7 @@ export default function PurchasesPage() {
         <CardHeader><CardTitle>Order timeline</CardTitle></CardHeader>
         <CardContent className="grid gap-3">
           {purchases.map((purchase) => (
-            <div key={purchase.item} className="rounded-2xl border border-border p-4">
-              <div className="flex flex-wrap items-center justify-between gap-3"><p className="font-semibold">{purchase.item}</p><Badge>{purchase.status}</Badge></div>
-              <p className="mt-2 text-sm text-muted-foreground">{purchase.milestone}</p>
-            </div>
+            <DashboardListItem key={purchase.item} title={purchase.item} detail={purchase.milestone} status={purchase.status} />
           ))}
         </CardContent>
       </Card>

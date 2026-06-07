@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Heart, Home, MessageSquare, ReceiptText, Search, Settings, ShieldCheck, ShoppingBag, Store, Tags, UserCheck, type LucideIcon } from "lucide-react";
+import { ChevronRight, Heart, Home, MessageSquare, ReceiptText, Search, Settings, ShieldCheck, ShoppingBag, Store, Tags, UserCheck, type LucideIcon } from "lucide-react";
 import type { DashboardLink } from "@/components/dashboard-config";
 import { cn } from "@/lib/utils";
 
@@ -98,12 +98,22 @@ export function DashboardMobileNavigation({ links }: { links: DashboardLink[] })
           </option>
         ))}
       </select>
-      <div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Quick dashboard links">
-        {links.slice(0, 6).map((link) => {
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3" aria-label="Quick dashboard links">
+        {links.map((link) => {
+          const Icon = iconByHref[link.href] ?? ChevronRight;
           const active = isActivePath(pathname, link.href);
           return (
-            <Link key={link.href} href={link.href} className={cn("shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold", active ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground")}>
-              {link.label}
+            <Link
+              key={link.href}
+              href={link.href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-colors",
+                active ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+              )}
+            >
+              <Icon className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">{link.label}</span>
             </Link>
           );
         })}

@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { Heart, MessageSquare, Search, ShieldCheck, ShoppingBag, Tags, TrendingUp, Wallet } from "lucide-react";
-import { DashboardActionCard, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
+import { DashboardActionCard, DashboardListItem, DashboardSectionCard, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const stats = [
   { label: "Active listings", value: "12", detail: "3 drafts are ready for photos or pricing updates.", icon: Tags },
@@ -20,25 +19,21 @@ const timeline = [
 
 export default function DashboardPage() {
   return (
-    <DashboardShell title="Dashboard home" description="A personalized overview of your buying, selling, messaging, trust, and verification activity.">
+    <DashboardShell
+      title="Dashboard home"
+      description="A personalized overview of your buying, selling, messaging, trust, and verification activity."
+      actions={<Button asChild><Link href="/dashboard/listings">Manage listings</Link></Button>}
+    >
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => <DashboardStatCard key={stat.label} {...stat} />)}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Today&apos;s priority queue</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-3">
-            {timeline.map((item, index) => (
-              <div key={item} className="flex gap-3 rounded-2xl bg-secondary p-4 text-sm leading-6">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-black text-primary-foreground">{index + 1}</span>
-                <span>{item}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <DashboardSectionCard icon={TrendingUp} title="Today's priority queue" description="Time-sensitive actions across buying, selling, messaging, and verification." badge="4 actions">
+          {timeline.map((item, index) => (
+            <DashboardListItem key={item} title={item} leading={<span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-black text-primary-foreground">{index + 1}</span>} className="bg-secondary/70" />
+          ))}
+        </DashboardSectionCard>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
           <DashboardActionCard icon={Search} title="Resume discovery" description="Review saved searches, favorited listings, and fresh recommendations based on your marketplace activity.">
             <Button asChild variant="outline" className="w-full"><Link href="/dashboard/saved-searches">View saved searches</Link></Button>
