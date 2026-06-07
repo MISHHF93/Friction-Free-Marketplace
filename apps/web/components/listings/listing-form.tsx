@@ -10,6 +10,7 @@ import { z } from "zod";
 import {
   changeListingStatusAction,
   createListingAction,
+  generateAiListingAction,
   deleteListingAction,
   updateListingAction,
   uploadListingImagesAction
@@ -76,7 +77,13 @@ const listingClientFormSchema = z.object({
     priceMin: z.number().min(0).optional(),
     priceMax: z.number().min(0).optional(),
     fraudRiskScore: z.number().min(0).max(100).optional(),
+    scamRiskWarning: z.string().max(700).optional(),
+    riskFactors: z.array(z.string()).optional(),
     conditionConfidence: z.number().min(0).max(1).optional(),
+    conditionEvidence: z.array(z.string()).optional(),
+    categoryRationale: z.string().max(500).optional(),
+    priceRationale: z.string().max(700).optional(),
+    missingInformationQuestions: z.array(z.string()).optional(),
     rationale: z.string().max(1200).optional()
   }),
   images: z.array(z.object({ storagePath: z.string(), publicUrl: z.string().optional(), altText: z.string().optional(), sortOrder: z.number() })).max(MAX_IMAGES)
@@ -215,21 +222,21 @@ export function ListingForm({ listing }: { listing?: ListingRecord }) {
       setError("Upload at least one photo before using AI generation.");
       return;
     }
+    const imageUrls = images.map((image) => image.publicUrl).filter((url): url is string => Boolean(url));
+    if (imageUrls.length === 0) {
+      setError("Uploaded photos must have public URLs before AI generation can inspect them.");
+      return;
+    }
     setBusy("Generating AI listing");
     setError(null);
-    const response = await fetch("/api/ai/listing-from-photos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageUrls: images.map((image) => image.publicUrl).filter(Boolean), sellerNotes, location: `${watched.locationCity}, ${watched.locationRegion}` })
-    });
-    const body = await response.json();
+    const result = await generateAiListingAction({ imageUrls, sellerNotes, location: `${watched.locationCity}, ${watched.locationRegion}` });
     setBusy(null);
-    if (!response.ok) {
-      setError(body.error || "AI generation failed.");
+    if (!result.ok) {
+      setError(result.error || "AI generation failed.");
       return;
     }
 
-    const suggestion = body.suggestion as AiListingResponse;
+    const suggestion = result.data.suggestion as AiListingResponse;
     setValue("title", suggestion.title, { shouldDirty: true, shouldValidate: true });
     setValue("description", suggestion.description, { shouldDirty: true, shouldValidate: true });
     setValue("category", suggestion.category, { shouldDirty: true, shouldValidate: true });
@@ -237,10 +244,24 @@ export function ListingForm({ listing }: { listing?: ListingRecord }) {
     setValue("priceAmount", String(Math.round((suggestion.priceRange.min + suggestion.priceRange.max) / 2)), { shouldDirty: true, shouldValidate: true });
     setValue("currency", suggestion.priceRange.currency || "USD", { shouldDirty: true, shouldValidate: true });
     setValue("seoTags", suggestion.seoTags.join(", "), { shouldDirty: true });
-    setValue("moderationStatus", suggestion.fraudRiskScore >= 70 ? "needs_review" : "pending", { shouldDirty: true });
-    setValue("moderationNotes", suggestion.fraudRiskScore >= 70 ? "AI flagged this draft for elevated fraud risk. Review before publishing." : watched.moderationNotes, { shouldDirty: true });
-    setValue("ai", { generated: true, priceMin: suggestion.priceRange.min, priceMax: suggestion.priceRange.max, fraudRiskScore: suggestion.fraudRiskScore, rationale: suggestion.rationale }, { shouldDirty: true });
-    setSuccess("AI generated a draft. Review every field before publishing.");
+    const fraudRiskScore = suggestion.scamRiskWarning?.riskScore ?? suggestion.fraudRiskScore ?? 0;
+    setValue("moderationStatus", fraudRiskScore >= 70 ? "needs_review" : "pending", { shouldDirty: true });
+    setValue("moderationNotes", fraudRiskScore >= 70 ? "AI flagged this draft for elevated scam risk. Review proof, payment, and shipping details before publishing." : watched.moderationNotes, { shouldDirty: true });
+    setValue("ai", {
+      generated: true,
+      priceMin: suggestion.priceRange.min,
+      priceMax: suggestion.priceRange.max,
+      fraudRiskScore,
+      scamRiskWarning: suggestion.scamRiskWarning?.warning,
+      riskFactors: suggestion.scamRiskWarning?.riskFactors ?? [],
+      conditionConfidence: suggestion.conditionConfidence,
+      conditionEvidence: suggestion.conditionEvidence ?? [],
+      categoryRationale: suggestion.categoryRationale,
+      priceRationale: suggestion.priceRange.rationale,
+      missingInformationQuestions: suggestion.missingInformationQuestions ?? [],
+      rationale: suggestion.rationale
+    }, { shouldDirty: true });
+    setSuccess("AI generated a draft. Review every field, answer missing-information questions, and verify accuracy before publishing.");
   }
 
   function payload(values: FormState, publish: boolean) {
@@ -493,10 +514,25 @@ export function ListingForm({ listing }: { listing?: ListingRecord }) {
               {helperText(errors.moderationNotes?.message)}
             </div>
             {watched.ai?.generated && (
-              <div className="rounded-2xl bg-secondary p-4 text-sm">
+              <div className="space-y-3 rounded-2xl bg-secondary p-4 text-sm">
                 <p className="font-semibold">AI analysis</p>
-                <p className="mt-2 text-muted-foreground">Fraud risk score: {watched.ai.fraudRiskScore ?? "n/a"}/100</p>
-                {watched.ai.rationale && <p className="mt-2 text-muted-foreground">{watched.ai.rationale}</p>}
+                <p className="text-muted-foreground">Scam risk score: {watched.ai.fraudRiskScore ?? "n/a"}/100</p>
+                {watched.ai.scamRiskWarning && <p className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-destructive">{watched.ai.scamRiskWarning}</p>}
+                {watched.ai.conditionConfidence !== undefined && <p className="text-muted-foreground">Condition confidence: {Math.round(watched.ai.conditionConfidence * 100)}%</p>}
+                {watched.ai.priceRationale && <p className="text-muted-foreground">Price rationale: {watched.ai.priceRationale}</p>}
+                {watched.ai.riskFactors && watched.ai.riskFactors.length > 0 && (
+                  <div>
+                    <p className="font-medium">Risk factors</p>
+                    <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">{watched.ai.riskFactors.map((factor) => <li key={factor}>{factor}</li>)}</ul>
+                  </div>
+                )}
+                {watched.ai.missingInformationQuestions && watched.ai.missingInformationQuestions.length > 0 && (
+                  <div>
+                    <p className="font-medium">Missing information to answer</p>
+                    <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">{watched.ai.missingInformationQuestions.map((question) => <li key={question}>{question}</li>)}</ul>
+                  </div>
+                )}
+                {watched.ai.rationale && <p className="text-muted-foreground">{watched.ai.rationale}</p>}
               </div>
             )}
           </CardContent>

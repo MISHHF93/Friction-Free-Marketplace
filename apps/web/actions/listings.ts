@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createListing, deleteListing, setListingStatus, updateListing } from "@/lib/listings/persistence";
 import { captureServerEvent } from "@/lib/analytics/posthog";
+import { generateAiListing, type AiListingGeneration } from "@/lib/ai/listing-generation";
 
 const LISTING_IMAGE_BUCKET = "listing-images";
 const MAX_FILES = 12;
@@ -51,6 +52,16 @@ function revalidateListingViews(listingId?: string) {
   if (listingId) {
     revalidatePath(`/dashboard/listings/${listingId}/edit`);
     revalidatePath(`/listings/${listingId}`);
+  }
+}
+
+export async function generateAiListingAction(input: unknown): Promise<ListingActionResult<{ suggestion: AiListingGeneration; taskId: string | null; usage: Record<string, unknown>; latencyMs: number }>> {
+  try {
+    const { user } = await requireAuthUser();
+    const result = await generateAiListing(input, user.id);
+    return { ok: true, data: result };
+  } catch (error) {
+    return actionError(error, "Unable to generate an AI listing draft.");
   }
 }
 
