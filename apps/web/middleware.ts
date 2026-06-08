@@ -29,21 +29,22 @@ function getPublicMiddlewareEnv(): PublicMiddlewareEnv | null {
   };
 }
 
-function isProtectedRoute(pathname: string) {
+export function isProtectedRoute(pathname: string) {
   return protectedRoutePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-function isAuthRoute(pathname: string) {
+export function isAuthRoute(pathname: string) {
   return authRoutePaths.some((route) => pathname === route);
 }
 
-function getSafeRedirectPath(value: string | null, fallback = "/dashboard") {
+export function getSafeRedirectPath(value: string | null, fallback = "/dashboard") {
   return value && value.startsWith("/") && !value.startsWith("//") ? value : fallback;
 }
 
 function getLoginRedirectUrl(request: NextRequest) {
   const redirectUrl = request.nextUrl.clone();
   redirectUrl.pathname = "/login";
+  redirectUrl.search = "";
   redirectUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
   return redirectUrl;
 }
@@ -114,18 +115,23 @@ async function getAuthenticatedUser(
   const accessToken = getAccessTokenFromCookie(request, env);
   if (!accessToken) return { user: null, accessToken: null };
 
-  const response = await fetch(`${env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`, {
-    headers: {
-      apikey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${accessToken}`
-    },
-    cache: "no-store"
-  });
+  try {
+    const response = await fetch(`${env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`, {
+      headers: {
+        apikey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${accessToken}`
+      },
+      cache: "no-store"
+    });
 
-  if (!response.ok) return { user: null, accessToken: null };
+    if (!response.ok) return { user: null, accessToken: null };
 
-  const user = (await response.json()) as SupabaseUser;
-  return user?.id ? { user, accessToken } : { user: null, accessToken: null };
+    const user = (await response.json()) as SupabaseUser;
+    return user?.id ? { user, accessToken } : { user: null, accessToken: null };
+  } catch (error) {
+    console.error("Middleware Supabase auth lookup failed", error);
+    return { user: null, accessToken: null };
+  }
 }
 
 async function getAppUserAccess(userId: string, accessToken: string, env: PublicMiddlewareEnv): Promise<AppUserAccess | null> {
@@ -134,24 +140,35 @@ async function getAppUserAccess(userId: string, accessToken: string, env: Public
   query.searchParams.set("id", `eq.${userId}`);
   query.searchParams.set("limit", "1");
 
-  const response = await fetch(query, {
-    headers: {
-      apikey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${accessToken}`,
-      Accept: "application/json"
-    },
-    cache: "no-store"
-  });
+  try {
+    const response = await fetch(query, {
+      headers: {
+        apikey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json"
+      },
+      cache: "no-store"
+    });
 
-  if (!response.ok) return null;
+    if (!response.ok) return null;
 
-  const users = (await response.json()) as AppUserAccess[];
-  return users[0] ?? null;
+    const users = (await response.json()) as AppUserAccess[];
+    return users[0] ?? null;
+  } catch (error) {
+    console.error("Middleware app user lookup failed", error);
+    return null;
+  }
 }
 
 export async function middleware(request: NextRequest) {
-  const env = getPublicMiddlewareEnv();
   const pathname = request.nextUrl.pathname;
+  const needsAuthState = isProtectedRoute(pathname) || isAuthRoute(pathname);
+
+  if (!needsAuthState) {
+    return NextResponse.next({ request });
+  }
+
+  const env = getPublicMiddlewareEnv();
 
   if (!env) {
     return isProtectedRoute(pathname) ? NextResponse.redirect(getLoginRedirectUrl(request)) : NextResponse.next({ request });
