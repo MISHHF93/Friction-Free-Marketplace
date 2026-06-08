@@ -52,8 +52,9 @@ function validateStartupEnvironment() {
 }
 
 const isNextLint = process.argv.some((argument) => argument.includes("next-lint") || argument === "lint");
+const isProductionBuild = process.argv.includes("build") || process.env.npm_lifecycle_event === "build" || process.env.VERCEL === "1";
 
-if (!isNextLint) {
+if (!isNextLint && !isProductionBuild) {
   validateStartupEnvironment();
 }
 
