@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { RemoteImage } from "@/components/ui/remote-image";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { SaveSearchForm } from "@/components/saved-searches/save-search-form";
 import { getFavoriteListingIds } from "@/lib/saves/user-saves";
@@ -266,7 +267,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
 function DiscoveryListingCard({ listing, isFavorited }: { listing: DiscoveryDocument; isFavorited: boolean }) {
   return (
     <Card className="overflow-hidden">
-      {listing.image_url ? <img src={listing.image_url} alt={listing.title} className="h-44 w-full object-cover" /> : <div className="h-44 bg-gradient-to-br from-emerald-100 via-sky-100 to-white" />}
+      {listing.image_url ? <RemoteImage src={listing.image_url} alt={listing.title} className="h-44 w-full object-cover" /> : <div className="h-44 bg-gradient-to-br from-emerald-100 via-sky-100 to-white" />}
       <CardContent className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">
           <div>

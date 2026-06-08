@@ -6,6 +6,7 @@ import { CalendarDays, Eye, Heart, PackageCheck, ShieldCheck, Store, Truck } fro
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RemoteImage } from "@/components/ui/remote-image";
 import { createClient } from "@/lib/supabase/server";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { CheckoutCard } from "@/components/payments/checkout-card";
@@ -154,7 +155,7 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
       <div className="min-w-0">
         <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-soft">
           {listing.image_url ? (
-            <img src={listing.image_url} alt={listing.title} className="h-72 w-full object-cover sm:h-[420px]" />
+            <RemoteImage src={listing.image_url} alt={listing.title} className="h-72 w-full object-cover sm:h-[420px]" />
           ) : (
             <div className="flex h-72 w-full items-center justify-center bg-gradient-to-br from-emerald-100 via-sky-50 to-white sm:h-[420px]">
               <PackageCheck className="h-16 w-16 text-primary/60" aria-hidden="true" />
