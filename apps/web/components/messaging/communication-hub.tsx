@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { Bell, CalendarClock, CircleDollarSign, Flag, Paperclip, Send, ShieldAlert, UserX } from "lucide-react";
+import { Bell, CalendarClock, CircleDollarSign, Flag, History, Paperclip, Send, ShieldAlert, Timer, UserX } from "lucide-react";
 import { createClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,6 +46,7 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
   const [attachmentUrl, setAttachmentUrl] = useState("");
   const [offerAmount, setOfferAmount] = useState("");
   const [offerMessage, setOfferMessage] = useState("");
+  const [offerExpiresAt, setOfferExpiresAt] = useState("");
   const [depositAmount, setDepositAmount] = useState("");
   const [pickupStartsAt, setPickupStartsAt] = useState("");
   const [pickupLocation, setPickupLocation] = useState("");
@@ -174,7 +175,13 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
     );
   }
 
-  const pendingOffer = activeConversation.offers.find((offer) => offer.status === "pending" || offer.status === "countered");
+  const orderedOffers = [...activeConversation.offers].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const pendingOffer = orderedOffers.find((offer) => offer.status === "pending");
+  const latestOffer = orderedOffers[0];
+  const canMakeFirstOffer = activeConversation.buyer_id === userId && !pendingOffer;
+  const canRespondToPendingOffer = Boolean(pendingOffer && pendingOffer.created_by_id !== userId);
+  const canCounterPendingOffer = canRespondToPendingOffer;
+  const canWithdrawPendingOffer = Boolean(pendingOffer && pendingOffer.created_by_id === userId);
   const latestDeposit = activeConversation.reservation_deposits[0];
   const latestPickup = activeConversation.pickup_schedules[0];
 
@@ -215,7 +222,7 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
               <CardDescription>With {otherParticipant?.display_name ?? "marketplace user"} · {activeConversation.listing ? money(activeConversation.listing.price_amount, activeConversation.listing.currency) : "No listing attached"}</CardDescription>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:flex">
-              <Button variant="outline" size="sm" onClick={() => runAction(() => activeConversation.messages.at(-1)?.id ? reportMessageAction({ conversationId: activeConversation.id, messageId: activeConversation.messages.at(-1)?.id, reason: reportReason || "Unsafe or inappropriate message" }) : reportUserAction({ conversationId: activeConversation.id, reportedUserId: otherParticipantId ?? "", reason: reportReason || "Unsafe or inappropriate chat" }))} disabled={(!activeConversation.messages.length && !otherParticipantId) || isPending}><Flag className="mr-2 h-4 w-4" />Report</Button>
+              <Button size="sm" onClick={() => runAction(() => activeConversation.messages.at(-1)?.id ? reportMessageAction({ conversationId: activeConversation.id, messageId: activeConversation.messages.at(-1)?.id, reason: reportReason || "Unsafe or inappropriate message" }) : reportUserAction({ conversationId: activeConversation.id, reportedUserId: otherParticipantId ?? "", reason: reportReason || "Unsafe or inappropriate chat" }))} disabled={(!activeConversation.messages.length && !otherParticipantId) || isPending}><Flag className="mr-2 h-4 w-4" />Report</Button>
               <Button variant="destructive" size="sm" onClick={() => otherParticipantId && runAction(() => blockUserAction({ conversationId: activeConversation.id, blockedId: otherParticipantId, reason: "Blocked from chat UI" }))} disabled={!otherParticipantId || activeConversation.status === "blocked" || isPending}><UserX className="mr-2 h-4 w-4" />Block</Button>
             </div>
           </CardHeader>
@@ -265,15 +272,38 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2"><CircleDollarSign className="h-5 w-5" />Offer desk</CardTitle><CardDescription>Make, counter, accept, and reject offers.</CardDescription></CardHeader>
             <CardContent className="grid gap-3">
-              {pendingOffer && <div className="rounded-xl bg-secondary p-3 text-sm">Latest: {money(pendingOffer.amount, pendingOffer.currency)} · {pendingOffer.status}</div>}
+              {latestOffer && (
+                <div className="rounded-xl bg-secondary p-3 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <span>Latest: {money(latestOffer.amount, latestOffer.currency)}</span>
+                    <Badge>{latestOffer.status === "declined" ? "rejected" : latestOffer.status}</Badge>
+                  </div>
+                  {latestOffer.expires_at && <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Timer className="h-3 w-3" />Expires {new Date(latestOffer.expires_at).toLocaleString()}</p>}
+                  {pendingOffer && <p className="mt-1 text-xs text-muted-foreground">Awaiting {pendingOffer.created_by_id === userId ? "their response" : "your response"}.</p>}
+                </div>
+              )}
               <Label htmlFor="offerAmount">Offer amount</Label>
-              <Input id="offerAmount" value={offerAmount} onChange={(event) => setOfferAmount(event.target.value)} type="number" min="1" step="0.01" />
+              <Input id="offerAmount" value={offerAmount} onChange={(event) => setOfferAmount(event.target.value)} type="number" min="1" step="0.01" placeholder={canCounterPendingOffer ? "Counter amount" : "Offer amount"} />
+              <Input value={offerExpiresAt} onChange={(event) => setOfferExpiresAt(event.target.value)} type="datetime-local" aria-label="Offer expiration" />
               <Textarea value={offerMessage} onChange={(event) => setOfferMessage(event.target.value)} placeholder="Terms, timing, or counter-offer note" />
-              <Button disabled={!offerAmount || isPending} onClick={() => runAction(() => makeOfferAction({ conversationId: activeConversation.id, amount: offerAmount, message: offerMessage, parentOfferId: pendingOffer?.id, depositAmount: depositAmount ? Number(depositAmount) : 0 }), () => { setOfferAmount(""); setOfferMessage(""); })}>Make / counter offer</Button>
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" disabled={!pendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "accepted", message: "Accepted from chat." }))}>Accept</Button>
-                <Button variant="outline" disabled={!pendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "declined", message: "Rejected from chat." }))}>Reject</Button>
+              <Button disabled={!offerAmount || isPending || (!canMakeFirstOffer && !canCounterPendingOffer)} onClick={() => runAction(() => makeOfferAction({ conversationId: activeConversation.id, amount: offerAmount, message: offerMessage, parentOfferId: canCounterPendingOffer ? pendingOffer?.id : undefined, depositAmount: depositAmount ? Number(depositAmount) : 0, expiresAt: offerExpiresAt ? new Date(offerExpiresAt).toISOString() : undefined }), () => { setOfferAmount(""); setOfferMessage(""); setOfferExpiresAt(""); })}>
+                {canCounterPendingOffer ? "Send counter" : "Make offer"}
+              </Button>
+              <div className="grid grid-cols-3 gap-2">
+                <Button disabled={!canRespondToPendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "accepted", message: "Accepted from chat." }))}>Accept</Button>
+                <Button disabled={!canRespondToPendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "declined", message: "Rejected from chat." }))}>Reject</Button>
+                <Button disabled={!canWithdrawPendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "withdrawn", message: "Withdrawn from chat." }))}>Withdraw</Button>
               </div>
+              {latestOffer?.offer_status_history && latestOffer.offer_status_history.length > 0 && (
+                <div className="rounded-xl border p-3 text-xs">
+                  <p className="mb-2 flex items-center gap-1 font-semibold"><History className="h-3.5 w-3.5" />Status history</p>
+                  <div className="grid gap-1">
+                    {latestOffer.offer_status_history.slice(0, 4).map((history) => (
+                      <p key={history.id} className="text-muted-foreground">{history.from_status ?? "new"} → {history.to_status} · {new Date(history.created_at).toLocaleString()}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -294,7 +324,7 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
               <Input value={depositAmount} onChange={(event) => setDepositAmount(event.target.value)} type="number" min="1" step="0.01" placeholder="Reservation deposit" />
               <Button disabled={!depositAmount || isPending} onClick={() => runAction(() => createReservationDepositAction({ conversationId: activeConversation.id, offerId: pendingOffer?.id, amount: depositAmount }), () => setDepositAmount(""))}><Bell className="mr-2 h-4 w-4" />Request deposit</Button>
               <Textarea value={reportReason} onChange={(event) => setReportReason(event.target.value)} placeholder="Report details for this message or user" />
-              <Button variant="outline" disabled={!otherParticipantId || isPending} onClick={() => otherParticipantId && runAction(() => reportUserAction({ conversationId: activeConversation.id, reportedUserId: otherParticipantId, reason: reportReason || "Unsafe or suspicious user" }), () => setReportReason(""))}><Flag className="mr-2 h-4 w-4" />Report user</Button>
+              <Button disabled={!otherParticipantId || isPending} onClick={() => otherParticipantId && runAction(() => reportUserAction({ conversationId: activeConversation.id, reportedUserId: otherParticipantId, reason: reportReason || "Unsafe or suspicious user" }), () => setReportReason(""))}><Flag className="mr-2 h-4 w-4" />Report user</Button>
               <p className="text-xs text-muted-foreground">Anti-ghosting penalties are created when pickup no-shows or forfeited deposits are reviewed by trust & safety.</p>
             </CardContent>
           </Card>

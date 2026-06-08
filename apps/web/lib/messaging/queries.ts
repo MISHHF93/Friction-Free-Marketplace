@@ -12,7 +12,7 @@ const conversationSummarySelect = `
   buyer:users!conversations_buyer_id_fkey(id,profiles(user_id,display_name,avatar_url)),
   seller:users!conversations_seller_id_fkey(id,profiles(user_id,display_name,avatar_url)),
   messages(id,conversation_id,sender_id,body,kind,attachments,moderation_status,read_at,created_at,updated_at,metadata,message_attachments(*)),
-  offers(id,conversation_id,listing_id,buyer_id,seller_id,created_by_id,amount,currency,message,status,parent_offer_id,reservation_deposit_amount,expires_at,accepted_at,rejected_at,created_at,updated_at),
+  offers(id,conversation_id,listing_id,buyer_id,seller_id,created_by_id,responded_by_id,amount,currency,message,status,parent_offer_id,response_message,reservation_deposit_amount,expires_at,accepted_at,rejected_at,withdrawn_at,created_at,updated_at,offer_status_history(id,offer_id,conversation_id,actor_id,from_status,to_status,reason,message,metadata,created_at)),
   pickup_schedules(id,conversation_id,listing_id,offer_id,buyer_id,seller_id,proposed_by_id,status,starts_at,ends_at,timezone,location_label,location_details,safety_notes,created_at),
   reservation_deposits(id,conversation_id,listing_id,offer_id,buyer_id,seller_id,status,amount,currency,due_at,created_at)
 `;
