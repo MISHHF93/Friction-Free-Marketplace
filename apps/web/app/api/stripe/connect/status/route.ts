@@ -3,35 +3,59 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/payments/auth";
+import { formatConnectError, getStoredSellerAccount, sellerStatusCopy, upsertSellerAccountFromStripe } from "@/lib/payments/connect";
 import { getStripe } from "@/lib/stripe/server";
-
-function mapAccountStatus(account: { charges_enabled?: boolean; payouts_enabled?: boolean; details_submitted?: boolean; requirements?: { disabled_reason?: string | null } | null }) {
-  if (account.charges_enabled && account.payouts_enabled) return "active";
-  if (account.requirements?.disabled_reason) return "restricted";
-  if (account.details_submitted) return "pending";
-  return "onboarding";
-}
 
 export async function GET() {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
 
   const supabase = createAdminClient() as any;
-  const { data } = await supabase.from("seller_payment_accounts").select("*").eq("seller_id", auth.user.id).maybeSingle();
-  if (!data) return NextResponse.json({ status: "not_started" });
 
-  const account = await getStripe().accounts.retrieve(data.stripe_account_id);
-  const status = mapAccountStatus(account);
-  await supabase.from("seller_payment_accounts").update({
-    status,
-    charges_enabled: account.charges_enabled,
-    payouts_enabled: account.payouts_enabled,
-    details_submitted: account.details_submitted,
-    disabled_reason: account.requirements?.disabled_reason ?? null,
-    requirements_currently_due: account.requirements?.currently_due ?? [],
-    requirements_eventually_due: account.requirements?.eventually_due ?? [],
-    onboarding_completed_at: status === "active" ? new Date().toISOString() : data.onboarding_completed_at
-  }).eq("seller_id", auth.user.id);
+  try {
+    const stored = await getStoredSellerAccount(supabase, auth.user.id);
+    if (!stored?.stripe_account_id) {
+      return NextResponse.json({
+        status: "not_started",
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        detailsSubmitted: false,
+        requirements: { currentlyDue: [], eventuallyDue: [], pastDue: [], pendingVerification: [] },
+        message: sellerStatusCopy("not_started"),
+        canAcceptPayments: false,
+        canReceivePayouts: false
+      });
+    }
 
-  return NextResponse.json({ ...data, status, charges_enabled: account.charges_enabled, payouts_enabled: account.payouts_enabled, details_submitted: account.details_submitted });
+    const account = await getStripe().accounts.retrieve(stored.stripe_account_id);
+    if (account.deleted) {
+      return NextResponse.json({ error: "The saved Stripe account was deleted. Contact support to reconnect payouts." }, { status: 409 });
+    }
+
+    const synced = await upsertSellerAccountFromStripe(supabase, account, auth.user.id);
+    if (!synced) return NextResponse.json({ error: "Stripe account ownership validation failed." }, { status: 403 });
+
+    return NextResponse.json({
+      accountId: synced.stripe_account_id,
+      status: synced.status,
+      chargesEnabled: synced.charges_enabled,
+      payoutsEnabled: synced.payouts_enabled,
+      detailsSubmitted: synced.details_submitted,
+      disabledReason: synced.disabled_reason,
+      requirements: {
+        currentlyDue: synced.requirements_currently_due,
+        eventuallyDue: synced.requirements_eventually_due,
+        pastDue: synced.requirements_past_due,
+        pendingVerification: synced.requirements_pending_verification
+      },
+      onboardingStartedAt: stored.onboarding_started_at,
+      onboardingCompletedAt: synced.onboarding_completed_at,
+      lastSyncedAt: synced.last_synced_at,
+      message: sellerStatusCopy(synced.status),
+      canAcceptPayments: synced.status === "active" && synced.charges_enabled,
+      canReceivePayouts: synced.status === "active" && synced.payouts_enabled
+    });
+  } catch (error) {
+    return NextResponse.json({ error: formatConnectError(error) }, { status: 502 });
+  }
 }
