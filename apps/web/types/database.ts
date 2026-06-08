@@ -244,6 +244,98 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["listing_images"]["Row"]>;
         Relationships: [];
       };
+      seller_payment_accounts: {
+        Row: {
+          seller_id: string;
+          provider: "stripe";
+          stripe_account_id: string;
+          status: "not_started" | "onboarding" | "pending" | "active" | "restricted";
+          charges_enabled: boolean;
+          payouts_enabled: boolean;
+          details_submitted: boolean;
+          disabled_reason: string | null;
+          requirements_currently_due: string[];
+          requirements_eventually_due: string[];
+          requirements_past_due: string[];
+          requirements_pending_verification: string[];
+          onboarding_started_at: string | null;
+          onboarding_completed_at: string | null;
+          last_synced_at: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["seller_payment_accounts"]["Row"]> & { seller_id: string; stripe_account_id: string };
+        Update: Partial<Database["public"]["Tables"]["seller_payment_accounts"]["Row"]>;
+        Relationships: [];
+      };
+      transactions: {
+        Row: {
+          id: string; listing_id: string; offer_id: string | null; buyer_id: string; seller_id: string;
+          status: "pending_payment" | "paid" | "escrowed" | "completed" | "cancelled" | "refunded" | "disputed";
+          item_amount: number; shipping_amount: number; tax_amount: number; marketplace_fee_amount: number; total_amount: number; currency: string;
+          paid_at: string | null; shipped_at: string | null; delivered_at: string | null; completed_at: string | null; cancelled_at: string | null;
+          metadata: Json; created_at: string; updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["transactions"]["Row"]> & { listing_id: string; buyer_id: string; seller_id: string };
+        Update: Partial<Database["public"]["Tables"]["transactions"]["Row"]>;
+        Relationships: [];
+      };
+      escrow_payments: {
+        Row: {
+          id: string; transaction_id: string; provider: "stripe"; provider_payment_id: string; provider_charge_id: string | null;
+          status: "requires_action" | "authorized" | "held" | "released" | "refunded" | "failed" | "cancelled";
+          amount: number; currency: string; platform_fee_amount: number; seller_net_amount: number; capture_before: string | null;
+          authorized_at: string | null; captured_at: string | null; held_at: string | null; released_at: string | null; refunded_at: string | null;
+          failure_code: string | null; metadata: Json; created_at: string; updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["escrow_payments"]["Row"]> & { transaction_id: string; provider_payment_id: string; amount: number };
+        Update: Partial<Database["public"]["Tables"]["escrow_payments"]["Row"]>;
+        Relationships: [];
+      };
+      payouts: {
+        Row: {
+          id: string; transaction_id: string; seller_id: string; provider: "stripe"; provider_transfer_id: string | null; provider_payout_id: string | null;
+          status: "pending" | "paid" | "failed" | "cancelled"; amount: number; currency: string; paid_at: string | null; metadata: Json; created_at: string; updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["payouts"]["Row"]> & { transaction_id: string; seller_id: string; amount: number };
+        Update: Partial<Database["public"]["Tables"]["payouts"]["Row"]>;
+        Relationships: [];
+      };
+      transaction_receipts: {
+        Row: {
+          transaction_id: string; buyer_id: string; seller_id: string; provider: string; provider_payment_id: string | null; provider_charge_id: string | null;
+          subtotal_amount: number; shipping_amount: number; tax_amount: number; platform_fee_amount: number; seller_net_amount: number; total_amount: number; currency: string;
+          metadata: Json; created_at: string; updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["transaction_receipts"]["Row"]> & { transaction_id: string; buyer_id: string; seller_id: string };
+        Update: Partial<Database["public"]["Tables"]["transaction_receipts"]["Row"]>;
+        Relationships: [];
+      };
+      transaction_events: {
+        Row: {
+          id: string; transaction_id: string | null; actor_id: string | null; type: string; from_status: string | null; to_status: string | null;
+          provider: string | null; provider_object_id: string | null; amount: number | null; currency: string | null; message: string | null; metadata: Json; created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["transaction_events"]["Row"]> & { type: string };
+        Update: Partial<Database["public"]["Tables"]["transaction_events"]["Row"]>;
+        Relationships: [];
+      };
+      stripe_webhook_events: {
+        Row: { id: string; type: string; api_version: string | null; livemode: boolean; payload: Json; processed_at: string | null; processing_error: string | null; created_at: string };
+        Insert: Partial<Database["public"]["Tables"]["stripe_webhook_events"]["Row"]> & { id: string; type: string; payload: Json };
+        Update: Partial<Database["public"]["Tables"]["stripe_webhook_events"]["Row"]>;
+        Relationships: [];
+      };
+      disputes: {
+        Row: {
+          id: string; transaction_id: string; opened_by_id: string; respondent_id: string; provider_dispute_id: string | null; provider_payment_id: string | null;
+          status: "open" | "under_review" | "closed"; reason: string | null; evidence: Json; metadata: Json; created_at: string; updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["disputes"]["Row"]> & { transaction_id: string; opened_by_id: string; respondent_id: string };
+        Update: Partial<Database["public"]["Tables"]["disputes"]["Row"]>;
+        Relationships: [];
+      };
       ai_agents: {
         Row: {
           id: string;
@@ -347,6 +439,7 @@ export type Database = {
       reservation_deposit_status: "pending" | "authorized" | "held" | "released" | "forfeited" | "refunded" | "failed" | "cancelled";
       ghosting_penalty_status: "pending" | "applied" | "waived" | "appealed" | "reversed";
       ai_task_status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+      seller_connect_status: "not_started" | "onboarding" | "pending" | "active" | "restricted";
     };
     CompositeTypes: Record<string, never>;
   };

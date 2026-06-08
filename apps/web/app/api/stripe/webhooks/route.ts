@@ -4,30 +4,14 @@ import { env } from "@/lib/env.server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { recordTransactionEvent } from "@/lib/payments/audit";
 import { centsToDollars } from "@/lib/payments/money";
+import { upsertSellerAccountFromStripe } from "@/lib/payments/connect";
 import { getStripe } from "@/lib/stripe/server";
 
 export const dynamic = "force-dynamic";
 
 async function updateSellerAccount(account: Stripe.Account) {
   const supabase = createAdminClient() as any;
-  const sellerId = typeof account.metadata?.seller_id === "string" ? account.metadata.seller_id : null;
-  if (!sellerId) return;
-  const status = account.charges_enabled && account.payouts_enabled ? "active" : account.requirements?.disabled_reason ? "restricted" : account.details_submitted ? "pending" : "onboarding";
-  await supabase.from("seller_payment_accounts").upsert({
-    seller_id: sellerId,
-    provider: "stripe",
-    stripe_account_id: account.id,
-    status,
-    charges_enabled: account.charges_enabled,
-    payouts_enabled: account.payouts_enabled,
-    details_submitted: account.details_submitted,
-    disabled_reason: account.requirements?.disabled_reason ?? null,
-    requirements_currently_due: account.requirements?.currently_due ?? [],
-    requirements_eventually_due: account.requirements?.eventually_due ?? [],
-    onboarding_completed_at: status === "active" ? new Date().toISOString() : null,
-    metadata: { default_currency: account.default_currency, livemode: (account as { livemode?: boolean }).livemode ?? false }
-  });
-  if (status === "active") await recordTransactionEvent(supabase, { actor_id: sellerId, type: "seller_onboarding_completed", provider_object_id: account.id, message: "Seller completed Stripe Connect onboarding." });
+  await upsertSellerAccountFromStripe(supabase, account);
 }
 
 async function updatePaymentIntent(intent: Stripe.PaymentIntent) {
