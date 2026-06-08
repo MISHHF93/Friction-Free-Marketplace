@@ -118,6 +118,7 @@ export type ConversationSummary = {
   last_message_at: string | null;
   created_at: string;
   updated_at: string;
+  metadata: Json;
   listing: MessagingListing | null;
   buyer: MessagingUser | null;
   seller: MessagingUser | null;
