@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { Bell, CalendarClock, CircleDollarSign, Flag, Paperclip, Send, ShieldAlert, UserX } from "lucide-react";
 import { createClient } from "@/lib/supabase/browser";
@@ -14,9 +15,11 @@ import type { ConversationMessage, ConversationOffer, ConversationSummary, Messa
 import {
   blockUserAction,
   createReservationDepositAction,
+  getConversationSummaryAction,
   makeOfferAction,
   markConversationReadAction,
   reportMessageAction,
+  reportUserAction,
   respondToOfferAction,
   schedulePickupAction,
   sendMessageAction,
@@ -30,6 +33,10 @@ function money(amount: number | string, currency = "USD") {
 function mergeById<T extends { id: string }>(items: T[], item: T) {
   const exists = items.some((candidate) => candidate.id === item.id);
   return exists ? items.map((candidate) => (candidate.id === item.id ? { ...candidate, ...item } : candidate)) : [...items, item];
+}
+
+function mergeConversation(items: ConversationSummary[], item: ConversationSummary) {
+  return mergeById(items, item).sort((a, b) => new Date(b.last_message_at ?? b.updated_at).getTime() - new Date(a.last_message_at ?? a.updated_at).getTime());
 }
 
 export function CommunicationHub({ userId, initialConversations, initialConversationId }: { userId: string; initialConversations: ConversationSummary[]; initialConversationId?: string }) {
@@ -48,20 +55,35 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
   const [isPending, startTransition] = useTransition();
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const sortedConversations = useMemo(() => [...conversations].sort((a, b) => new Date(b.last_message_at ?? b.updated_at).getTime() - new Date(a.last_message_at ?? a.updated_at).getTime()), [conversations]);
   const activeConversation = useMemo(
-    () => conversations.find((conversation) => conversation.id === activeId) ?? conversations[0],
-    [activeId, conversations]
+    () => sortedConversations.find((conversation) => conversation.id === activeId) ?? sortedConversations[0],
+    [activeId, sortedConversations]
   );
   const otherParticipant = activeConversation?.buyer_id === userId ? activeConversation?.seller : activeConversation?.buyer;
   const otherParticipantId = activeConversation?.buyer_id === userId ? activeConversation?.seller_id : activeConversation?.buyer_id;
 
   useEffect(() => {
+    const upsertConversationSummary = (conversationId: string) => {
+      getConversationSummaryAction({ conversationId })
+        .then((conversation) => setConversations((current) => mergeConversation(current, conversation)))
+        .catch(() => null);
+    };
+
     const supabase = createClient();
     const channel = supabase
       .channel(`marketplace-communications:${userId}`, { config: { presence: { key: userId } } })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "conversations" }, (payload) => {
+        const conversation = payload.new as { id: string };
+        upsertConversationSummary(conversation.id);
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "conversations" }, (payload) => {
+        const conversation = payload.new as Partial<ConversationSummary> & { id: string };
+        setConversations((current) => current.map((candidate) => candidate.id === conversation.id ? { ...candidate, ...conversation } as ConversationSummary : candidate));
+      })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
         const message = payload.new as ConversationMessage;
-        setConversations((current) => current.map((conversation) => conversation.id === message.conversation_id ? { ...conversation, messages: mergeById(conversation.messages, message), last_message_at: message.created_at } : conversation));
+        setConversations((current) => current.map((conversation) => conversation.id === message.conversation_id ? { ...conversation, messages: mergeById(conversation.messages, message), last_message_at: message.created_at, updated_at: message.created_at } : conversation));
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {
         const message = payload.new as ConversationMessage;
@@ -164,14 +186,18 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
           <CardDescription>Supabase Realtime keeps every thread, receipt, and negotiation update live.</CardDescription>
         </CardHeader>
         <CardContent className="grid max-h-72 gap-2 overflow-y-auto p-3 lg:max-h-[calc(100vh-14rem)]">
-          {conversations.map((conversation) => {
+          {sortedConversations.map((conversation) => {
             const participant = conversation.buyer_id === userId ? conversation.seller : conversation.buyer;
             const latestMessage = conversation.messages[conversation.messages.length - 1];
+            const unreadCount = conversation.messages.filter((message) => message.sender_id !== userId && !message.read_at).length;
             return (
               <button key={conversation.id} onClick={() => setActiveId(conversation.id)} className={cn("rounded-xl border p-3 text-left transition hover:bg-secondary", conversation.id === activeConversation.id && "border-primary bg-secondary")}>
                 <div className="flex items-center justify-between gap-2">
                   <p className="font-semibold">{participant?.display_name ?? "Marketplace user"}</p>
-                  <Badge className={conversation.status === "blocked" ? "border-destructive/30 bg-destructive text-destructive-foreground" : undefined}>{conversation.status}</Badge>
+                  <div className="flex items-center gap-1">
+                    {unreadCount > 0 && <Badge className="bg-primary text-primary-foreground">{unreadCount}</Badge>}
+                    <Badge className={conversation.status === "blocked" ? "border-destructive/30 bg-destructive text-destructive-foreground" : undefined}>{conversation.status}</Badge>
+                  </div>
                 </div>
                 <p className="mt-1 truncate text-sm text-muted-foreground">{conversation.listing?.title ?? "General marketplace conversation"}</p>
                 <p className="mt-2 truncate text-xs text-muted-foreground">{latestMessage?.body ?? "No messages yet."}</p>
@@ -182,20 +208,29 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
       </Card>
 
       <div className="grid gap-4">
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader className="grid gap-4 sm:flex sm:flex-row sm:items-start sm:justify-between">
             <div>
               <CardTitle>{activeConversation.listing?.title ?? "Conversation"}</CardTitle>
               <CardDescription>With {otherParticipant?.display_name ?? "marketplace user"} · {activeConversation.listing ? money(activeConversation.listing.price_amount, activeConversation.listing.currency) : "No listing attached"}</CardDescription>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:flex">
-              <Button variant="outline" size="sm" onClick={() => runAction(() => reportMessageAction({ conversationId: activeConversation.id, messageId: activeConversation.messages.at(-1)?.id, reason: reportReason || "Unsafe or inappropriate message" }))} disabled={!activeConversation.messages.length || isPending}><Flag className="mr-2 h-4 w-4" />Report</Button>
-              <Button variant="destructive" size="sm" onClick={() => otherParticipantId && runAction(() => blockUserAction({ conversationId: activeConversation.id, blockedId: otherParticipantId, reason: "Blocked from chat UI" }))} disabled={!otherParticipantId || isPending}><UserX className="mr-2 h-4 w-4" />Block</Button>
+              <Button variant="outline" size="sm" onClick={() => runAction(() => activeConversation.messages.at(-1)?.id ? reportMessageAction({ conversationId: activeConversation.id, messageId: activeConversation.messages.at(-1)?.id, reason: reportReason || "Unsafe or inappropriate message" }) : reportUserAction({ conversationId: activeConversation.id, reportedUserId: otherParticipantId ?? "", reason: reportReason || "Unsafe or inappropriate chat" }))} disabled={(!activeConversation.messages.length && !otherParticipantId) || isPending}><Flag className="mr-2 h-4 w-4" />Report</Button>
+              <Button variant="destructive" size="sm" onClick={() => otherParticipantId && runAction(() => blockUserAction({ conversationId: activeConversation.id, blockedId: otherParticipantId, reason: "Blocked from chat UI" }))} disabled={!otherParticipantId || activeConversation.status === "blocked" || isPending}><UserX className="mr-2 h-4 w-4" />Block</Button>
             </div>
           </CardHeader>
           <CardContent>
             {error && <div className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-            <div className="h-[430px] space-y-3 overflow-y-auto rounded-2xl border bg-background p-4">
+            {activeConversation.listing && (
+              <div className="mb-4 rounded-2xl border bg-secondary/60 p-3 text-sm">
+                <p className="font-semibold">Listing context</p>
+                <div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-muted-foreground">
+                  <Link href={`/listings/${activeConversation.listing.id}`} className="font-medium text-primary hover:underline">{activeConversation.listing.title}</Link>
+                  <span>{money(activeConversation.listing.price_amount, activeConversation.listing.currency)} · {activeConversation.listing.status}</span>
+                </div>
+              </div>
+            )}
+            <div className="h-[55vh] min-h-[340px] space-y-3 overflow-y-auto rounded-2xl border bg-background p-3 sm:h-[430px] sm:p-4">
               {activeConversation.messages.map((message) => {
                 const own = message.sender_id === userId;
                 return (
@@ -216,11 +251,11 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
               })}
             </div>
             <div className="mt-2 h-5 text-xs text-muted-foreground">{(typingUsers[activeConversation.id] ?? []).length > 0 ? `${otherParticipant?.display_name ?? "They"} is typing…` : " "}</div>
-            <form className="mt-3 grid gap-3" onSubmit={(event) => { event.preventDefault(); runAction(() => sendMessageAction({ conversationId: activeConversation.id, body, clientToken: crypto.randomUUID(), attachments: attachmentUrl ? [{ storagePath: `external/${crypto.randomUUID()}`, publicUrl: attachmentUrl, fileName: attachmentUrl.split('/').pop() || 'attachment', contentType: 'application/octet-stream', byteSize: 1024 }] : [] }), () => { setBody(""); setAttachmentUrl(""); }); }}>
-              <Textarea value={body} onChange={(event) => onMessageInput(event.target.value)} placeholder="Write a real-time message…" />
+            <form className="mt-3 grid gap-3" onSubmit={(event) => { event.preventDefault(); runAction(() => sendMessageAction({ conversationId: activeConversation.id, body, clientToken: crypto.randomUUID(), attachments: attachmentUrl ? [{ storagePath: `external/${crypto.randomUUID()}`, publicUrl: attachmentUrl, fileName: attachmentUrl.split('/').pop() || 'attachment', contentType: 'application/octet-stream', byteSize: 1024 }] : [] }), () => { setBody(""); setAttachmentUrl(""); if (activeConversation) setTypingAction({ conversationId: activeConversation.id, isTyping: false }).catch(() => null); }); }}>
+              <Textarea value={body} onChange={(event) => onMessageInput(event.target.value)} placeholder="Write a real-time message…" disabled={activeConversation.status === "blocked"} />
               <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
                 <Input value={attachmentUrl} onChange={(event) => setAttachmentUrl(event.target.value)} placeholder="Optional attachment URL (uploaded path can be stored here)" />
-                <Button disabled={isPending || (!body && !attachmentUrl)}><Send className="mr-2 h-4 w-4" />Send</Button>
+                <Button disabled={isPending || activeConversation.status === "blocked" || (!body && !attachmentUrl)}><Send className="mr-2 h-4 w-4" />Send</Button>
               </div>
             </form>
           </CardContent>
@@ -258,7 +293,8 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
               {latestDeposit && <div className="rounded-xl bg-secondary p-3 text-sm">Deposit: {money(latestDeposit.amount, latestDeposit.currency)} · {latestDeposit.status}</div>}
               <Input value={depositAmount} onChange={(event) => setDepositAmount(event.target.value)} type="number" min="1" step="0.01" placeholder="Reservation deposit" />
               <Button disabled={!depositAmount || isPending} onClick={() => runAction(() => createReservationDepositAction({ conversationId: activeConversation.id, offerId: pendingOffer?.id, amount: depositAmount }), () => setDepositAmount(""))}><Bell className="mr-2 h-4 w-4" />Request deposit</Button>
-              <Textarea value={reportReason} onChange={(event) => setReportReason(event.target.value)} placeholder="Report details for the latest message" />
+              <Textarea value={reportReason} onChange={(event) => setReportReason(event.target.value)} placeholder="Report details for this message or user" />
+              <Button variant="outline" disabled={!otherParticipantId || isPending} onClick={() => otherParticipantId && runAction(() => reportUserAction({ conversationId: activeConversation.id, reportedUserId: otherParticipantId, reason: reportReason || "Unsafe or suspicious user" }), () => setReportReason(""))}><Flag className="mr-2 h-4 w-4" />Report user</Button>
               <p className="text-xs text-muted-foreground">Anti-ghosting penalties are created when pickup no-shows or forfeited deposits are reviewed by trust & safety.</p>
             </CardContent>
           </Card>

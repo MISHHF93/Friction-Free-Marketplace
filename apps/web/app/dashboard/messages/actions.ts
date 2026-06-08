@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { getConversationSummaryById } from "@/lib/messaging/queries";
 
 const uuidSchema = z.string().uuid();
 
@@ -23,6 +24,12 @@ async function getConversation(supabase: ReturnType<typeof createClient>, conver
   return data as { id: string; listing_id: string | null; buyer_id: string; seller_id: string; status: string };
 }
 
+
+export async function getConversationSummaryAction(input: unknown) {
+  const payload = z.object({ conversationId: uuidSchema }).parse(input);
+  const { supabase } = await requireUser();
+  return getConversationSummaryById(supabase, payload.conversationId);
+}
 
 export async function createConversationAction(input: unknown) {
   const payload = z.object({ listingId: uuidSchema, openingMessage: z.string().trim().max(10000).optional() }).parse(input);
@@ -300,6 +307,22 @@ export async function reportMessageAction(input: unknown) {
   });
   if (error) throw error;
   await (supabase as any).from("messages").update({ reported_at: new Date().toISOString() }).eq("id", payload.messageId);
+  revalidatePath("/dashboard/messages");
+}
+
+
+export async function reportUserAction(input: unknown) {
+  const payload = z.object({ conversationId: uuidSchema, reportedUserId: uuidSchema, reason: z.string().min(3).max(1000) }).parse(input);
+  const { supabase, user } = await requireUser();
+  const { error } = await (supabase as any).from("reports").insert({
+    reporter_id: user.id,
+    reported_user_id: payload.reportedUserId,
+    reason: "user",
+    description: payload.reason,
+    conversation_id: payload.conversationId,
+    metadata: { source: "dashboard_messages", target: "conversation_participant" }
+  });
+  if (error) throw error;
   revalidatePath("/dashboard/messages");
 }
 
