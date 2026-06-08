@@ -57,6 +57,19 @@ export type MessageReadReceipt = {
   read_at: string;
 };
 
+export type OfferStatusHistory = {
+  id: string;
+  offer_id: string;
+  conversation_id: string | null;
+  actor_id: string | null;
+  from_status: OfferStatus | null;
+  to_status: OfferStatus;
+  reason: string | null;
+  message: string | null;
+  metadata: Json;
+  created_at: string;
+};
+
 export type ConversationOffer = {
   id: string;
   conversation_id: string | null;
@@ -64,15 +77,19 @@ export type ConversationOffer = {
   buyer_id: string;
   seller_id: string;
   created_by_id: string | null;
+  responded_by_id: string | null;
   amount: number;
   currency: string;
   message: string | null;
   status: OfferStatus;
   parent_offer_id: string | null;
+  response_message: string | null;
   reservation_deposit_amount: number;
   expires_at: string | null;
   accepted_at: string | null;
   rejected_at: string | null;
+  withdrawn_at: string | null;
+  offer_status_history?: OfferStatusHistory[];
   created_at: string;
   updated_at: string;
 };

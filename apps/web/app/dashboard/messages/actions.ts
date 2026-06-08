@@ -179,61 +179,33 @@ export async function makeOfferAction(input: unknown) {
     expiresAt: z.string().datetime().optional().or(z.literal(""))
   }).parse(input);
 
-  const { supabase, user } = await requireUser();
-  const conversation = await getConversation(supabase, payload.conversationId);
-  const status = payload.parentOfferId ? "countered" : "pending";
-  const { data: listing } = await (supabase as any).from("listings").select("currency").eq("id", conversation.listing_id).maybeSingle();
-
-  const { data, error } = await (supabase as any)
-    .from("offers")
-    .insert({
-      conversation_id: conversation.id,
-      listing_id: conversation.listing_id,
-      buyer_id: conversation.buyer_id,
-      seller_id: conversation.seller_id,
-      created_by_id: user.id,
-      amount: payload.amount,
-      currency: listing?.currency ?? "USD",
-      message: payload.message,
-      status,
-      parent_offer_id: payload.parentOfferId,
-      reservation_deposit_amount: payload.depositAmount,
-      expires_at: payload.expiresAt || null
-    })
-    .select("*")
-    .single();
+  const { supabase } = await requireUser();
+  const { data, error } = await (supabase as any).rpc("create_negotiation_offer", {
+    p_conversation_id: payload.conversationId,
+    p_amount: payload.amount,
+    p_message: payload.message || null,
+    p_parent_offer_id: payload.parentOfferId || null,
+    p_reservation_deposit_amount: payload.depositAmount,
+    p_expires_at: payload.expiresAt || null
+  });
   if (error) throw error;
 
-  await (supabase as any).from("messages").insert({
-    conversation_id: conversation.id,
-    sender_id: user.id,
-    body: payload.parentOfferId ? `Counter offer: ${data.currency} ${data.amount}` : `Offer: ${data.currency} ${data.amount}`,
-    kind: "offer",
-    metadata: { offer_id: data.id, status: data.status }
-  });
-
   revalidatePath("/dashboard/messages");
+  revalidatePath("/dashboard/offers");
   return data;
 }
 
 export async function respondToOfferAction(input: unknown) {
   const payload = z.object({ offerId: uuidSchema, status: z.enum(["accepted", "declined", "withdrawn"]), message: z.string().max(1000).optional() }).parse(input);
-  const { supabase, user } = await requireUser();
-  const patch: Record<string, unknown> = { status: payload.status, responded_by_id: user.id, response_message: payload.message };
-  if (payload.status === "accepted") patch.accepted_at = new Date().toISOString();
-  if (payload.status === "declined") patch.rejected_at = new Date().toISOString();
-  if (payload.status === "withdrawn") patch.withdrawn_at = new Date().toISOString();
-
-  const { data, error } = await (supabase as any).from("offers").update(patch).eq("id", payload.offerId).select("*").single();
-  if (error) throw error;
-  await (supabase as any).from("messages").insert({
-    conversation_id: data.conversation_id,
-    sender_id: user.id,
-    body: `Offer ${payload.status}${payload.message ? `: ${payload.message}` : "."}`,
-    kind: "offer",
-    metadata: { offer_id: data.id, status: data.status }
+  const { supabase } = await requireUser();
+  const { data, error } = await (supabase as any).rpc("respond_to_negotiation_offer", {
+    p_offer_id: payload.offerId,
+    p_status: payload.status,
+    p_message: payload.message || null
   });
+  if (error) throw error;
   revalidatePath("/dashboard/messages");
+  revalidatePath("/dashboard/offers");
   return data;
 }
 

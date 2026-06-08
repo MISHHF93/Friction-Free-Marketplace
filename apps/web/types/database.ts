@@ -181,6 +181,17 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["offers"]["Row"]>;
         Relationships: [];
       };
+      offer_status_history: {
+        Row: {
+          id: string; offer_id: string; conversation_id: string | null; listing_id: string | null; actor_id: string | null;
+          from_status: "pending" | "accepted" | "countered" | "declined" | "expired" | "withdrawn" | null;
+          to_status: "pending" | "accepted" | "countered" | "declined" | "expired" | "withdrawn";
+          reason: string | null; message: string | null; metadata: Json; created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["offer_status_history"]["Row"]> & { offer_id: string; to_status: "pending" | "accepted" | "countered" | "declined" | "expired" | "withdrawn" };
+        Update: Partial<Database["public"]["Tables"]["offer_status_history"]["Row"]>;
+        Relationships: [];
+      };
       pickup_schedules: {
         Row: {
           id: string; conversation_id: string; listing_id: string | null; offer_id: string | null; buyer_id: string; seller_id: string; proposed_by_id: string;
@@ -313,7 +324,17 @@ export type Database = {
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      create_negotiation_offer: {
+        Args: { p_conversation_id: string; p_amount: number; p_message?: string | null; p_parent_offer_id?: string | null; p_reservation_deposit_amount?: number; p_expires_at?: string | null };
+        Returns: Database["public"]["Tables"]["offers"]["Row"];
+      };
+      respond_to_negotiation_offer: {
+        Args: { p_offer_id: string; p_status: Database["public"]["Enums"]["offer_status"]; p_message?: string | null };
+        Returns: Database["public"]["Tables"]["offers"]["Row"];
+      };
+      expire_due_offers: { Args: Record<string, never>; Returns: number };
+    };
     Enums: {
       user_role: "buyer" | "seller" | "admin" | "super_admin";
       listing_status: "draft" | "active" | "reserved" | "sold" | "paused" | "expired" | "removed";
