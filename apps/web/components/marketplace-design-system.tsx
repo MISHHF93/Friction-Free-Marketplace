@@ -31,6 +31,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { RemoteImage } from "@/components/ui/remote-image";
 
 export type AppNavLink = {
   href: string;
@@ -227,7 +228,7 @@ export function ListingCard({ listing, ctaLabel = "View details", className, ...
         <Link href={href} className="block" aria-label={`${ctaLabel} for ${listing.title}`}>
           <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-secondary to-accent">
             {listing.imageUrl ? (
-              <img
+              <RemoteImage
                 src={listing.imageUrl}
                 alt={listing.imageAlt ?? listing.title}
                 className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
@@ -356,7 +357,7 @@ export function UserAvatar({ name, imageUrl, size = "md", status, className, ...
       role="img"
       {...props}
     >
-      {imageUrl ? <img src={imageUrl} alt="" className="h-full w-full rounded-full object-cover" /> : initials}
+      {imageUrl ? <RemoteImage src={imageUrl} alt="" className="h-full w-full rounded-full object-cover" /> : initials}
       {status ? (
         <span
           className={cn(
