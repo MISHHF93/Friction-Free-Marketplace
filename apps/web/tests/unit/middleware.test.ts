@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { getSafeRedirectPath, isAuthRoute, isProtectedRoute, middleware } from "../../middleware";
+import { config, getSafeRedirectPath, isAuthRoute, isProtectedRoute, middleware } from "../../middleware";
 
 const supabaseUrl = "https://example-project.supabase.co";
 const anonKey = "test-anon-key";
@@ -31,6 +31,13 @@ describe("middleware route helpers", () => {
     expect(getSafeRedirectPath("//evil.example/phish")).toBe("/dashboard");
     expect(getSafeRedirectPath("https://evil.example/phish")).toBe("/dashboard");
     expect(getSafeRedirectPath(null, "/fallback")).toBe("/fallback");
+  });
+
+  it("does not invoke middleware for API routes", () => {
+    const matcher = new RegExp(`^${config.matcher[0]}$`);
+
+    expect(matcher.test("/dashboard")).toBe(true);
+    expect(matcher.test("/api/admin/users")).toBe(false);
   });
 });
 

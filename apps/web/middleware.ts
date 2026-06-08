@@ -165,13 +165,13 @@ export async function middleware(request: NextRequest) {
   const needsAuthState = isProtectedRoute(pathname) || isAuthRoute(pathname);
 
   if (!needsAuthState) {
-    return NextResponse.next({ request });
+    return NextResponse.next();
   }
 
   const env = getPublicMiddlewareEnv();
 
   if (!env) {
-    return isProtectedRoute(pathname) ? NextResponse.redirect(getLoginRedirectUrl(request)) : NextResponse.next({ request });
+    return isProtectedRoute(pathname) ? NextResponse.redirect(getLoginRedirectUrl(request)) : NextResponse.next();
   }
 
   const { user, accessToken } = await getAuthenticatedUser(request, env);
@@ -195,9 +195,9 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next({ request });
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]
 };
