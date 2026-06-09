@@ -86,23 +86,31 @@ function decodeSessionCookie(value: string) {
   return decodeBase64Url(value.slice(BASE64_PREFIX.length));
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function getNestedAccessToken(value: unknown) {
+  if (!isRecord(value)) return null;
+
+  const accessToken = value.access_token;
+  return typeof accessToken === "string" && accessToken ? accessToken : null;
+}
+
 function getAccessTokenFromCookie(request: NextRequest, env: PublicMiddlewareEnv) {
   const cookieValue = getChunkedCookieValue(request, `sb-${getSupabaseProjectRef(env)}-auth-token`);
   if (!cookieValue) return null;
 
   try {
-    const session = JSON.parse(decodeSessionCookie(cookieValue)) as {
-      access_token?: unknown;
-      currentSession?: { access_token?: unknown };
-      session?: { access_token?: unknown };
-    } | unknown[];
+    const session = JSON.parse(decodeSessionCookie(cookieValue)) as unknown;
 
     if (Array.isArray(session)) {
-      return typeof session[0] === "string" ? session[0] : null;
+      return typeof session[0] === "string" && session[0] ? session[0] : null;
     }
 
-    const token = session.access_token ?? session.currentSession?.access_token ?? session.session?.access_token;
-    return typeof token === "string" && token ? token : null;
+    if (!isRecord(session)) return null;
+
+    return getNestedAccessToken(session) ?? getNestedAccessToken(session.currentSession) ?? getNestedAccessToken(session.session);
   } catch {
     return null;
   }
