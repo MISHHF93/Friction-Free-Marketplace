@@ -102,6 +102,9 @@ export type DiscoverySearchParams = {
   maxPrice?: number;
   condition?: string[];
   minSellerTrust?: number;
+  verifiedOnly?: boolean;
+  paymentProtection?: boolean;
+  fulfillment?: "pickup" | "delivery" | "any";
   sort?: DiscoverySort;
   page?: number;
   limit?: number;

@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { evaluateMessageFraud, evaluateMessageReportRate } from "@/lib/fraud/detection";
 import { getConversationSummaryById } from "@/lib/messaging/queries";
+import { enqueueTemplateNotification } from "@/lib/notifications/service";
 
 const uuidSchema = z.string().uuid();
 
@@ -82,11 +84,24 @@ export async function createConversationAction(input: unknown) {
   if (!conversation) throw new Error("Unable to open conversation.");
 
   if (payload.openingMessage) {
-    await (supabase as any).from("messages").insert({
+    const { data: openingMessage, error: openingMessageError } = await (supabase as any).from("messages").insert({
       conversation_id: conversation.id,
       sender_id: user.id,
       body: payload.openingMessage,
       kind: "text"
+    }).select("id").single();
+    if (openingMessageError) throw openingMessageError;
+    if (openingMessage?.id) await evaluateMessageFraud(openingMessage.id);
+    await enqueueTemplateNotification({
+      userId: listing.seller_id,
+      template: "message_received",
+      input: {
+        actorName: user.email,
+        listingTitle: listing.title,
+        messagePreview: payload.openingMessage,
+        actionUrl: `/dashboard/messages?conversation=${conversation.id}`
+      },
+      payload: { conversation_id: conversation.id, listing_id: listing.id, message_id: openingMessage?.id ?? null }
     });
   }
 
@@ -111,6 +126,8 @@ export async function sendMessageAction(input: unknown) {
   if (!payload.body && payload.attachments.length === 0) throw new Error("Write a message or attach a file.");
 
   const { supabase, user } = await requireUser();
+  const conversation = await getConversation(supabase, payload.conversationId);
+  if (![conversation.buyer_id, conversation.seller_id].includes(user.id)) throw new Error("Conversation not found.");
   const { data: message, error } = await (supabase as any)
     .from("messages")
     .insert({
@@ -124,6 +141,18 @@ export async function sendMessageAction(input: unknown) {
     .select("*")
     .single();
   if (error) throw error;
+  await evaluateMessageFraud(message.id);
+  await enqueueTemplateNotification({
+    userId: user.id === conversation.buyer_id ? conversation.seller_id : conversation.buyer_id,
+    template: "message_received",
+    input: {
+      actorName: user.email,
+      listingTitle: "a marketplace conversation",
+      messagePreview: payload.body || "Attachment",
+      actionUrl: `/dashboard/messages?conversation=${conversation.id}`
+    },
+    payload: { conversation_id: conversation.id, listing_id: conversation.listing_id, message_id: message.id }
+  });
 
   if (payload.attachments.length > 0) {
     const { error: attachmentError } = await (supabase as any).from("message_attachments").insert(
@@ -189,6 +218,17 @@ export async function makeOfferAction(input: unknown) {
     p_expires_at: payload.expiresAt || null
   });
   if (error) throw error;
+  await enqueueTemplateNotification({
+    userId: data.seller_id,
+    template: data.parent_offer_id ? "offer_countered" : "offer_received",
+    input: {
+      amount: data.amount,
+      currency: data.currency,
+      actionUrl: `/dashboard/messages?conversation=${data.conversation_id ?? ""}`
+    },
+    payload: { offer_id: data.id, conversation_id: data.conversation_id, listing_id: data.listing_id },
+    channels: ["email"]
+  });
 
   revalidatePath("/dashboard/messages");
   revalidatePath("/dashboard/offers");
@@ -204,6 +244,18 @@ export async function respondToOfferAction(input: unknown) {
     p_message: payload.message || null
   });
   if (error) throw error;
+  const recipientId = data.responded_by_id === data.buyer_id ? data.seller_id : data.buyer_id;
+  await enqueueTemplateNotification({
+    userId: recipientId,
+    template: data.status === "accepted" ? "offer_accepted" : data.status === "declined" ? "offer_declined" : "offer_countered",
+    input: {
+      amount: data.amount,
+      currency: data.currency,
+      actionUrl: `/dashboard/messages?conversation=${data.conversation_id ?? ""}`
+    },
+    payload: { offer_id: data.id, conversation_id: data.conversation_id, listing_id: data.listing_id },
+    channels: ["email"]
+  });
   revalidatePath("/dashboard/messages");
   revalidatePath("/dashboard/offers");
   return data;
@@ -279,6 +331,7 @@ export async function reportMessageAction(input: unknown) {
   });
   if (error) throw error;
   await (supabase as any).from("messages").update({ reported_at: new Date().toISOString() }).eq("id", payload.messageId);
+  if (message?.sender_id) await evaluateMessageReportRate(message.sender_id);
   revalidatePath("/dashboard/messages");
 }
 

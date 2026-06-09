@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { logoutAction } from "@/app/auth/actions";
 import { AccountSettingsForm } from "@/components/forms/account-settings-form";
+import { NotificationPreferencesForm } from "@/components/notifications/notification-preferences-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { getNotificationPreferences } from "@/lib/notifications/service";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AccountSettingsPage() {
@@ -21,6 +23,7 @@ export default async function AccountSettingsPage() {
     .select("display_name,username,bio,location_label,website_url")
     .eq("user_id", user.id)
     .maybeSingle();
+  const notificationPreferences = await getNotificationPreferences(user.id);
 
   return (
     <section className="mx-auto grid max-w-4xl gap-6 px-4 py-10 sm:px-6 lg:px-8">
@@ -32,15 +35,18 @@ export default async function AccountSettingsPage() {
         </p>
       </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile details</CardTitle>
-            <CardDescription>These details power your buyer, seller, and messaging experiences.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AccountSettingsForm email={user.email ?? ""} profile={profile ?? null} />
-          </CardContent>
-        </Card>
+        <div className="grid gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile details</CardTitle>
+              <CardDescription>These details power your buyer, seller, and messaging experiences.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AccountSettingsForm email={user.email ?? ""} profile={profile ?? null} />
+            </CardContent>
+          </Card>
+          <NotificationPreferencesForm preferences={notificationPreferences} />
+        </div>
         <Card className="h-fit">
           <CardHeader>
             <CardTitle>Session</CardTitle>

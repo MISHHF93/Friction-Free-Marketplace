@@ -6,20 +6,21 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/payments/auth";
 import { recordTransactionEvent } from "@/lib/payments/audit";
 import { calculatePlatformFeeCents, centsToDollars, dollarsToCents, normalizeCurrency } from "@/lib/payments/money";
+import { enqueueTemplateNotification } from "@/lib/notifications/service";
 import { getStripe } from "@/lib/stripe/server";
 
 const paymentIntentRequestSchema = z.object({
   listingId: z.string().uuid(),
-  reservationDepositCents: z.number().int().min(0).optional(),
-  shippingCents: z.number().int().min(0).default(0),
-  taxCents: z.number().int().min(0).default(0)
+  reservationDepositCents: z.number().int().min(0).max(999_999_99).optional(),
+  shippingCents: z.number().int().min(0).max(25_000_00).default(0),
+  taxCents: z.number().int().min(0).max(25_000_00).default(0)
 });
 
 export async function POST(request: Request) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
 
-  const payload = paymentIntentRequestSchema.safeParse(await request.json());
+  const payload = paymentIntentRequestSchema.safeParse(await request.json().catch(() => null));
   if (!payload.success) return NextResponse.json({ error: payload.error.flatten() }, { status: 400 });
 
   const supabase = createAdminClient() as any;
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
     .eq("seller_id", listing.seller_id)
     .maybeSingle();
 
-  if (!sellerAccount?.stripe_account_id || sellerAccount.status !== "active") {
+  if (!sellerAccount?.stripe_account_id || sellerAccount.status !== "active" || !sellerAccount.charges_enabled) {
     return NextResponse.json({ error: "Seller has not completed Stripe Connect onboarding." }, { status: 409 });
   }
 
@@ -114,6 +115,23 @@ export async function POST(request: Request) {
     currency,
     message: "Manual-capture PaymentIntent created. Funds will be authorized before capture."
   });
+
+  await Promise.all([
+    enqueueTemplateNotification({
+      userId: auth.user.id,
+      template: "payment_authorized",
+      input: { listingTitle: listing.title, amount: centsToDollars(totalCents), currency: currency.toUpperCase(), actionUrl: "/dashboard/purchases" },
+      payload: { transaction_id: transaction.id, listing_id: listing.id, payment_intent_id: paymentIntent.id },
+      supabase
+    }),
+    enqueueTemplateNotification({
+      userId: listing.seller_id,
+      template: "payment_authorized",
+      input: { listingTitle: listing.title, amount: centsToDollars(totalCents), currency: currency.toUpperCase(), actionUrl: "/dashboard/sales" },
+      payload: { transaction_id: transaction.id, listing_id: listing.id, payment_intent_id: paymentIntent.id },
+      supabase
+    })
+  ]);
 
   return NextResponse.json({
     clientSecret: paymentIntent.client_secret,

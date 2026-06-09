@@ -11,7 +11,7 @@ export function SaveSearchForm({ params }: { params: DiscoverySearchParams }) {
     <form action={createSavedSearchFormAction} className="space-y-3">
       <Input name="name" defaultValue={defaultName} aria-label="Saved search name" />
       {Object.entries(params).map(([key, value]) => {
-        if (value === undefined || value === "" || key === "limit") return null;
+        if (value === undefined || value === "" || value === false || key === "limit" || key === "page") return null;
         return <input key={key} type="hidden" name={key} value={Array.isArray(value) ? value.join(",") : String(value)} />;
       })}
       <label className="grid gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">

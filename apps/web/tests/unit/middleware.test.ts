@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
-import { config, getSafeRedirectPath, isAuthRoute, isProtectedRoute, middleware } from "../../middleware";
+import { config, getSafeRedirectPath, isAuthRoute, isProtectedRoute, proxy } from "../../proxy";
 
 const supabaseUrl = "https://example-project.supabase.co";
 const anonKey = "test-anon-key";
@@ -53,7 +53,7 @@ describe("middleware", () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
-    const response = await middleware(createRequest("/browse?q=camera"));
+    const response = await proxy(createRequest("/browse?q=camera"));
 
     expect(response.headers.get("location")).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -66,7 +66,7 @@ describe("middleware", () => {
     vi.stubGlobal("fetch", fetchMock);
     const encodedNullSession = btoa("null");
 
-    const response = await middleware(createRequest("/dashboard", `sb-example-project-auth-token=base64-${encodedNullSession}`));
+    const response = await proxy(createRequest("/dashboard", `sb-example-project-auth-token=base64-${encodedNullSession}`));
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(response.headers.get("location")).toBe("https://marketplace.example/login?next=%2Fdashboard");
@@ -79,10 +79,10 @@ describe("middleware", () => {
     const consoleErrorMock = vi.spyOn(console, "error").mockImplementation(() => undefined);
     vi.stubGlobal("fetch", fetchMock);
 
-    const response = await middleware(createRequest("/dashboard?tab=listings", createSupabaseAuthCookie("access-token")));
+    const response = await proxy(createRequest("/dashboard?tab=listings", createSupabaseAuthCookie("access-token")));
 
     expect(fetchMock).toHaveBeenCalledWith(`${supabaseUrl}/auth/v1/user`, expect.any(Object));
-    expect(consoleErrorMock).toHaveBeenCalledWith("Middleware Supabase auth lookup failed", expect.any(Error));
+    expect(consoleErrorMock).toHaveBeenCalledWith("Proxy Supabase auth lookup failed", expect.any(Error));
     expect(response.headers.get("location")).toBe("https://marketplace.example/login?next=%2Fdashboard%3Ftab%3Dlistings");
   });
 });

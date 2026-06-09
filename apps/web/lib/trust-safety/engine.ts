@@ -101,7 +101,11 @@ export const scoringFormulas = {
   scamMessages:
     "message_risk = weighted keyword/domain/contact/payment patterns with action thresholds: warn >=35, redact >=55, hold >=70, block >=85.",
   duplicateImages:
-    "duplicate_image_risk = image_similarity + cross-seller reuse bonus + recently published match bonus. High risk starts at 75; critical at 92."
+    "duplicate_image_risk = image_similarity + cross-seller reuse bonus + recently published match bonus. High risk starts at 75; critical at 92.",
+  listingFraudV1:
+    "listing_fraud_v1 = strongest rule score + 35% of supporting rule scores, clamped to 100. Rules: suspicious low price, duplicate title, duplicate image hash, new account expensive item, listing velocity, and category mismatch. Hold >=70; block publish >=85.",
+  messageFraudV1:
+    "message_fraud_v1 creates signals for repeated external payment language and high message report rate. Repeated off-platform payment detections hold messages >=70 and remove/block >=85."
 } as const;
 
 export const defaultTrustBadges: TrustBadgeDefinition[] = [

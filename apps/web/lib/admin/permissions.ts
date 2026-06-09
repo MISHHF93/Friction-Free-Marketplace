@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
@@ -37,12 +38,12 @@ export const permissionLabels: Record<AdminPermission, string> = {
   "users.write": "Edit users",
   "users.ban": "Ban or suspend users",
   "listings.moderate": "Moderate listings",
-  "fraud.review": "Review fraud alerts",
+  "fraud.review": "Review fraud signals",
   "reports.review": "Resolve reports",
   "disputes.decide": "Decide disputes",
   "transactions.monitor": "Monitor transactions",
   "payments.monitor": "Monitor payments and payouts",
-  "ai.monitor": "Monitor AI tasks",
+  "ai.monitor": "Monitor AI usage logs",
   "analytics.search": "View search analytics",
   "analytics.revenue": "View revenue analytics",
   "trust.override": "Override trust scores",
@@ -51,6 +52,19 @@ export const permissionLabels: Record<AdminPermission, string> = {
 };
 
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
+type AdminAuthorizationSuccess = {
+  authorized: true;
+  supabase: ReturnType<typeof createClient>;
+  authUser: NonNullable<Awaited<ReturnType<ReturnType<typeof createClient>["auth"]["getUser"]>>["data"]["user"]>;
+  adminUser: Pick<UserRow, "id" | "email" | "role" | "status" | "metadata">;
+  role: AdminRole;
+};
+type AdminAuthorizationFailure = {
+  authorized: false;
+  status: 401 | 403;
+  message: string;
+  permission: AdminPermission;
+};
 
 export function getAdminRole(user: Pick<UserRow, "role" | "metadata"> | null | undefined): AdminRole | null {
   if (!user || (user.role !== "admin" && user.role !== "super_admin")) return null;
@@ -65,11 +79,11 @@ export function can(role: AdminRole | null, permission: AdminPermission) {
   return !!role && rolePermissions[role].includes(permission);
 }
 
-export async function requireAdminPermission(permission: AdminPermission = "admin.access") {
+export async function getAdminAuthorization(permission: AdminPermission = "admin.access"): Promise<AdminAuthorizationSuccess | AdminAuthorizationFailure> {
   const supabase = createClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
   if (authError || !authData.user) {
-    return { error: NextResponse.json({ error: "Authentication required." }, { status: 401 }) } as const;
+    return { authorized: false, status: 401, message: "Authentication required.", permission };
   }
 
   const { data: user, error: userError } = await supabase
@@ -80,8 +94,34 @@ export async function requireAdminPermission(permission: AdminPermission = "admi
 
   const role = getAdminRole(user as Pick<UserRow, "role" | "metadata"> | null);
   if (userError || !user || user.status !== "active" || !can(role, permission)) {
-    return { error: NextResponse.json({ error: "Admin permission denied.", permission }, { status: 403 }) } as const;
+    return { authorized: false, status: 403, message: "Admin permission denied.", permission };
   }
 
-  return { supabase, authUser: authData.user, adminUser: user, role } as const;
+  return { authorized: true, supabase, authUser: authData.user, adminUser: user, role } as AdminAuthorizationSuccess;
+}
+
+export async function requireAdminPermission(permission: AdminPermission = "admin.access") {
+  const auth = await getAdminAuthorization(permission);
+  if (!auth.authorized) {
+    return { error: NextResponse.json({ error: auth.message, permission }, { status: auth.status }) } as const;
+  }
+
+  return auth;
+}
+
+export async function requireAdminPagePermission(
+  permission: AdminPermission = "admin.access",
+  options: { loginNext?: string; deniedPath?: string } = {}
+) {
+  const auth = await getAdminAuthorization(permission);
+  if (auth.authorized) return auth;
+
+  if (auth.status === 401) {
+    const next = encodeURIComponent(options.loginNext ?? "/admin");
+    redirect(`/login?next=${next}`);
+  }
+
+  const deniedPath = options.deniedPath ?? "/dashboard";
+  const separator = deniedPath.includes("?") ? "&" : "?";
+  redirect(`${deniedPath}${separator}adminDenied=1&permission=${encodeURIComponent(permission)}`);
 }

@@ -27,12 +27,12 @@ export function TrustBadgeStrip({ badges, className }: { badges: TrustBadgeDefin
 
   return (
     <div className={cn("flex flex-wrap gap-2", className)}>
-      {badges.map((badge) => {
+      {badges.map((badge, index) => {
         const Icon = icons[badge.icon] ?? BadgeCheck;
         return (
           <span
             className={cn("inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold", levelClasses[badge.level])}
-            key={badge.code}
+            key={`${badge.code}-${index}`}
             title={badge.description}
           >
             <Icon className="h-3.5 w-3.5" />

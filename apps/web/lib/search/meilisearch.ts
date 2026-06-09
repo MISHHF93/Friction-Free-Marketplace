@@ -79,6 +79,10 @@ export function buildMeiliSearchPayload(params: DiscoverySearchParams) {
     params.condition?.length ? `condition IN [${params.condition.map(quote).join(", ")}]` : undefined,
     locationFilter(params.location),
     params.minSellerTrust !== undefined ? `seller_trust_score >= ${params.minSellerTrust}` : undefined,
+    params.verifiedOnly ? "seller_trust_score >= 80" : undefined,
+    params.paymentProtection ? "seller_trust_score >= 80" : undefined,
+    params.fulfillment === "pickup" ? "pickup_available = true" : undefined,
+    params.fulfillment === "delivery" ? "ships_to EXISTS" : undefined,
     params.lat !== undefined && params.lng !== undefined && params.radiusMiles !== undefined
       ? `_geoRadius(${params.lat}, ${params.lng}, ${Math.round(params.radiusMiles * 1609.344)})`
       : undefined

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Json } from "@/types/database";
+import { evaluateListingFraud } from "@/lib/fraud/detection";
 import {
   listingFormSchema,
   listingPatchSchema,
@@ -42,6 +43,11 @@ async function syncListingChange(listingId: string, remove = false) {
     });
     return { skipped: true, reason: "sync_failed" };
   }
+}
+
+async function applyFraudDetection(listingId: string) {
+  const decision = await evaluateListingFraud(listingId);
+  return decision?.blocked ?? false;
 }
 
 function metadataFromInput(input: ListingFormInput) {
@@ -120,8 +126,17 @@ export async function createListing(
     if (imageError) throw imageError;
   }
 
-  await syncListingChange(listing.id);
-  return listing;
+  const blocked = await applyFraudDetection(listing.id);
+  await syncListingChange(listing.id, blocked);
+
+  if (!blocked) return listing;
+
+  const { data: blockedListing } = await supabase
+    .from("listings")
+    .select("*")
+    .eq("id", listing.id)
+    .single();
+  return blockedListing ?? listing;
 }
 
 export async function updateListing(
@@ -262,8 +277,17 @@ export async function updateListing(
     }
   }
 
-  await syncListingChange(listing.id);
-  return listing;
+  const blocked = await applyFraudDetection(listing.id);
+  await syncListingChange(listing.id, blocked || listing.status !== "active");
+
+  if (!blocked) return listing;
+
+  const { data: blockedListing } = await supabase
+    .from("listings")
+    .select("*")
+    .eq("id", listing.id)
+    .single();
+  return blockedListing ?? listing;
 }
 
 export async function setListingStatus(
@@ -301,8 +325,17 @@ export async function setListingStatus(
     .single();
 
   if (error) throw error;
-  await syncListingChange(listing.id, status !== "active");
-  return listing;
+  const blocked = status === "active" ? await applyFraudDetection(listing.id) : false;
+  await syncListingChange(listing.id, blocked || status !== "active");
+
+  if (!blocked) return listing;
+
+  const { data: blockedListing } = await supabase
+    .from("listings")
+    .select("*")
+    .eq("id", listing.id)
+    .single();
+  return blockedListing ?? listing;
 }
 
 export async function deleteListing(

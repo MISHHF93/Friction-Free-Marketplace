@@ -1,5 +1,5 @@
-import { PublicPageLoading } from "@/components/public-page-states";
+import { DiscoveryLoadingSkeleton } from "@/components/search/discovery-loading";
 
 export default function Loading() {
-  return <PublicPageLoading label="Loading public marketplace page" />;
+  return <DiscoveryLoadingSkeleton />;
 }

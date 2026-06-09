@@ -10,20 +10,20 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Trust and safety | Friction-Free Marketplace",
-  description: "Learn how Friction-Free Marketplace protects buyers and sellers with identity signals, moderation, escrow-ready payments, reports, and disputes.",
+  description: "Learn how Friction-Free Marketplace helps protect buyers and sellers with identity signals, moderation, protected payments, reports, and disputes.",
   alternates: { canonical: "/trust-and-safety" },
   openGraph: {
     title: "Trust and safety on Friction-Free Marketplace",
-    description: "Marketplace safety policies, buyer protection, seller verification, reporting, and dispute workflows.",
+    description: "Marketplace safety policies, buyer protection, seller verification, reporting, and dispute support.",
     url: "/trust-and-safety"
   }
 };
 
 const protections = [
-  { icon: ShieldCheck, title: "Verified identity signals", text: "Seller profiles surface trust scores, completed transactions, fraud-risk levels, and verification badges." },
-  { icon: LockKeyhole, title: "Protected payment workflows", text: "Escrow-ready checkout coordinates authorization, capture, release, refunds, and disputes from server-side payment events." },
-  { icon: MessageSquareWarning, title: "Moderation and reporting", text: "Reports, listing moderation, media review, and admin queues help remove unsafe content before it spreads." },
-  { icon: FileText, title: "Auditability", text: "Admin actions, risk overrides, payment changes, and AI decisions are designed to leave operational audit trails." }
+  { icon: ShieldCheck, title: "Seller signals", text: "Seller profiles show trust scores, completed transactions, risk levels, and verification badges." },
+  { icon: LockKeyhole, title: "Protected payments", text: "Eligible checkout keeps payment status, release, refunds, and disputes connected to the order." },
+  { icon: MessageSquareWarning, title: "Reporting and review", text: "Reports, listing review, media checks, and admin queues help remove unsafe content." },
+  { icon: FileText, title: "Audit records", text: "Admin actions, risk changes, payment updates, and AI decisions are designed to leave a reviewable record." }
 ];
 
 const steps = ["Search listings with trust filters before contacting a seller.", "Keep conversations and offers in platform messaging.", "Use protected checkout for eligible items instead of off-platform payment.", "Report suspicious listings, messages, seller requests, or delivery problems quickly."];
@@ -37,14 +37,14 @@ export default async function TrustAndSafetyPage() {
         <Badge>Trust center · {stats.source}</Badge>
         <div className="mt-5 grid gap-8 lg:grid-cols-[1fr_360px] lg:items-end">
           <div>
-            <h1 className="max-w-4xl text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">Marketplace protection designed around safer decisions.</h1>
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-muted-foreground">Trust and safety is built into discovery, listing detail, seller profiles, checkout, messaging, and admin workflows so buyers and sellers can act with clearer signals.</p>
+            <h1 className="max-w-4xl text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">Marketplace protection for safer decisions.</h1>
+            <p className="mt-5 max-w-3xl text-lg leading-8 text-muted-foreground">Trust and safety is built into search, listing details, seller profiles, checkout, messaging, and admin review so buyers and sellers can act with clearer information.</p>
           </div>
           <Card className="bg-primary text-primary-foreground">
-            <CardHeader><CardTitle>Live safety pulse</CardTitle><CardDescription className="text-primary-foreground/75">Aggregated from marketplace data where configured.</CardDescription></CardHeader>
+            <CardHeader><CardTitle>Safety snapshot</CardTitle><CardDescription className="text-primary-foreground/75">Aggregated from marketplace data when available.</CardDescription></CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
               <Metric label="Active listings" value={stats.activeListings.toLocaleString()} />
-              <Metric label="Trusted sellers" value={stats.trustedSellers.toLocaleString()} />
+              <Metric label="Checked sellers" value={stats.trustedSellers.toLocaleString()} />
               <Metric label="Transactions" value={stats.completedTransactions.toLocaleString()} />
               <Metric label="Low risk" value={`${stats.lowRiskRate}%`} />
             </CardContent>

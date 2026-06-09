@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import {
-  useMemo,
   useRef,
   useState,
   useTransition,
@@ -11,7 +10,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowDown, ArrowUp, Sparkles, UploadCloud, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import {
   changeListingStatusAction,
@@ -305,10 +304,9 @@ export function ListingForm({
     register,
     handleSubmit,
     setValue,
-    watch,
     formState: { errors },
   } = form;
-  const watched = watch();
+  const watched = useWatch({ control: form.control }) as FormState;
   const images = watched.images ?? [];
   const currentStatus = (listing?.status ?? "draft") as ListingStatus;
   const categoryOptions = categories?.length
@@ -321,14 +319,9 @@ export function ListingForm({
           .join(" "),
       }));
 
-  const priceSuggestion = useMemo(() => {
-    if (
-      watched.ai?.priceMin === undefined ||
-      watched.ai?.priceMax === undefined
-    )
-      return null;
-    return `$${watched.ai.priceMin.toLocaleString()} - $${watched.ai.priceMax.toLocaleString()}`;
-  }, [watched.ai?.priceMax, watched.ai?.priceMin]);
+  const priceSuggestion = watched.ai?.priceMin === undefined || watched.ai?.priceMax === undefined
+    ? null
+    : `$${watched.ai.priceMin.toLocaleString()} - $${watched.ai.priceMax.toLocaleString()}`;
 
   function updateImages(nextImages: UploadedImage[]) {
     setValue(
@@ -393,7 +386,7 @@ export function ListingForm({
     });
     setBusy(null);
     if (!result.ok) {
-      setError(result.error || "AI generation failed.");
+      setError(result.error || "The assistant could not create a draft. Please try again.");
       return;
     }
 
@@ -564,7 +557,7 @@ export function ListingForm({
 
   return (
     <form
-      className="mx-auto grid max-w-7xl gap-6 px-4 py-10 lg:grid-cols-[1fr_360px]"
+      className="app-container-wide grid gap-5 py-6 sm:py-8 xl:grid-cols-[minmax(0,1fr)_22rem]"
       onSubmit={(event) => {
         event.preventDefault();
         submitListing(false);
@@ -572,8 +565,8 @@ export function ListingForm({
     >
       <div className="space-y-6">
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
               <div>
                 <CardTitle>
                   {listing ? "Edit listing" : "Create a listing"}
@@ -586,7 +579,7 @@ export function ListingForm({
               <Badge>{currentStatus}</Badge>
             </div>
           </CardHeader>
-          <CardContent className="grid gap-5">
+          <CardContent className="grid gap-5 p-4 pt-0 sm:p-6 sm:pt-0">
             {error && (
               <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
                 {error}
@@ -647,7 +640,7 @@ export function ListingForm({
                 {helperText(errors.condition?.message)}
               </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
               <div className="grid gap-2">
                 <Label htmlFor="priceAmount">Price</Label>
                 <Input
@@ -696,10 +689,10 @@ export function ListingForm({
           <CardHeader>
             <CardTitle>Photos and AI generation</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
             <Label
               htmlFor="photos"
-              className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border p-8 text-center"
+              className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-border p-5 text-center sm:p-8"
             >
               <UploadCloud className="mb-3 h-8 w-8 text-primary" />
               <span className="font-semibold">
@@ -719,7 +712,7 @@ export function ListingForm({
               />
             </Label>
             {images.length > 0 && (
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
                 {images.map((image, index) => (
                   <div
                     key={`${image.storagePath}-${index}`}
@@ -833,6 +826,8 @@ export function ListingForm({
               variant="secondary"
               onClick={generateWithAi}
               disabled={disabled}
+              isLoading={busy === "Generating AI listing"}
+              loadingText="Generating AI listing..."
             >
               <Sparkles className="h-4 w-4" /> Generate title, description,
               category, condition, price range, SEO tags, and fraud risk
@@ -844,8 +839,8 @@ export function ListingForm({
           <CardHeader>
             <CardTitle>Location and fulfillment</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-5">
-            <div className="grid gap-4 md:grid-cols-3">
+          <CardContent className="grid gap-5 p-4 pt-0 sm:p-6 sm:pt-0">
+            <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
               <div className="grid gap-2">
                 <Label htmlFor="locationCity">City</Label>
                 <Input id="locationCity" {...register("locationCity")} />
@@ -875,7 +870,7 @@ export function ListingForm({
             </div>
             <div className="grid gap-3">
               <Label>Shipping / pickup options</Label>
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
                 {FULFILLMENT_OPTIONS.map((option) => (
                   <label
                     key={option}
@@ -905,12 +900,12 @@ export function ListingForm({
         </Card>
       </div>
 
-      <aside className="space-y-6 lg:sticky lg:top-24 lg:h-fit">
+      <aside className="space-y-5 xl:sticky xl:top-24 xl:h-fit">
         <Card>
           <CardHeader>
             <CardTitle>Listing status management</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 p-4 pt-0 sm:p-6 sm:pt-0">
             <div className="flex flex-wrap gap-2">
               <Badge>{currentStatus}</Badge>
               <Badge>
@@ -924,6 +919,8 @@ export function ListingForm({
                   variant="secondary"
                   disabled={disabled}
                   onClick={() => changeStatus("draft")}
+                  isLoading={busy?.startsWith("Setting listing")}
+                  loadingText="Saving status..."
                 >
                   Save as draft
                 </Button>
@@ -931,6 +928,8 @@ export function ListingForm({
                   type="button"
                   disabled={disabled}
                   onClick={() => changeStatus("active")}
+                  isLoading={busy?.startsWith("Setting listing")}
+                  loadingText="Publishing..."
                 >
                   Publish listing
                 </Button>
@@ -939,6 +938,8 @@ export function ListingForm({
                   variant="outline"
                   disabled={disabled}
                   onClick={() => changeStatus("paused")}
+                  isLoading={busy?.startsWith("Setting listing")}
+                  loadingText="Pausing..."
                 >
                   Pause listing
                 </Button>
@@ -947,6 +948,8 @@ export function ListingForm({
                   variant="outline"
                   disabled={disabled}
                   onClick={() => changeStatus("sold")}
+                  isLoading={busy?.startsWith("Setting listing")}
+                  loadingText="Updating..."
                 >
                   Mark as sold
                 </Button>
@@ -958,7 +961,7 @@ export function ListingForm({
           <CardHeader>
             <CardTitle>Moderation and SEO</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
             <div className="grid gap-2">
               <Label htmlFor="seoTags">SEO tags</Label>
               <Input
@@ -1072,13 +1075,15 @@ export function ListingForm({
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="space-y-3 p-5">
+          <CardContent className="space-y-3 p-4 sm:p-5">
             {busy && <p className="text-sm text-muted-foreground">{busy}...</p>}
             <Button
               type="submit"
               variant="secondary"
               className="w-full"
               disabled={disabled}
+              isLoading={busy === "Saving draft"}
+              loadingText="Saving draft..."
             >
               Save draft
             </Button>
@@ -1087,6 +1092,8 @@ export function ListingForm({
               className="w-full"
               disabled={disabled}
               onClick={() => submitListing(true)}
+              isLoading={busy === "Publishing listing"}
+              loadingText="Publishing listing..."
             >
               Publish listing
             </Button>
@@ -1097,6 +1104,8 @@ export function ListingForm({
                 className="w-full"
                 disabled={disabled}
                 onClick={removeListing}
+                isLoading={busy === "Deleting listing"}
+                loadingText="Deleting listing..."
               >
                 Delete listing
               </Button>

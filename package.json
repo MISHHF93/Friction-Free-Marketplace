@@ -5,12 +5,22 @@
     "apps/web"
   ],
   "scripts": {
+    "test": "npm run web:test",
+    "test:unit": "npm run web:test:unit",
+    "test:e2e": "npm run web:test:e2e",
     "web:dev": "npm --workspace apps/web run dev",
     "web:build": "npm --workspace apps/web run build",
     "web:lint": "npm --workspace apps/web run lint",
     "web:typecheck": "npm --workspace apps/web run typecheck",
     "web:test": "npm --workspace apps/web run test",
+    "web:test:unit": "npm --workspace apps/web run test:unit",
     "web:test:e2e": "npm --workspace apps/web run test:e2e",
     "web:search:index": "npm --workspace apps/web run search:index"
+  },
+  "overrides": {
+    "next": {
+      "postcss": "8.5.15"
+    },
+    "postcss": "8.5.15"
   }
 }

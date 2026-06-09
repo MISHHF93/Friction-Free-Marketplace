@@ -17,8 +17,9 @@ export async function generateStaticParams() {
   return getPublicSellerParams(50);
 }
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const { seller } = await getSellerProfile(params.id);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const { seller } = await getSellerProfile(id);
 
   if (!seller) {
     return { title: "Seller not found | Friction-Free Marketplace", description: "This seller profile is not available." };
@@ -29,18 +30,19 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   return {
     title: `${seller.displayName} seller profile | Friction-Free Marketplace`,
     description,
-    alternates: { canonical: `/sellers/${params.id}` },
+    alternates: { canonical: `/sellers/${id}` },
     openGraph: {
       title: `${seller.displayName} on Friction-Free Marketplace`,
       description,
-      url: `/sellers/${params.id}`,
+      url: `/sellers/${id}`,
       images: seller.avatarUrl ? [{ url: seller.avatarUrl, alt: seller.displayName }] : undefined
     }
   };
 }
 
-export default async function SellerProfilePage({ params }: { params: { id: string } }) {
-  const { seller, listings } = await getSellerProfile(params.id);
+export default async function SellerProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const { seller, listings } = await getSellerProfile(id);
   if (!seller) notFound();
 
   const inventoryValue = listings.reduce((sum, listing) => sum + Number(listing.price_amount), 0);

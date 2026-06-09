@@ -3,6 +3,7 @@
 import { ErrorMessage, LoadingSpinner } from "@/components/marketplace-design-system";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type PublicPageLoadingProps = {
   label: string;
@@ -17,18 +18,18 @@ export function PublicPageLoading({ label, helperText = "Fetching live marketpla
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground">{helperText}</p>
         <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_340px]">
           <div className="space-y-4">
-            <div className="h-10 w-3/4 animate-pulse rounded-full bg-secondary" />
-            <div className="h-5 w-full animate-pulse rounded-full bg-secondary" />
-            <div className="h-5 w-5/6 animate-pulse rounded-full bg-secondary" />
+            <Skeleton className="h-10 w-3/4 rounded-full" />
+            <Skeleton className="h-5 w-full rounded-full" />
+            <Skeleton className="h-5 w-5/6 rounded-full" />
           </div>
           <Card className="bg-secondary/60">
             <CardHeader className="space-y-3">
-              <div className="h-5 w-1/2 animate-pulse rounded-full bg-background" />
-              <div className="h-4 w-4/5 animate-pulse rounded-full bg-background" />
+              <Skeleton className="h-5 w-1/2 rounded-full bg-background" />
+              <Skeleton className="h-4 w-4/5 rounded-full bg-background" />
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
               {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="h-16 animate-pulse rounded-2xl bg-background" />
+                <Skeleton key={index} className="h-16 bg-background" />
               ))}
             </CardContent>
           </Card>
@@ -37,11 +38,11 @@ export function PublicPageLoading({ label, helperText = "Fetching live marketpla
       <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 6 }).map((_, index) => (
           <Card key={index}>
-            <div className="aspect-[4/3] animate-pulse rounded-t-2xl bg-secondary" />
+            <Skeleton className="aspect-[4/3] rounded-b-none rounded-t-2xl" />
             <CardContent className="space-y-3 p-5">
-              <div className="h-5 w-3/4 animate-pulse rounded-full bg-secondary" />
-              <div className="h-4 w-1/2 animate-pulse rounded-full bg-secondary" />
-              <div className="h-10 w-full animate-pulse rounded-xl bg-secondary" />
+              <Skeleton className="h-5 w-3/4 rounded-full" />
+              <Skeleton className="h-4 w-1/2 rounded-full" />
+              <Skeleton className="h-10 w-full rounded-xl" />
             </CardContent>
           </Card>
         ))}
