@@ -59,6 +59,19 @@ describe("middleware", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("redirects protected routes instead of crashing when the Supabase cookie is a null session", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", supabaseUrl);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", anonKey);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const encodedNullSession = btoa("null");
+
+    const response = await middleware(createRequest("/dashboard", `sb-example-project-auth-token=base64-${encodedNullSession}`));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe("https://marketplace.example/login?next=%2Fdashboard");
+  });
+
   it("redirects protected routes to login when auth lookup fails", async () => {
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", supabaseUrl);
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", anonKey);
