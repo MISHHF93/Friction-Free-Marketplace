@@ -21,7 +21,7 @@ Production-oriented Next.js App Router starter for the marketplace experience.
 
 ## Environment variables
 
-Copy `apps/web/.env.example` to `apps/web/.env.local` before running `npm run web:dev` or `npm run web:build`. The app validates required variables at Next.js startup and also validates server-only and browser-safe variables when the corresponding modules load. Startup errors list each missing or invalid variable so deployment failures are actionable.
+Copy `apps/web/.env.example` to `apps/web/.env.local` before connecting the app to real Supabase, Stripe, OpenAI, Meilisearch, Resend, and PostHog services. Local development can start without a `.env.local`; the app hydrates inert placeholder values, skips unavailable external services, and serves demo marketplace data so `npm run web:dev` is usable immediately. Production and CI still validate required variables so deployment failures are actionable.
 
 ### Required variables
 

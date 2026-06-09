@@ -1,4 +1,4 @@
-import { formatEnvError, publicEnvSchema, type PublicEnv } from "@/lib/env.shared";
+import { formatEnvError, localDevelopmentPublicEnv, publicEnvSchema, shouldUseLocalDevelopmentEnv, type PublicEnv } from "@/lib/env.shared";
 
 export type { PublicEnv };
 
@@ -22,6 +22,10 @@ export function validatePublicEnv(input: Record<string, string | undefined>): Pu
   if (!result.success) {
     if (isProductionBuild()) {
       return buildTimePublicEnv;
+    }
+
+    if (shouldUseLocalDevelopmentEnv()) {
+      return localDevelopmentPublicEnv;
     }
 
     throw new Error(formatEnvError(result.error, "client"));

@@ -48,6 +48,10 @@ function numberValue(value: unknown, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function shouldUseDemoMarketplaceData() {
+  return process.env.SUPABASE_SERVICE_ROLE_KEY === "local-dev-placeholder" || process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("local-dev-placeholder");
+}
+
 function demoCategoryRows(): PublicCategory[] {
   const counts = new Map<string, number>();
   for (const listing of demoListings) {
@@ -69,6 +73,10 @@ export async function getFeaturedListings(limit = 6): Promise<DiscoveryResult> {
 }
 
 export async function getPublicListingParams(limit = 50): Promise<Array<{ id: string }>> {
+  if (shouldUseDemoMarketplaceData()) {
+    return demoListings.slice(0, limit).map((listing) => ({ id: listing.id }));
+  }
+
   try {
     const supabase = createAdminClient();
     const { data, error } = await (supabase as any)
@@ -92,6 +100,16 @@ export async function getPublicListingParams(limit = 50): Promise<Array<{ id: st
 }
 
 export async function getPublicSellerParams(limit = 50): Promise<Array<{ id: string }>> {
+  if (shouldUseDemoMarketplaceData()) {
+    const seen = new Set<string>();
+    return demoListings.flatMap((listing, index) => {
+      const id = `demo-seller-${index}`;
+      if (seen.has(id)) return [];
+      seen.add(id);
+      return [{ id }];
+    }).slice(0, limit);
+  }
+
   try {
     const supabase = createAdminClient();
     const { data, error } = await (supabase as any)
@@ -128,6 +146,10 @@ export async function getPublicSellerParams(limit = 50): Promise<Array<{ id: str
 }
 
 export async function getPublicCategories(limit = 8): Promise<{ categories: PublicCategory[]; source: "database" | "demo" }> {
+  if (shouldUseDemoMarketplaceData()) {
+    return { categories: demoCategoryRows().slice(0, limit), source: "demo" };
+  }
+
   try {
     const supabase = createAdminClient();
     const { data, error } = await (supabase as any)
@@ -170,6 +192,11 @@ export async function getCategoryPage(slug: string) {
 }
 
 export async function getListingById(id: string): Promise<DiscoveryDocument | null> {
+  if (shouldUseDemoMarketplaceData()) {
+    const result = await searchMarketplace({ limit: 200 });
+    return result.listings.find((listing) => listing.id === id) ?? null;
+  }
+
   try {
     const supabase = createAdminClient();
     const { data, error } = await (supabase as any).from("listing_search_documents").select("*").eq("id", id).eq("status", "active").maybeSingle();
@@ -184,6 +211,34 @@ export async function getListingById(id: string): Promise<DiscoveryDocument | nu
 }
 
 export async function getSellerProfile(id: string): Promise<{ seller: SellerProfile | null; listings: DiscoveryDocument[] }> {
+  if (shouldUseDemoMarketplaceData()) {
+    const all = await searchMarketplace({ limit: 200 });
+    const sellerListings = all.listings.filter((listing) => listing.seller_id === id || listing.seller_display_name.toLowerCase().replace(/\s+/g, "-") === id);
+    const first = sellerListings[0] ?? all.listings[0];
+    if (!first) return { seller: null, listings: [] };
+
+    return {
+      seller: {
+        id: first.seller_id,
+        displayName: first.seller_display_name,
+        username: first.seller_display_name.toLowerCase().replace(/\s+/g, "-"),
+        bio: "Trusted marketplace seller with escrow-ready checkout, verified listing practices, and responsive buyer communication.",
+        avatarUrl: null,
+        bannerUrl: null,
+        locationLabel: first.location_label,
+        headline: "Verified seller focused on transparent, low-friction deals.",
+        responseTimeMinutes: 45,
+        trustScore: first.seller_trust_score,
+        sellerScore: first.safety_score,
+        completedTransactions: first.seller_completed_transactions,
+        reviewCount: Math.max(6, Math.round(first.seller_completed_transactions / 2)),
+        fraudRiskLevel: first.seller_fraud_risk_level,
+        source: "demo"
+      },
+      listings: sellerListings.length ? sellerListings : all.listings.slice(0, 3)
+    };
+  }
+
   try {
     const supabase = createAdminClient();
     const [{ data: profile, error: profileError }, { data: trust, error: trustError }, { data: listingRows, error: listingsError }] = await Promise.all([
@@ -248,6 +303,10 @@ export async function getSellerProfile(id: string): Promise<{ seller: SellerProf
 }
 
 export async function getTrustSafetyStats(): Promise<TrustSafetyStats> {
+  if (shouldUseDemoMarketplaceData()) {
+    return { source: "demo", activeListings: demoListings.length, trustedSellers: 3, completedTransactions: 86, lowRiskRate: 98 };
+  }
+
   try {
     const supabase = createAdminClient();
     const [{ count: activeListings }, { data: scores, error }] = await Promise.all([
