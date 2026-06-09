@@ -1,6 +1,48 @@
+const isDevelopmentRuntime = process.env.NODE_ENV !== "production";
+const scriptSrc = [
+  "'self'",
+  "'unsafe-inline'",
+  isDevelopmentRuntime ? "'unsafe-eval'" : null,
+  "https://js.stripe.com",
+  "https://*.posthog.com"
+].filter(Boolean).join(" ");
+
+const securityHeaders = [
+  { key: "X-DNS-Prefetch-Control", value: "on" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=(self)" },
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "form-action 'self'",
+      `script-src ${scriptSrc}`,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "frame-src https://js.stripe.com https://hooks.stripe.com",
+      "connect-src 'self' https://*.supabase.co https://api.stripe.com https://*.posthog.com"
+    ].join("; ")
+  },
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  allowedDevOrigins: ["127.0.0.1"]
+  allowedDevOrigins: ["127.0.0.1"],
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: securityHeaders
+      }
+    ];
+  }
 };
 
 const localDevelopmentEnvironment = {
@@ -15,6 +57,7 @@ const localDevelopmentEnvironment = {
   OPENAI_API_KEY: "sk-local-dev-placeholder",
   MEILISEARCH_HOST: "http://127.0.0.1:7700",
   MEILISEARCH_API_KEY: "local-dev-placeholder",
+  ADMIN_WORKER_SECRET: "admin-worker-local-dev-placeholder",
   RESEND_API_KEY: "re_local_dev_placeholder",
   POSTHOG_KEY: "phc_local_dev_placeholder",
   POSTHOG_HOST: "https://app.posthog.com",

@@ -11,7 +11,6 @@ import { getStripe } from "@/lib/stripe/server";
 
 const paymentIntentRequestSchema = z.object({
   listingId: z.string().uuid(),
-  reservationDepositCents: z.number().int().min(0).max(999_999_99).optional(),
   shippingCents: z.number().int().min(0).max(25_000_00).default(0),
   taxCents: z.number().int().min(0).max(25_000_00).default(0)
 });
@@ -49,9 +48,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Seller has not completed Stripe Connect onboarding." }, { status: 409 });
   }
 
-  const itemCents = payload.data.reservationDepositCents && payload.data.reservationDepositCents > 0
-    ? payload.data.reservationDepositCents
-    : dollarsToCents(Number(listing.price_amount));
+  const itemCents = dollarsToCents(Number(listing.price_amount));
   const platformFeeCents = calculatePlatformFeeCents(itemCents + payload.data.shippingCents + payload.data.taxCents);
   const totalCents = itemCents + payload.data.shippingCents + payload.data.taxCents + platformFeeCents;
   const currency = normalizeCurrency(listing.currency);
@@ -67,7 +64,7 @@ export async function POST(request: Request) {
     marketplace_fee_amount: centsToDollars(platformFeeCents),
     currency: currency.toUpperCase(),
     metadata: {
-      checkout_kind: payload.data.reservationDepositCents ? "reservation_deposit" : "full_purchase",
+      checkout_kind: "full_purchase",
       seller_stripe_account_id: sellerAccount.stripe_account_id
     }
   }).select("*").single();
@@ -75,22 +72,25 @@ export async function POST(request: Request) {
   if (transactionError || !transaction) return NextResponse.json({ error: "Could not create transaction." }, { status: 500 });
 
   const stripe = getStripe();
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: totalCents,
-    currency,
-    capture_method: "manual",
-    automatic_payment_methods: { enabled: true },
-    description: `Friction-Free Marketplace purchase: ${listing.title}`,
-    metadata: {
-      transaction_id: transaction.id,
-      listing_id: listing.id,
-      buyer_id: auth.user.id,
-      seller_id: listing.seller_id,
-      platform_fee_cents: String(platformFeeCents),
-      seller_net_cents: String(totalCents - platformFeeCents)
+  const paymentIntent = await stripe.paymentIntents.create(
+    {
+      amount: totalCents,
+      currency,
+      capture_method: "manual",
+      automatic_payment_methods: { enabled: true },
+      description: `Friction-Free Marketplace purchase: ${listing.title}`,
+      metadata: {
+        transaction_id: transaction.id,
+        listing_id: listing.id,
+        buyer_id: auth.user.id,
+        seller_id: listing.seller_id,
+        platform_fee_cents: String(platformFeeCents),
+        seller_net_cents: String(totalCents - platformFeeCents)
+      },
+      transfer_group: `transaction_${transaction.id}`
     },
-    transfer_group: `transaction_${transaction.id}`
-  });
+    { idempotencyKey: request.headers.get("idempotency-key") ?? `payment-intent:${auth.user.id}:${listing.id}:${transaction.id}` }
+  );
 
   await supabase.from("escrow_payments").insert({
     transaction_id: transaction.id,

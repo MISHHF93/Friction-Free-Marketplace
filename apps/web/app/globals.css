@@ -6,9 +6,17 @@
   :root {
     --brand-ink: 222 57% 8%;
     --brand-slate: 215 25% 27%;
+    --brand-steel: 214 18% 43%;
     --brand-mist: 210 40% 98%;
     --brand-cloud: 210 38% 94%;
+    --brand-pearl: 210 32% 96%;
     --brand-surface: 0 0% 100%;
+
+    --surface-canvas: 210 40% 98%;
+    --surface-elevated: 0 0% 100%;
+    --surface-sunken: 210 32% 92%;
+    --surface-overlay: 210 28% 99%;
+    --surface-inverse: 222 57% 8%;
 
     --background: 210 40% 98%;
     --foreground: 222 57% 8%;
@@ -17,10 +25,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 57% 8%;
 
-    --primary: 170 81% 28%;
+    --commerce: 168 84% 25%;
+    --commerce-foreground: 0 0% 100%;
+    --commerce-soft: 166 72% 94%;
+    --commerce-border: 166 56% 80%;
+    --commerce-dark: 175 76% 17%;
+
+    --primary: 168 84% 25%;
     --primary-foreground: 0 0% 100%;
 
-    --trust: 170 81% 28%;
+    --trust: 168 84% 25%;
     --trust-foreground: 0 0% 100%;
     --trust-soft: 166 70% 93%;
     --trust-border: 166 56% 80%;
@@ -33,13 +47,22 @@
     --safety: 142 72% 36%;
     --safety-foreground: 0 0% 100%;
     --safety-soft: 140 76% 94%;
+    --safety-border: 141 54% 78%;
     --safety-warning: 35 92% 45%;
+    --safety-warning-soft: 42 96% 92%;
     --safety-risk: 0 72% 51%;
 
     --premium: 40 64% 57%;
     --premium-foreground: 222 57% 8%;
     --premium-soft: 45 100% 93%;
+    --premium-border: 42 70% 76%;
     --premium-graphite: 222 47% 11%;
+
+    --data-1: 168 84% 25%;
+    --data-2: 222 84% 56%;
+    --data-3: 40 64% 57%;
+    --data-4: 262 83% 58%;
+    --data-5: 350 77% 55%;
 
     --secondary: 210 38% 94%;
     --secondary-foreground: 222 57% 8%;
@@ -51,19 +74,29 @@
     --destructive-foreground: 0 0% 100%;
     --border: 214 30% 88%;
     --input: 214 30% 88%;
-    --ring: 170 81% 28%;
+    --ring: 168 84% 25%;
 
-    --radius: 1rem;
-    --radius-card: 1.35rem;
+    --radius: 0.875rem;
+    --radius-control: 0.875rem;
+    --radius-card: 1.25rem;
     --radius-panel: 1.75rem;
-    --radius-hero: 2.35rem;
+    --radius-shell: 2rem;
+    --radius-hero: 2.5rem;
 
     --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
-    --shadow-sm: 0 8px 26px -18px rgba(15, 23, 42, 0.35);
-    --shadow-md: 0 18px 46px -28px rgba(15, 23, 42, 0.42);
+    --shadow-sm: 0 8px 24px -18px rgba(15, 23, 42, 0.32);
+    --shadow-md: 0 18px 44px -28px rgba(15, 23, 42, 0.42);
+    --shadow-input: 0 1px 2px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    --shadow-control: 0 10px 26px -18px rgba(15, 23, 42, 0.45);
+    --shadow-card: 0 16px 48px -34px rgba(15, 23, 42, 0.52);
+    --shadow-card-hover: 0 24px 64px -38px rgba(15, 23, 42, 0.62);
+    --shadow-panel: 0 28px 80px -48px rgba(15, 23, 42, 0.55);
     --shadow-soft: 0 28px 80px -42px rgba(15, 23, 42, 0.42);
     --shadow-glow: 0 24px 90px -44px rgba(37, 99, 235, 0.48);
     --shadow-trust: 0 24px 90px -44px rgba(15, 143, 126, 0.5);
+    --shadow-ai: 0 24px 90px -44px rgba(37, 99, 235, 0.52);
+    --shadow-commerce: 0 22px 70px -42px rgba(13, 148, 136, 0.58);
+    --shadow-danger: 0 20px 70px -44px rgba(220, 38, 38, 0.48);
     --shadow-admin: 0 20px 70px -42px rgba(2, 6, 23, 0.62);
 
     --motion-fast: 140ms;
@@ -71,14 +104,53 @@
     --motion-slow: 320ms;
   }
 
+  .dark {
+    --brand-ink: 210 40% 98%;
+    --brand-slate: 215 18% 72%;
+    --brand-steel: 215 16% 62%;
+    --brand-mist: 222 47% 11%;
+    --brand-cloud: 222 47% 14%;
+    --brand-pearl: 222 42% 16%;
+    --brand-surface: 222 47% 11%;
+
+    --surface-canvas: 222 47% 8%;
+    --surface-elevated: 222 42% 12%;
+    --surface-sunken: 222 50% 6%;
+    --surface-overlay: 222 38% 15%;
+    --surface-inverse: 210 40% 98%;
+
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
+    --card: 222 42% 12%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 42% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --secondary: 222 35% 16%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 35% 16%;
+    --muted-foreground: 215 18% 72%;
+    --accent: 222 35% 18%;
+    --accent-foreground: 210 40% 98%;
+    --border: 217 25% 22%;
+    --input: 217 25% 22%;
+  }
+
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-brand-radial text-foreground antialiased;
+    @apply min-h-screen bg-brand-radial text-body text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
     text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display text-foreground;
   }
 
   ::selection {
@@ -88,23 +160,288 @@
 
 @layer components {
   .brand-focus {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 
   .brand-surface {
-    @apply border border-border/80 bg-card/95 shadow-sm backdrop-blur;
+    @apply border border-border/80 bg-surface-elevated/95 shadow-card backdrop-blur;
   }
 
   .brand-panel {
-    @apply rounded-3xl border border-border/80 bg-card/90 shadow-soft backdrop-blur;
+    @apply rounded-panel border border-border/80 bg-surface-elevated/95 shadow-panel backdrop-blur;
   }
 
   .brand-admin-panel {
-    @apply rounded-3xl border border-slate-800/20 bg-white shadow-admin;
+    @apply rounded-panel border border-slate-800/20 bg-surface-elevated shadow-admin;
   }
 
   .brand-kicker {
     @apply text-eyebrow uppercase text-primary;
+  }
+
+  .brand-icon {
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-border/70 bg-surface-elevated text-brand-slate shadow-xs;
+  }
+
+  .brand-icon-sm {
+    @apply h-8 w-8 rounded-xl;
+  }
+
+  .brand-icon-lg {
+    @apply h-12 w-12 rounded-2xl;
+  }
+
+  .brand-icon-commerce {
+    @apply border-commerce-border bg-commerce-soft text-commerce shadow-commerce;
+  }
+
+  .brand-icon-trust {
+    @apply border-trust-border bg-trust-soft text-trust shadow-trust;
+  }
+
+  .brand-icon-ai {
+    @apply border-ai-border bg-ai-soft text-ai shadow-ai;
+  }
+
+  .brand-icon-safety {
+    @apply border-safety-border bg-safety-soft text-safety;
+  }
+
+  .brand-icon-premium {
+    @apply border-premium-border bg-premium-soft text-premium-foreground;
+  }
+
+  .brand-icon-risk {
+    @apply border-red-200 bg-red-50 text-red-700 shadow-danger;
+  }
+
+  .ui-button {
+    @apply brand-focus inline-flex min-h-touch items-center justify-center gap-2 whitespace-nowrap rounded-control px-5 py-2 text-sm font-extrabold tracking-[-0.01em] transition-all duration-200 active:translate-y-0 disabled:pointer-events-none disabled:opacity-50 data-[loading=true]:cursor-wait;
+  }
+
+  .ui-button-primary {
+    @apply bg-commerce-gradient text-commerce-foreground shadow-commerce hover:-translate-y-0.5 hover:shadow-card-hover;
+  }
+
+  .ui-button-secondary {
+    @apply border border-border bg-surface-elevated text-foreground shadow-control hover:-translate-y-0.5 hover:border-commerce-border hover:bg-commerce-soft/60;
+  }
+
+  .ui-button-outline {
+    @apply border border-border bg-surface-elevated/80 text-foreground shadow-input backdrop-blur hover:-translate-y-0.5 hover:border-primary/40 hover:bg-trust-soft;
+  }
+
+  .ui-button-ghost {
+    @apply text-muted-foreground hover:bg-secondary hover:text-foreground;
+  }
+
+  .ui-button-destructive {
+    @apply bg-destructive text-destructive-foreground shadow-danger hover:-translate-y-0.5 hover:bg-destructive/90;
+  }
+
+  .ui-button-premium {
+    @apply bg-premium text-premium-foreground shadow-md hover:-translate-y-0.5 hover:bg-premium/90;
+  }
+
+  .ui-button-ai {
+    @apply bg-ai-gradient text-ai-foreground shadow-ai hover:-translate-y-0.5;
+  }
+
+  .ui-button-trust {
+    @apply bg-trust text-trust-foreground shadow-trust hover:-translate-y-0.5 hover:bg-trust/90;
+  }
+
+  .ui-button-surface {
+    @apply border border-border bg-white/80 text-foreground shadow-control backdrop-blur hover:-translate-y-0.5 hover:shadow-md;
+  }
+
+  .ui-button-sm {
+    @apply min-h-9 rounded-lg px-3 text-xs;
+  }
+
+  .ui-button-lg {
+    @apply min-h-12 rounded-2xl px-8 text-base;
+  }
+
+  .ui-button-xl {
+    @apply min-h-14 rounded-2xl px-10 text-base;
+  }
+
+  .ui-button-icon {
+    @apply h-10 min-h-10 w-10 px-0;
+  }
+
+  .card-base {
+    @apply rounded-card border border-border/80 bg-card/95 text-card-foreground shadow-card backdrop-blur transition-all duration-200;
+  }
+
+  .card-interactive {
+    @apply hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-card-hover focus-within:border-primary/40 focus-within:shadow-card-hover;
+  }
+
+  .card-muted {
+    @apply border-border/70 bg-surface-overlay/75 shadow-xs;
+  }
+
+  .card-commerce {
+    @apply border-commerce-border bg-commerce-soft/65 shadow-commerce;
+  }
+
+  .card-ai {
+    @apply border-ai-border bg-ai-soft/80 shadow-ai;
+  }
+
+  .card-premium {
+    @apply border-premium-border bg-premium-soft/70 shadow-card;
+  }
+
+  .card-danger {
+    @apply border-red-200 bg-red-50 text-red-950 shadow-danger;
+  }
+
+  .card-header {
+    @apply space-y-2 p-5 sm:p-6;
+  }
+
+  .card-title {
+    @apply text-title font-black leading-tight tracking-[-0.025em];
+  }
+
+  .card-description {
+    @apply text-body-sm text-muted-foreground;
+  }
+
+  .card-content {
+    @apply p-5 pt-0 sm:p-6 sm:pt-0;
+  }
+
+  .table-shell {
+    @apply overflow-hidden rounded-card border border-border/80 bg-card shadow-card;
+  }
+
+  .table-scroll {
+    @apply w-full overflow-x-auto;
+  }
+
+  .table-base {
+    @apply w-full min-w-[720px] border-collapse text-left text-sm;
+  }
+
+  .table-base thead {
+    @apply bg-secondary/70 text-meta uppercase text-muted-foreground;
+  }
+
+  .table-base th {
+    @apply px-4 py-3 font-black;
+  }
+
+  .table-base td {
+    @apply border-t border-border/70 px-4 py-3 align-middle text-body-sm;
+  }
+
+  .table-base tbody tr {
+    @apply transition-colors hover:bg-commerce-soft/40;
+  }
+
+  .table-base tbody tr[data-selected="true"] {
+    @apply bg-ai-soft/70;
+  }
+
+  .table-density-compact th,
+  .table-density-compact td {
+    @apply px-3 py-2;
+  }
+
+  .table-cell-numeric {
+    @apply text-right font-mono tabular-nums;
+  }
+
+  .form-field {
+    @apply grid gap-2;
+  }
+
+  .form-label {
+    @apply text-label text-foreground;
+  }
+
+  .form-control {
+    @apply brand-focus flex min-h-touch w-full rounded-control border border-input bg-card/90 px-3.5 py-2 text-sm shadow-input outline-none transition placeholder:text-muted-foreground hover:border-primary/40 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .form-control-lg {
+    @apply min-h-13 rounded-2xl px-4 text-base;
+  }
+
+  .form-helper {
+    @apply text-xs leading-5 text-muted-foreground;
+  }
+
+  .form-error {
+    @apply text-xs font-semibold leading-5 text-destructive;
+  }
+
+  .form-section {
+    @apply rounded-panel border border-border/80 bg-card/85 p-4 shadow-card sm:p-6;
+  }
+
+  .search-control {
+    @apply form-control border-ai-border bg-ai-soft/50 pl-11 shadow-ai;
+  }
+
+  .dashboard-shell {
+    @apply space-y-5 sm:space-y-6;
+  }
+
+  .dashboard-hero {
+    @apply overflow-hidden rounded-shell border border-white/10 bg-premium-dark p-4 text-white shadow-admin sm:p-6;
+  }
+
+  .dashboard-grid {
+    @apply grid gap-4 sm:gap-5 lg:gap-6;
+  }
+
+  .dashboard-grid-metrics {
+    @apply dashboard-grid sm:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .dashboard-stat {
+    @apply card-base card-interactive shadow-md;
+  }
+
+  .dashboard-list-item {
+    @apply flex flex-col gap-3 rounded-card border border-border/80 bg-card/70 p-4 shadow-xs transition hover:border-primary/30 hover:bg-white sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold tracking-[-0.01em] transition-colors;
+  }
+
+  .status-badge-sm {
+    @apply px-2 py-0.5 text-[11px];
+  }
+
+  .status-trust {
+    @apply border-trust-border bg-trust-soft text-trust;
+  }
+
+  .status-ai {
+    @apply border-ai-border bg-ai-soft text-ai;
+  }
+
+  .status-safety {
+    @apply border-safety-border bg-safety-soft text-safety;
+  }
+
+  .status-warning {
+    @apply border-amber-200 bg-safety-warning-soft text-amber-800;
+  }
+
+  .status-risk {
+    @apply border-red-200 bg-red-50 text-red-700;
+  }
+
+  .status-premium {
+    @apply border-premium-border bg-premium-soft text-premium-foreground;
   }
 
   .app-container {
@@ -155,7 +492,7 @@
   }
 
   .interactive-card {
-    @apply transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-soft focus-within:border-primary/40 focus-within:shadow-soft;
+    @apply card-interactive;
   }
 
   .motion-dropdown {

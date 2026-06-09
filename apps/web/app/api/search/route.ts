@@ -1,42 +1,46 @@
 import { NextResponse } from "next/server";
-import { searchMarketplace } from "@/lib/search/discovery";
-import type { DiscoverySearchParams, DiscoverySort } from "@/lib/search/schema";
+import { ZodError } from "zod";
+import { createClient } from "@/lib/supabase/server";
+import { searchMarketplace, trackSearchEvent } from "@/lib/search/discovery";
+import { parseDiscoverySearchParamsFromRequest, parseDiscoverySearchParamsFromUrl } from "@/lib/search/api";
 
-function list(value: string | null) {
-  return value ? value.split(",").map((item) => item.trim()).filter(Boolean) : undefined;
+function validationError(error: unknown) {
+  if (error instanceof ZodError) {
+    return NextResponse.json({ error: "Invalid search request.", issues: error.issues }, { status: 400 });
+  }
+  throw error;
 }
 
-function number(value: string | null) {
-  if (!value) return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
+async function getSearchUserId() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user?.id ?? null;
 }
 
-function paramsFromUrl(url: URL): DiscoverySearchParams {
-  return {
-    q: url.searchParams.get("q") ?? undefined,
-    category: url.searchParams.get("category") ?? undefined,
-    location: url.searchParams.get("location") ?? undefined,
-    lat: number(url.searchParams.get("lat")),
-    lng: number(url.searchParams.get("lng")),
-    radiusMiles: number(url.searchParams.get("radiusMiles")),
-    minPrice: number(url.searchParams.get("minPrice")),
-    maxPrice: number(url.searchParams.get("maxPrice")),
-    condition: list(url.searchParams.get("condition")),
-    minSellerTrust: number(url.searchParams.get("minSellerTrust")),
-    sort: (url.searchParams.get("sort") as DiscoverySort | null) ?? "newest",
-    page: number(url.searchParams.get("page")),
-    limit: number(url.searchParams.get("limit"))
-  };
+async function responseForSearch(params: ReturnType<typeof parseDiscoverySearchParamsFromUrl>) {
+  const [result, userId] = await Promise.all([searchMarketplace(params), getSearchUserId()]);
+  await trackSearchEvent({
+    params,
+    resultCount: result.total,
+    source: result.source,
+    userId,
+    sessionId: params.sessionId,
+  });
+  return NextResponse.json(result);
 }
 
 export async function GET(request: Request) {
-  const result = await searchMarketplace(paramsFromUrl(new URL(request.url)));
-  return NextResponse.json(result);
+  try {
+    return await responseForSearch(parseDiscoverySearchParamsFromUrl(new URL(request.url)));
+  } catch (error) {
+    return validationError(error);
+  }
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json()) as DiscoverySearchParams;
-  const result = await searchMarketplace(body);
-  return NextResponse.json(result);
+  try {
+    return await responseForSearch(await parseDiscoverySearchParamsFromRequest(request));
+  } catch (error) {
+    return validationError(error);
+  }
 }

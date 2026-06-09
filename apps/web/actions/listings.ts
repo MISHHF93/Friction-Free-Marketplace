@@ -55,7 +55,7 @@ function revalidateListingViews(listingId?: string) {
   }
 }
 
-export async function generateAiListingAction(input: unknown): Promise<ListingActionResult<{ suggestion: AiListingGeneration; taskId: string | null; usage: Record<string, unknown>; latencyMs: number }>> {
+export async function generateAiListingAction(input: unknown): Promise<ListingActionResult<{ suggestion: AiListingGeneration; taskId: string | null; usage: Record<string, unknown>; latencyMs: number; promptVersion: string }>> {
   try {
     const { user } = await requireAuthUser();
     const result = await generateAiListing(input, user.id);
@@ -81,7 +81,7 @@ export async function updateListingAction(listingId: string, input: unknown): Pr
   try {
     const { supabase, user } = await requireAuthUser();
     await ensureListingOwner(supabase, listingId, user.id);
-    const listing = await updateListing(supabase as any, listingId, input);
+    const listing = await updateListing(supabase as any, listingId, input, user.id);
     await captureServerEvent({ distinctId: user.id, event: "listing_updated", properties: { listing_id: listing.id, status: listing.status } });
     revalidateListingViews(listing.id);
     return { ok: true, data: { id: listing.id, status: listing.status } };
@@ -106,7 +106,7 @@ export async function changeListingStatusAction(listingId: string, status: unkno
   try {
     const { supabase, user } = await requireAuthUser();
     await ensureListingOwner(supabase, listingId, user.id);
-    const listing = await setListingStatus(supabase as any, listingId, status);
+    const listing = await setListingStatus(supabase as any, listingId, status, user.id);
     await captureServerEvent({ distinctId: user.id, event: "listing_status_changed", properties: { listing_id: listing.id, status: listing.status } });
     revalidateListingViews(listing.id);
     return { ok: true, data: { id: listing.id, status: listing.status } };

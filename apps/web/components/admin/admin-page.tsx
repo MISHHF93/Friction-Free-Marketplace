@@ -75,15 +75,15 @@ export function AdminFeaturePage({ config, adminRole }: { config: AdminPageConfi
               </div>
             </div>
             <form className="grid gap-2 pt-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_11rem_11rem_auto]" aria-label={`${config.title} table filters`}>
-              <input className="h-10 rounded-xl border border-input bg-card px-3 text-sm shadow-xs outline-none focus:ring-2 focus:ring-ring" placeholder="Search users, listings, payments, or cases..." aria-label="Search admin table" />
-              <select className="h-10 rounded-xl border border-input bg-card px-3 text-sm font-semibold shadow-xs" aria-label="Filter by status">
+              <input className="form-control min-h-10" placeholder="Search users, listings, payments, or cases..." aria-label="Search admin table" />
+              <select className="form-control min-h-10 font-semibold" aria-label="Filter by status">
                 <option>All statuses</option>
                 <option>Open</option>
                 <option>Held</option>
                 <option>Escalated</option>
                 <option>Resolved</option>
               </select>
-              <select className="h-10 rounded-xl border border-input bg-card px-3 text-sm font-semibold shadow-xs" aria-label="Filter by risk">
+              <select className="form-control min-h-10 font-semibold" aria-label="Filter by risk">
                 <option>All risk</option>
                 <option>Critical</option>
                 <option>High</option>
@@ -93,25 +93,25 @@ export function AdminFeaturePage({ config, adminRole }: { config: AdminPageConfi
               <Button type="button" variant="surface" className="sm:col-span-2 xl:col-span-1">Filter</Button>
             </form>
           </CardHeader>
-          <CardContent className="responsive-table-wrap">
-            <table className="w-full min-w-[720px] text-left text-sm">
+          <CardContent className="table-scroll p-0">
+            <table className="table-base table-density-compact">
               <thead>
-                <tr className="border-b border-border bg-secondary/50 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                  {config.columns.map((column) => <th className="px-3 py-3 font-semibold" key={column.key}>{column.label}</th>)}
-                  <th className="px-3 py-3 font-semibold">Risk</th>
-                  <th className="px-3 py-3 font-semibold">Menu</th>
+                <tr>
+                  {config.columns.map((column) => <th key={column.key}>{column.label}</th>)}
+                  <th>Risk</th>
+                  <th>Menu</th>
                 </tr>
               </thead>
               <tbody>
                 {config.rows.map((row, index) => (
-                  <tr className="border-b border-border transition hover:bg-secondary/40 last:border-0" key={`${row.subject}-${index}`}>
+                  <tr key={`${row.subject}-${index}`}>
                     {config.columns.map((column) => (
-                      <td className="px-3 py-4 align-top" key={column.key}>
+                      <td className="align-top" key={column.key}>
                         {column.key === "subject" ? <SeverityBadge severity={row.severity} value={row[column.key]} /> : column.key === "status" ? <StatusBadge value={row[column.key]} severity={row.severity} /> : <span className="text-muted-foreground">{row[column.key]}</span>}
                       </td>
                     ))}
-                    <td className="px-3 py-4 align-top"><RiskScoreIndicator severity={row.severity} seed={index} /></td>
-                    <td className="px-3 py-4 align-top"><AdminRowActionMenu subject={row.subject} primaryAction={row.action ?? config.primaryAction} /></td>
+                    <td className="align-top"><RiskScoreIndicator severity={row.severity} seed={index} /></td>
+                    <td className="align-top"><AdminRowActionMenu subject={row.subject} primaryAction={row.action ?? config.primaryAction} /></td>
                   </tr>
                 ))}
               </tbody>

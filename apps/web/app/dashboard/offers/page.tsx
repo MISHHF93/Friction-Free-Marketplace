@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import type { OfferStatus } from "@/lib/messaging/types";
+import { displayOfferStatus } from "@/lib/offers/state-machine";
 
 type OfferRow = {
   id: string;
@@ -29,10 +30,6 @@ type OfferRow = {
   listing: { id: string; title: string; price_amount: number; currency: string; status: string } | null;
   offer_status_history?: Array<{ id: string; from_status: OfferStatus | null; to_status: OfferStatus; reason: string | null; created_at: string }>;
 };
-
-function displayStatus(status: OfferStatus) {
-  return status === "declined" ? "rejected" : status;
-}
 
 export default async function OffersPage() {
   let userId = "";
@@ -117,8 +114,8 @@ export default async function OffersPage() {
                   expiresAt={offer.expires_at ? new Date(offer.expires_at).toLocaleString() : undefined}
                   actions={
                     <div className="flex flex-wrap items-center justify-end gap-2">
-                      {awaitingYou ? <Badge variant="warning">Awaiting you</Badge> : <Badge>{displayStatus(offer.status)}</Badge>}
-                      {latestHistory && <Badge className="gap-1"><History className="h-3 w-3" />{latestHistory.from_status ?? "new"} → {displayStatus(latestHistory.to_status)}</Badge>}
+                      {awaitingYou ? <Badge variant="warning">Awaiting you</Badge> : <Badge>{displayOfferStatus(offer.status)}</Badge>}
+                      {latestHistory && <Badge className="gap-1"><History className="h-3 w-3" />{latestHistory.from_status ? displayOfferStatus(latestHistory.from_status) : "new"} -&gt; {displayOfferStatus(latestHistory.to_status)}</Badge>}
                       {offer.conversation_id && <Button asChild size="sm"><Link href={`/dashboard/messages?conversation=${offer.conversation_id}`}>Review</Link></Button>}
                     </div>
                   }

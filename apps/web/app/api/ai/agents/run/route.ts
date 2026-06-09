@@ -25,6 +25,10 @@ export async function POST(request: Request) {
   }
 
   const actorId = await getActorId();
+  if (!actorId) {
+    return NextResponse.json({ error: "Sign in to run marketplace AI agents." }, { status: 401 });
+  }
+
   const inputSummary = { ...summarizeInput(payload.data.message), context: payload.data.context ?? {} };
   const taskId = await createAgentTask({ agent: payload.data.agent, actorId, input: inputSummary });
 
@@ -59,6 +63,7 @@ export async function POST(request: Request) {
       inputSummary,
       outputSummary,
       safetyFlags: result.safetyFlags,
+      toolCalls: result.toolPlan,
       tokenUsage: result.tokenUsage
     });
 

@@ -8,7 +8,7 @@ import {
   type ChangeEvent,
 } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowDown, ArrowUp, Sparkles, UploadCloud, X } from "lucide-react";
+import { Archive, ArrowDown, ArrowUp, Sparkles, UploadCloud, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
@@ -151,6 +151,22 @@ const listingClientFormSchema = z.object({
     categoryRationale: z.string().max(500).optional(),
     priceRationale: z.string().max(700).optional(),
     missingInformationQuestions: z.array(z.string()).optional(),
+    fraudIndicators: z
+      .object({
+        riskScore: z.number().min(0).max(100),
+        riskLevel: z.enum(["low", "medium", "high", "critical"]),
+        reviewRequired: z.boolean(),
+        indicators: z.array(
+          z.object({
+            type: z.string(),
+            severity: z.string(),
+            evidence: z.string(),
+            recommendation: z.string(),
+          }),
+        ),
+        buyerWarning: z.string(),
+      })
+      .optional(),
     rationale: z.string().max(1200).optional(),
   }),
   images: z
@@ -309,6 +325,11 @@ export function ListingForm({
   const watched = useWatch({ control: form.control }) as FormState;
   const images = watched.images ?? [];
   const currentStatus = (listing?.status ?? "draft") as ListingStatus;
+  const canMoveToDraft = listing ? ["active", "paused", "archived", "expired"].includes(currentStatus) : false;
+  const canPublish = listing ? ["draft", "paused", "archived", "expired"].includes(currentStatus) : false;
+  const canPause = listing ? currentStatus === "active" : false;
+  const canMarkSold = listing ? ["active", "reserved"].includes(currentStatus) : false;
+  const canArchive = listing ? ["draft", "active", "reserved", "paused", "expired", "sold"].includes(currentStatus) : false;
   const categoryOptions = categories?.length
     ? categories
     : LISTING_CATEGORIES.map((slug) => ({
@@ -381,7 +402,8 @@ export function ListingForm({
     setError(null);
     const result = await generateAiListingAction({
       imageUrls,
-      sellerNotes,
+      title: watched.title,
+      notes: sellerNotes,
       location: `${watched.locationCity}, ${watched.locationRegion}`,
     });
     setBusy(null);
@@ -431,7 +453,10 @@ export function ListingForm({
     });
     setValue("seoTags", suggestion.seoTags.join(", "), { shouldDirty: true });
     const fraudRiskScore =
-      suggestion.scamRiskWarning?.riskScore ?? suggestion.fraudRiskScore ?? 0;
+      suggestion.fraudIndicators?.riskScore ??
+      suggestion.scamRiskWarning?.riskScore ??
+      suggestion.fraudRiskScore ??
+      0;
     setValue(
       "moderationStatus",
       fraudRiskScore >= 70 ? "needs_review" : "pending",
@@ -452,7 +477,11 @@ export function ListingForm({
         priceMax: suggestion.priceRange.max,
         fraudRiskScore,
         scamRiskWarning: suggestion.scamRiskWarning?.warning,
-        riskFactors: suggestion.scamRiskWarning?.riskFactors ?? [],
+        riskFactors:
+          suggestion.scamRiskWarning?.riskFactors ??
+          suggestion.fraudIndicators?.indicators?.map((indicator) => indicator.evidence) ??
+          [],
+        fraudIndicators: suggestion.fraudIndicators,
         conditionConfidence: suggestion.conditionConfidence,
         conditionEvidence: suggestion.conditionEvidence ?? [],
         categoryRationale: suggestion.categoryRationale,
@@ -914,45 +943,66 @@ export function ListingForm({
             </div>
             {listing && (
               <div className="grid gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={disabled}
-                  onClick={() => changeStatus("draft")}
-                  isLoading={busy?.startsWith("Setting listing")}
-                  loadingText="Saving status..."
-                >
-                  Save as draft
-                </Button>
-                <Button
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => changeStatus("active")}
-                  isLoading={busy?.startsWith("Setting listing")}
-                  loadingText="Publishing..."
-                >
-                  Publish listing
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={disabled}
-                  onClick={() => changeStatus("paused")}
-                  isLoading={busy?.startsWith("Setting listing")}
-                  loadingText="Pausing..."
-                >
-                  Pause listing
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={disabled}
-                  onClick={() => changeStatus("sold")}
-                  isLoading={busy?.startsWith("Setting listing")}
-                  loadingText="Updating..."
-                >
-                  Mark as sold
-                </Button>
+                {canMoveToDraft ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={disabled}
+                    onClick={() => changeStatus("draft")}
+                    isLoading={busy?.startsWith("Setting listing")}
+                    loadingText="Saving status..."
+                  >
+                    Save as draft
+                  </Button>
+                ) : null}
+                {canPublish ? (
+                  <Button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => changeStatus("active")}
+                    isLoading={busy?.startsWith("Setting listing")}
+                    loadingText="Publishing..."
+                  >
+                    Publish listing
+                  </Button>
+                ) : null}
+                {canPause ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={disabled}
+                    onClick={() => changeStatus("paused")}
+                    isLoading={busy?.startsWith("Setting listing")}
+                    loadingText="Pausing..."
+                  >
+                    Pause listing
+                  </Button>
+                ) : null}
+                {canMarkSold ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={disabled}
+                    onClick={() => changeStatus("sold")}
+                    isLoading={busy?.startsWith("Setting listing")}
+                    loadingText="Updating..."
+                  >
+                    Mark as sold
+                  </Button>
+                ) : null}
+                {canArchive ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={disabled}
+                    onClick={() => changeStatus("archived")}
+                    isLoading={busy?.startsWith("Setting listing")}
+                    loadingText="Archiving..."
+                  >
+                    <Archive className="h-4 w-4" aria-hidden="true" />
+                    Archive listing
+                  </Button>
+                ) : null}
               </div>
             )}
           </CardContent>
@@ -1050,6 +1100,25 @@ export function ListingForm({
                       </ul>
                     </div>
                   )}
+                {watched.ai.fraudIndicators?.indicators?.length ? (
+                  <div>
+                    <p className="font-medium">
+                      Fraud indicators: {watched.ai.fraudIndicators.riskLevel} risk
+                      {watched.ai.fraudIndicators.reviewRequired ? " · review required" : ""}
+                    </p>
+                    <ul className="mt-1 space-y-2 text-muted-foreground">
+                      {watched.ai.fraudIndicators.indicators.map((indicator) => (
+                        <li key={`${indicator.type}-${indicator.evidence}`} className="rounded-xl border border-border bg-background p-3">
+                          <span className="font-medium text-foreground">
+                            {indicator.severity} {indicator.type}
+                          </span>
+                          <span className="block">{indicator.evidence}</span>
+                          <span className="block text-xs">{indicator.recommendation}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
                 {watched.ai.missingInformationQuestions &&
                   watched.ai.missingInformationQuestions.length > 0 && (
                     <div>

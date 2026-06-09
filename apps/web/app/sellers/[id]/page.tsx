@@ -103,7 +103,7 @@ export default async function SellerProfilePage({ params }: { params: Promise<{ 
             <CardHeader><CardTitle>Safe buying tips</CardTitle></CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>Use platform messaging, inspect listing details, and keep payment protection enabled for eligible purchases.</p>
-              <Button asChild className="w-full" variant="outline"><Link href="/trust-and-safety">Review trust policy</Link></Button>
+              <Button asChild className="w-full" variant="outline"><Link href="/safety">Review trust policy</Link></Button>
             </CardContent>
           </Card>
         </aside>

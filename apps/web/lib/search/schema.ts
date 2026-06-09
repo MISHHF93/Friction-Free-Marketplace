@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export const LISTINGS_INDEX_UID = process.env.MEILISEARCH_LISTINGS_INDEX || "listings";
 export const DISCOVERY_INDEX_UID = LISTINGS_INDEX_UID;
 
@@ -10,12 +12,14 @@ export const listingSearchableAttributes = [
   "seller_display_name",
   "seo_tags",
   "attributes",
+  "search_terms",
   "location_label",
   "location_city",
   "location_region"
 ];
 
 export const listingFilterableAttributes = [
+  "id",
   "status",
   "category_id",
   "category_slug",
@@ -26,6 +30,7 @@ export const listingFilterableAttributes = [
   "seller_completed_transactions",
   "seller_fraud_risk_level",
   "pickup_available",
+  "fulfillment_modes",
   "ships_to",
   "location_city",
   "location_region",
@@ -88,7 +93,33 @@ export const discoveryFilterableAttributes = listingFilterableAttributes;
 export const discoverySortableAttributes = listingSortableAttributes;
 export const discoveryRankingRules = listingRankingRules;
 
-export type DiscoverySort = "newest" | "closest" | "price_low" | "price_high" | "best_value" | "safest_seller" | "recommended" | "trending";
+export const discoverySortSchema = z.enum(["newest", "closest", "price_low", "price_high", "best_value", "safest_seller", "recommended", "trending"]);
+export type DiscoverySort = z.infer<typeof discoverySortSchema>;
+
+export const discoverySearchParamsSchema = z.object({
+  q: z.string().trim().max(200).optional(),
+  intent: z.string().trim().max(300).optional(),
+  category: z.string().trim().max(80).optional(),
+  location: z.string().trim().max(120).optional(),
+  lat: z.coerce.number().min(-90).max(90).optional(),
+  lng: z.coerce.number().min(-180).max(180).optional(),
+  radiusMiles: z.coerce.number().min(1).max(500).optional(),
+  minPrice: z.coerce.number().min(0).optional(),
+  maxPrice: z.coerce.number().min(0).optional(),
+  condition: z.array(z.string().trim().max(60)).max(12).optional(),
+  minSellerTrust: z.coerce.number().min(0).max(100).optional(),
+  verifiedOnly: z.coerce.boolean().optional(),
+  paymentProtection: z.coerce.boolean().optional(),
+  fulfillment: z.enum(["pickup", "delivery", "any"]).optional(),
+  sort: discoverySortSchema.default("newest"),
+  page: z.coerce.number().int().min(1).max(500).default(1),
+  limit: z.coerce.number().int().min(1).max(60).default(24),
+  userId: z.string().uuid().optional(),
+  sessionId: z.string().trim().max(160).optional(),
+}).refine((params) => params.maxPrice === undefined || params.minPrice === undefined || params.maxPrice >= params.minPrice, {
+  message: "maxPrice must be greater than or equal to minPrice.",
+  path: ["maxPrice"],
+});
 
 export type DiscoverySearchParams = {
   q?: string;
@@ -140,6 +171,8 @@ export type DiscoveryDocument = {
   image_url: string | null;
   seo_tags: string[];
   attributes: string[];
+  search_terms: string[];
+  fulfillment_modes: string[];
   view_count: number;
   saved_count: number;
   purchase_count: number;

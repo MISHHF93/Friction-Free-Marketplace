@@ -7,11 +7,12 @@ import { requireUser } from "@/lib/payments/auth";
 import { recordTransactionEvent } from "@/lib/payments/audit";
 import { centsToDollars } from "@/lib/payments/money";
 import { enqueueTemplateNotification } from "@/lib/notifications/service";
+import { buildCaptureJournal, postLedgerJournal } from "@/lib/financial/ledger";
 import { getStripe } from "@/lib/stripe/server";
 
 const transactionIdSchema = z.string().uuid();
 
-export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
   const { id } = await params;
@@ -28,7 +29,11 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   if (!payment) return NextResponse.json({ error: "Payment not found." }, { status: 404 });
   if (payment.status !== "authorized") return NextResponse.json({ error: "Payment must be authorized before capture." }, { status: 409 });
 
-  const captured = await getStripe().paymentIntents.capture(payment.provider_payment_id);
+  const captured = await getStripe().paymentIntents.capture(
+    payment.provider_payment_id,
+    {},
+    { idempotencyKey: request.headers.get("idempotency-key") ?? `capture:${transactionId.data}:${payment.provider_payment_id}` }
+  );
   const charge = typeof captured.latest_charge === "string" ? captured.latest_charge : captured.latest_charge?.id ?? null;
   const previousStatus = transaction.status;
 
@@ -42,6 +47,17 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
   await supabase.from("transactions").update({ status: "escrowed", paid_at: new Date().toISOString() }).eq("id", transactionId.data);
   await supabase.from("listings").update({ status: "reserved" }).eq("id", transaction.listing_id);
+  await postLedgerJournal(supabase, buildCaptureJournal({
+    transactionId: transactionId.data,
+    totalAmount: Number(payment.amount),
+    sellerNetAmount: Number(payment.seller_net_amount),
+    platformFeeAmount: Number(payment.platform_fee_amount),
+    currency: payment.currency,
+    buyerId: transaction.buyer_id,
+    sellerId: transaction.seller_id,
+    providerPaymentId: payment.provider_payment_id,
+    providerChargeId: charge,
+  }));
 
   await recordTransactionEvent(supabase, {
     transaction_id: transactionId.data,

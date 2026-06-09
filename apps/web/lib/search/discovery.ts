@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listings as demoListings } from "@/lib/marketplace-data";
-import { deleteDiscoveryDocuments, isSearchConfigured, searchDiscoveryIndex, upsertDiscoveryDocuments } from "@/lib/search/meilisearch";
+import { configureDiscoveryIndex, deleteDiscoveryDocuments, isSearchConfigured, searchDiscoveryIndex, upsertDiscoveryDocuments, waitForMeiliTask } from "@/lib/search/meilisearch";
 import type { DiscoveryDocument, DiscoverySearchParams } from "@/lib/search/schema";
 
 export type DiscoveryResult = {
@@ -52,6 +52,8 @@ export function rowToDiscoveryDocument(row: Row): DiscoveryDocument {
     image_url: typeof row.image_url === "string" ? row.image_url : null,
     seo_tags: stringArray(row.seo_tags),
     attributes: stringArray(row.attributes),
+    search_terms: stringArray(row.search_terms),
+    fulfillment_modes: stringArray(row.fulfillment_modes),
     view_count: Number(row.view_count ?? 0),
     saved_count: Number(row.saved_count ?? 0),
     purchase_count: Number(row.purchase_count ?? 0),
@@ -101,6 +103,8 @@ function demoDocuments(): DiscoveryDocument[] {
       image_url: null,
       seo_tags: listing.highlights,
       attributes: listing.highlights,
+      search_terms: [listing.title, listing.category, listing.condition, ...listing.highlights],
+      fulfillment_modes: ["pickup", "shipping"],
       view_count: 350 - index * 60,
       saved_count: 42 - index * 7,
       purchase_count: 0,
@@ -220,13 +224,96 @@ export async function searchMarketplace(params: DiscoverySearchParams): Promise<
   }
 }
 
-export async function indexActiveListings(limit = 500) {
+export async function trackSearchEvent({
+  params,
+  resultCount,
+  source,
+  userId,
+  sessionId,
+  clickedListingId,
+}: {
+  params: DiscoverySearchParams;
+  resultCount: number;
+  source: DiscoveryResult["source"];
+  userId?: string | null;
+  sessionId?: string | null;
+  clickedListingId?: string | null;
+}) {
+  try {
+    const supabase = createAdminClient();
+    const { error } = await (supabase as any).from("search_events").insert({
+      user_id: userId ?? null,
+      session_id: sessionId ?? params.sessionId ?? null,
+      query: params.intent || params.q || null,
+      filters: {
+        category: params.category,
+        location: params.location,
+        lat: params.lat,
+        lng: params.lng,
+        radiusMiles: params.radiusMiles,
+        minPrice: params.minPrice,
+        maxPrice: params.maxPrice,
+        condition: params.condition,
+        minSellerTrust: params.minSellerTrust,
+        verifiedOnly: params.verifiedOnly,
+        paymentProtection: params.paymentProtection,
+        fulfillment: params.fulfillment,
+        sort: params.sort,
+        source,
+      },
+      result_count: resultCount,
+      clicked_listing_id: clickedListingId ?? null,
+    });
+    if (error) throw error;
+    return { tracked: true };
+  } catch (error) {
+    console.error("Unable to record search event", { error });
+    return { tracked: false };
+  }
+}
+
+export async function indexActiveListings(limit = 500, options: { waitForTasks?: boolean } = {}) {
+  await configureDiscoveryIndex();
   const supabase = createAdminClient();
   const { data, error } = await (supabase as any).from("listing_search_documents").select("*").eq("status", "active").order("updated_at", { ascending: false }).limit(limit);
   if (error) throw error;
   const documents = (data ?? []).map((row: Row) => rowToDiscoveryDocument(row));
   const task = await upsertDiscoveryDocuments(documents);
+  if (options.waitForTasks && task.taskUid !== null) await waitForMeiliTask(task.taskUid);
   return { indexed: documents.length, task };
+}
+
+export async function indexListingsById(listingIds: string[], options: { waitForTasks?: boolean } = {}) {
+  if (!isSearchConfigured()) return { skipped: true, reason: "search_not_configured", indexed: 0, deleted: 0 };
+  await configureDiscoveryIndex();
+  const supabase = createAdminClient();
+  const { data, error } = await (supabase as any).from("listing_search_documents").select("*").in("id", listingIds);
+  if (error) throw error;
+
+  const activeDocuments = (data ?? [])
+    .filter((row: Row) => row.status === "active")
+    .map((row: Row) => rowToDiscoveryDocument(row));
+  const activeIds = new Set(activeDocuments.map((document: DiscoveryDocument) => document.id));
+  const staleIds = listingIds.filter((id) => !activeIds.has(id));
+
+  const [upsertTask, deleteTask] = await Promise.all([
+    upsertDiscoveryDocuments(activeDocuments),
+    deleteDiscoveryDocuments(staleIds),
+  ]);
+
+  if (options.waitForTasks) {
+    await Promise.all([
+      upsertTask.taskUid !== null ? waitForMeiliTask(upsertTask.taskUid) : Promise.resolve(),
+      deleteTask.taskUid !== null ? waitForMeiliTask(deleteTask.taskUid) : Promise.resolve(),
+    ]);
+  }
+
+  return { indexed: activeDocuments.length, deleted: staleIds.length, upsertTask, deleteTask };
+}
+
+export async function rebuildDiscoveryIndex(limit = 1000, options: { waitForTasks?: boolean } = {}) {
+  if (!isSearchConfigured()) return { skipped: true, reason: "search_not_configured", indexed: 0 };
+  return indexActiveListings(limit, options);
 }
 
 

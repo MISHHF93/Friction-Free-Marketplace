@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MapPin, ShieldCheck } from "lucide-react";
-import { EmptyState, ListingCard as DesignListingCard } from "@/components/marketplace-design-system";
 import { Button } from "@/components/ui/button";
+import { EmptyState, ListingCard as DesignListingCard } from "@/components/ui-library";
 import type { DiscoveryDocument } from "@/lib/search/schema";
 
 export function toDesignListing(listing: DiscoveryDocument) {

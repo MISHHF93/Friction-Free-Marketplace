@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { recordTransactionEvent } from "@/lib/payments/audit";
 import { centsToDollars } from "@/lib/payments/money";
 import { upsertSellerAccountFromStripe } from "@/lib/payments/connect";
+import { buildCaptureJournal, buildDisputeHoldJournal, postLedgerJournal } from "@/lib/financial/ledger";
 import { getStripe } from "@/lib/stripe/server";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,17 @@ async function updatePaymentIntent(intent: Stripe.PaymentIntent) {
     await supabase.from("escrow_payments").update({ status: "held", captured_at: new Date().toISOString(), held_at: new Date().toISOString(), provider_charge_id: chargeId }).eq("provider_payment_id", intent.id);
     await supabase.from("transactions").update({ status: "escrowed", paid_at: new Date().toISOString() }).eq("id", transactionId);
     if (transaction && payment) {
+      await postLedgerJournal(supabase, buildCaptureJournal({
+        transactionId,
+        totalAmount: Number(payment.amount),
+        sellerNetAmount: Number(payment.seller_net_amount),
+        platformFeeAmount: Number(payment.platform_fee_amount),
+        currency: payment.currency,
+        buyerId: transaction.buyer_id,
+        sellerId: transaction.seller_id,
+        providerPaymentId: intent.id,
+        providerChargeId: chargeId,
+      }));
       await supabase.from("transaction_receipts").upsert({
         transaction_id: transactionId,
         buyer_id: transaction.buyer_id,
@@ -68,7 +80,7 @@ async function upsertStripeDispute(dispute: Stripe.Dispute) {
   const paymentIntentId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
   if (!paymentIntentId) return;
   const supabase = createAdminClient() as any;
-  const { data: payment } = await supabase.from("escrow_payments").select("transaction_id").eq("provider_payment_id", paymentIntentId).maybeSingle();
+  const { data: payment } = await supabase.from("escrow_payments").select("*").eq("provider_payment_id", paymentIntentId).maybeSingle();
   if (!payment?.transaction_id) return;
   const { data: transaction } = await supabase.from("transactions").select("buyer_id,seller_id,status").eq("id", payment.transaction_id).single();
   if (!transaction) return;
@@ -84,6 +96,21 @@ async function upsertStripeDispute(dispute: Stripe.Dispute) {
     metadata: { stripe_status: dispute.status, amount: dispute.amount, currency: dispute.currency }
   }, { onConflict: "provider_dispute_id" });
   await supabase.from("transactions").update({ status: "disputed" }).eq("id", payment.transaction_id);
+  if (payment.status === "held") {
+    await postLedgerJournal(supabase, buildDisputeHoldJournal({
+      transactionId: payment.transaction_id,
+      totalAmount: Number(payment.amount),
+      sellerNetAmount: Number(payment.seller_net_amount),
+      platformFeeAmount: Number(payment.platform_fee_amount),
+      disputedAmount: centsToDollars(dispute.amount),
+      currency: payment.currency,
+      buyerId: transaction.buyer_id,
+      sellerId: transaction.seller_id,
+      providerPaymentId: payment.provider_payment_id,
+      providerChargeId: payment.provider_charge_id,
+      providerDisputeId: dispute.id,
+    }));
+  }
   await recordTransactionEvent(supabase, { transaction_id: payment.transaction_id, type: dispute.status === "won" || dispute.status === "lost" ? "dispute_closed" : "dispute_opened", from_status: transaction.status, to_status: "disputed", provider_object_id: dispute.id, amount: centsToDollars(dispute.amount), currency: dispute.currency, message: `Stripe dispute ${dispute.status}: ${dispute.reason}` });
 }
 

@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/payments/auth";
 import { recordTransactionEvent } from "@/lib/payments/audit";
 import { enqueueTemplateNotification } from "@/lib/notifications/service";
+import { buildDisputeHoldJournal, postLedgerJournal } from "@/lib/financial/ledger";
 
 const disputeSchema = z.object({ reason: z.string().min(10), evidence: z.record(z.unknown()).default({}) });
 const transactionIdSchema = z.string().uuid();
@@ -22,6 +23,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const supabase = createAdminClient() as any;
   const { data: transaction } = await supabase.from("transactions").select("*").eq("id", transactionId.data).single();
   if (!transaction || ![transaction.buyer_id, transaction.seller_id].includes(auth.user.id)) return NextResponse.json({ error: "Transaction not found." }, { status: 404 });
+  const { data: existingDispute } = await supabase
+    .from("disputes")
+    .select("id,status")
+    .eq("transaction_id", transactionId.data)
+    .in("status", ["opened", "under_review", "awaiting_buyer", "awaiting_seller"])
+    .maybeSingle();
+  if (existingDispute) {
+    return NextResponse.json({ error: "An open dispute already exists for this transaction.", disputeId: existingDispute.id }, { status: 409 });
+  }
 
   const { data: dispute, error } = await supabase.from("disputes").insert({
     transaction_id: transactionId.data,
@@ -34,6 +44,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (error) return NextResponse.json({ error: "Could not create dispute." }, { status: 500 });
 
   await supabase.from("transactions").update({ status: "disputed" }).eq("id", transactionId.data);
+  const { data: payment } = await supabase.from("escrow_payments").select("*").eq("transaction_id", transactionId.data).maybeSingle();
+  if (payment?.status === "held") {
+    await postLedgerJournal(supabase, buildDisputeHoldJournal({
+      transactionId: transactionId.data,
+      totalAmount: Number(payment.amount),
+      sellerNetAmount: Number(payment.seller_net_amount),
+      platformFeeAmount: Number(payment.platform_fee_amount),
+      currency: payment.currency,
+      buyerId: transaction.buyer_id,
+      sellerId: transaction.seller_id,
+      providerPaymentId: payment.provider_payment_id,
+      providerChargeId: payment.provider_charge_id,
+      providerDisputeId: dispute.id,
+    }));
+  }
   await recordTransactionEvent(supabase, {
     transaction_id: transactionId.data,
     actor_id: auth.user.id,

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type ChangeEvent } from "react";
 import { Bell, CalendarClock, CircleDollarSign, Flag, History, Paperclip, Send, ShieldAlert, Timer, UserX } from "lucide-react";
 import { createClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { createMediaViewerItem, MediaViewer } from "@/components/media/media-viewer";
 import { cn } from "@/lib/utils";
 import type { ConversationMessage, ConversationOffer, ConversationSummary, MessageAttachment, MessageReadReceipt } from "@/lib/messaging/types";
+import { displayOfferStatus, isOfferExpired } from "@/lib/offers/state-machine";
 import {
   blockUserAction,
   createReservationDepositAction,
@@ -23,8 +25,17 @@ import {
   respondToOfferAction,
   schedulePickupAction,
   sendMessageAction,
-  setTypingAction
+  setTypingAction,
+  uploadMessageAttachmentsAction
 } from "@/app/dashboard/messages/actions";
+
+type PendingAttachment = {
+  storagePath: string;
+  publicUrl: string;
+  fileName: string;
+  contentType: string;
+  byteSize: number;
+};
 
 function money(amount: number | string, currency = "USD") {
   return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(Number(amount));
@@ -39,11 +50,24 @@ function mergeConversation(items: ConversationSummary[], item: ConversationSumma
   return mergeById(items, item).sort((a, b) => new Date(b.last_message_at ?? b.updated_at).getTime() - new Date(a.last_message_at ?? a.updated_at).getTime());
 }
 
+function attachmentViewerItem(attachment: MessageAttachment) {
+  if (!attachment.public_url) return null;
+  return createMediaViewerItem({
+    id: attachment.id,
+    src: attachment.public_url,
+    title: attachment.file_name,
+    contentType: attachment.content_type,
+    byteSize: attachment.byte_size,
+    createdAt: attachment.created_at
+  });
+}
+
 export function CommunicationHub({ userId, initialConversations, initialConversationId }: { userId: string; initialConversations: ConversationSummary[]; initialConversationId?: string }) {
   const [conversations, setConversations] = useState(initialConversations);
   const [activeId, setActiveId] = useState(initialConversationId ?? initialConversations[0]?.id ?? "");
   const [body, setBody] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState("");
+  const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [offerAmount, setOfferAmount] = useState("");
   const [offerMessage, setOfferMessage] = useState("");
   const [offerExpiresAt, setOfferExpiresAt] = useState("");
@@ -55,6 +79,7 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attachmentInputRef = useRef<HTMLInputElement | null>(null);
 
   const sortedConversations = useMemo(() => [...conversations].sort((a, b) => new Date(b.last_message_at ?? b.updated_at).getTime() - new Date(a.last_message_at ?? a.updated_at).getTime()), [conversations]);
   const activeConversation = useMemo(
@@ -164,6 +189,24 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
     typingTimeoutRef.current = setTimeout(() => setTypingAction({ conversationId: activeConversation.id, isTyping: false }).catch(() => null), 1200);
   }
 
+  async function uploadAttachments(event: ChangeEvent<HTMLInputElement>) {
+    if (!activeConversation) return;
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length) return;
+    setError(null);
+    const formData = new FormData();
+    formData.append("conversationId", activeConversation.id);
+    files.forEach((file) => formData.append("files", file));
+
+    try {
+      const uploaded = await uploadMessageAttachmentsAction(formData);
+      setAttachments((current) => [...current, ...uploaded].slice(0, 5));
+      if (attachmentInputRef.current) attachmentInputRef.current.value = "";
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Attachment upload failed.");
+    }
+  }
+
   if (!activeConversation) {
     return (
       <Card>
@@ -182,6 +225,7 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
   const canRespondToPendingOffer = Boolean(pendingOffer && pendingOffer.created_by_id !== userId);
   const canCounterPendingOffer = canRespondToPendingOffer;
   const canWithdrawPendingOffer = Boolean(pendingOffer && pendingOffer.created_by_id === userId);
+  const canExpirePendingOffer = Boolean(pendingOffer && isOfferExpired(pendingOffer.expires_at));
   const latestDeposit = activeConversation.reservation_deposits[0];
   const latestPickup = activeConversation.pickup_schedules[0];
 
@@ -248,9 +292,18 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
                         <span>{new Date(message.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                       </div>
                       <p className="whitespace-pre-wrap">{message.body}</p>
-                      {(message.message_attachments ?? []).map((attachment) => (
-                        <a key={attachment.id} href={attachment.public_url ?? "#"} className="mt-2 flex items-center gap-2 underline" target="_blank" rel="noreferrer"><Paperclip className="h-4 w-4" />{attachment.file_name}</a>
-                      ))}
+                      {(message.message_attachments ?? []).map((attachment) => {
+                        const item = attachmentViewerItem(attachment);
+                        return (
+                          <div key={attachment.id} className="mt-2">
+                            {item ? (
+                              <MediaViewer items={[item]} mode="attachment" surface="messageAttachment" triggerLabel={attachment.file_name} triggerClassName={cn("max-w-full justify-start", own && "bg-background/15 text-primary-foreground hover:bg-background/20")} />
+                            ) : (
+                              <span className="flex items-center gap-2 text-xs opacity-80"><Paperclip className="h-4 w-4" />{attachment.file_name}</span>
+                            )}
+                          </div>
+                        );
+                      })}
                       {own && <p className="mt-1 text-right text-[11px] opacity-70">{message.read_at ? "Read" : "Sent"}</p>}
                     </div>
                   </div>
@@ -258,11 +311,31 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
               })}
             </div>
             <div className="mt-2 h-5 text-xs text-muted-foreground">{(typingUsers[activeConversation.id] ?? []).length > 0 ? `${otherParticipant?.display_name ?? "They"} is typing…` : " "}</div>
-            <form className="mt-3 grid gap-3" onSubmit={(event) => { event.preventDefault(); runAction(() => sendMessageAction({ conversationId: activeConversation.id, body, clientToken: crypto.randomUUID(), attachments: attachmentUrl ? [{ storagePath: `external/${crypto.randomUUID()}`, publicUrl: attachmentUrl, fileName: attachmentUrl.split('/').pop() || 'attachment', contentType: 'application/octet-stream', byteSize: 1024 }] : [] }), () => { setBody(""); setAttachmentUrl(""); if (activeConversation) setTypingAction({ conversationId: activeConversation.id, isTyping: false }).catch(() => null); }); }}>
+            <form className="mt-3 grid gap-3" onSubmit={(event) => { event.preventDefault(); runAction(() => sendMessageAction({ conversationId: activeConversation.id, body, clientToken: crypto.randomUUID(), attachments: [...attachments, ...(attachmentUrl ? [{ storagePath: `external/${crypto.randomUUID()}`, publicUrl: attachmentUrl, fileName: attachmentUrl.split('/').pop() || 'attachment', contentType: 'application/octet-stream', byteSize: 1024 }] : [])] }), () => { setBody(""); setAttachmentUrl(""); setAttachments([]); if (activeConversation) setTypingAction({ conversationId: activeConversation.id, isTyping: false }).catch(() => null); }); }}>
               <Textarea value={body} onChange={(event) => onMessageInput(event.target.value)} placeholder="Write a real-time message…" disabled={activeConversation.status === "blocked"} />
+              {attachments.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {attachments.map((attachment) => (
+                    <button
+                      key={attachment.storagePath}
+                      type="button"
+                      className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground"
+                      onClick={() => setAttachments((current) => current.filter((item) => item.storagePath !== attachment.storagePath))}
+                    >
+                      {attachment.fileName} x
+                    </button>
+                  ))}
+                </div>
+              )}
               <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <Input value={attachmentUrl} onChange={(event) => setAttachmentUrl(event.target.value)} placeholder="Optional attachment URL (uploaded path can be stored here)" />
-                <Button disabled={isPending || activeConversation.status === "blocked" || (!body && !attachmentUrl)}><Send className="mr-2 h-4 w-4" />Send</Button>
+                <div className="flex gap-2">
+                  <input ref={attachmentInputRef} type="file" multiple className="hidden" onChange={uploadAttachments} />
+                  <Button type="button" variant="outline" onClick={() => attachmentInputRef.current?.click()} disabled={isPending || activeConversation.status === "blocked"}>
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                  <Button disabled={isPending || activeConversation.status === "blocked" || (!body && !attachmentUrl && attachments.length === 0)}><Send className="mr-2 h-4 w-4" />Send</Button>
+                </div>
               </div>
             </form>
           </CardContent>
@@ -276,7 +349,7 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
                 <div className="rounded-xl bg-secondary p-3 text-sm">
                   <div className="flex items-center justify-between gap-2">
                     <span>Latest: {money(latestOffer.amount, latestOffer.currency)}</span>
-                    <Badge>{latestOffer.status === "declined" ? "rejected" : latestOffer.status}</Badge>
+                    <Badge>{displayOfferStatus(latestOffer.status)}</Badge>
                   </div>
                   {latestOffer.expires_at && <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><Timer className="h-3 w-3" />Expires {new Date(latestOffer.expires_at).toLocaleString()}</p>}
                   {pendingOffer && <p className="mt-1 text-xs text-muted-foreground">Awaiting {pendingOffer.created_by_id === userId ? "their response" : "your response"}.</p>}
@@ -293,13 +366,14 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
                 <Button disabled={!canRespondToPendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "accepted", message: "Accepted from chat." }))}>Accept</Button>
                 <Button disabled={!canRespondToPendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "declined", message: "Rejected from chat." }))}>Reject</Button>
                 <Button disabled={!canWithdrawPendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "withdrawn", message: "Withdrawn from chat." }))}>Withdraw</Button>
+                <Button disabled={!canExpirePendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "expired", message: "Expired from chat." }))}>Expire</Button>
               </div>
               {latestOffer?.offer_status_history && latestOffer.offer_status_history.length > 0 && (
                 <div className="rounded-xl border p-3 text-xs">
                   <p className="mb-2 flex items-center gap-1 font-semibold"><History className="h-3.5 w-3.5" />Status history</p>
                   <div className="grid gap-1">
                     {latestOffer.offer_status_history.slice(0, 4).map((history) => (
-                      <p key={history.id} className="text-muted-foreground">{history.from_status ?? "new"} → {history.to_status} · {new Date(history.created_at).toLocaleString()}</p>
+                      <p key={history.id} className="text-muted-foreground">{history.from_status ? displayOfferStatus(history.from_status) : "new"} -&gt; {displayOfferStatus(history.to_status)} · {new Date(history.created_at).toLocaleString()}</p>
                     ))}
                   </div>
                 </div>

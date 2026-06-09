@@ -32,6 +32,7 @@ export const dashboardLinks: DashboardLink[] = [
   { href: "/dashboard/favorites", label: "Favorites", description: "Saved listings and collections", icon: Heart },
   { href: "/dashboard/saved-searches", label: "Saved searches", description: "Alerts and market tracking", icon: Search },
   { href: "/dashboard/ai-listing-creator", label: "AI assistant", description: "Generate listings and commerce guidance", icon: Sparkles },
+  { href: "/dashboard/trust-safety", label: "Trust & safety", description: "Reports, risk status, and safety workflows", icon: ShieldCheck },
   { href: "/dashboard/trust-score", label: "Trust score", description: "Reliability and risk signals", icon: ShieldCheck },
   { href: "/dashboard/verification", label: "Verification center", description: "Identity and account limits", icon: UserCheck },
   { href: "/dashboard/payments", label: "Payments", description: "Checkout, payouts, and protected payments", icon: WalletCards },

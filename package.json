@@ -2,12 +2,15 @@
   "name": "friction-free-marketplace",
   "private": true,
   "workspaces": [
-    "apps/web"
+    "apps/web",
+    "packages/*"
   ],
   "scripts": {
     "test": "npm run web:test",
     "test:unit": "npm run web:test:unit",
     "test:e2e": "npm run web:test:e2e",
+    "shared:build": "npm --workspace @ffm/shared run build",
+    "shared:typecheck": "npm --workspace @ffm/shared run typecheck",
     "web:dev": "npm --workspace apps/web run dev",
     "web:build": "npm --workspace apps/web run build",
     "web:lint": "npm --workspace apps/web run lint",

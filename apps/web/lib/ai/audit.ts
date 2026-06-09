@@ -11,6 +11,7 @@ type AgentAuditEvent = {
   inputSummary?: Record<string, unknown>;
   outputSummary?: Record<string, unknown>;
   safetyFlags?: string[];
+  toolCalls?: Array<Record<string, unknown>>;
   tokenUsage?: Record<string, unknown> | null;
   errorMessage?: string | null;
 };
@@ -36,6 +37,7 @@ export async function recordAgentAuditEvent(event: AgentAuditEvent) {
         latency_ms: event.latencyMs,
         input_summary: event.inputSummary,
         safety_flags: event.safetyFlags ?? [],
+        tool_calls: event.toolCalls ?? [],
         token_usage: event.tokenUsage ?? null,
         error_message: event.errorMessage ?? null
       }
@@ -49,6 +51,7 @@ export async function recordAgentAuditEvent(event: AgentAuditEvent) {
       input_summary: event.inputSummary ?? {},
       output_summary: event.outputSummary ?? {},
       safety_flags: event.safetyFlags ?? [],
+      tool_calls: event.toolCalls ?? [],
       token_usage: event.tokenUsage ?? {},
       latency_ms: event.latencyMs ?? null,
       error_message: event.errorMessage ?? null

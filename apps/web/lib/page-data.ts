@@ -111,8 +111,8 @@ export const pages: ExperiencePage[] = [
   {
     key: "trust-safety",
     title: "Trust and safety page",
-    eyebrow: "Public · /trust-and-safety",
-    route: "/trust-and-safety",
+    eyebrow: "Public · /safety",
+    route: "/safety",
     persona: "Users validating marketplace safety before transacting",
     promise: "Shows how identity, escrow, AI moderation, reporting, and disputes protect commerce.",
     layout: ["Trust mission hero", "Protection pillars grid", "Risk lifecycle diagram", "Reporting CTA and policy links"],

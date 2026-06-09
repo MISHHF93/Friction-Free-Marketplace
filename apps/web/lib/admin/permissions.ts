@@ -20,7 +20,10 @@ export type AdminPermission =
   | "analytics.revenue"
   | "trust.override"
   | "audit.read"
-  | "workflows.manage";
+  | "workflows.manage"
+  | "platform.rbac"
+  | "platform.audit"
+  | "platform.operations";
 
 export const rolePermissions: Record<AdminRole, AdminPermission[]> = {
   support: ["admin.access", "users.read", "reports.review", "disputes.decide", "transactions.monitor", "audit.read"],
@@ -28,8 +31,8 @@ export const rolePermissions: Record<AdminRole, AdminPermission[]> = {
   risk: ["admin.access", "users.read", "users.write", "users.ban", "listings.moderate", "fraud.review", "reports.review", "trust.override", "audit.read"],
   finance: ["admin.access", "users.read", "transactions.monitor", "payments.monitor", "disputes.decide", "analytics.revenue", "audit.read"],
   analyst: ["admin.access", "analytics.search", "analytics.revenue", "transactions.monitor", "payments.monitor", "audit.read"],
-  admin: ["admin.access", "users.read", "users.write", "users.ban", "listings.moderate", "fraud.review", "reports.review", "disputes.decide", "transactions.monitor", "payments.monitor", "ai.monitor", "analytics.search", "analytics.revenue", "trust.override", "audit.read", "workflows.manage"],
-  super_admin: ["admin.access", "users.read", "users.write", "users.ban", "listings.moderate", "fraud.review", "reports.review", "disputes.decide", "transactions.monitor", "payments.monitor", "ai.monitor", "analytics.search", "analytics.revenue", "trust.override", "audit.read", "workflows.manage"]
+  admin: ["admin.access", "users.read", "users.write", "users.ban", "listings.moderate", "fraud.review", "reports.review", "disputes.decide", "transactions.monitor", "payments.monitor", "ai.monitor", "analytics.search", "analytics.revenue", "trust.override", "audit.read", "workflows.manage", "platform.operations", "platform.audit"],
+  super_admin: ["admin.access", "users.read", "users.write", "users.ban", "listings.moderate", "fraud.review", "reports.review", "disputes.decide", "transactions.monitor", "payments.monitor", "ai.monitor", "analytics.search", "analytics.revenue", "trust.override", "audit.read", "workflows.manage", "platform.operations", "platform.audit", "platform.rbac"]
 };
 
 export const permissionLabels: Record<AdminPermission, string> = {
@@ -48,7 +51,10 @@ export const permissionLabels: Record<AdminPermission, string> = {
   "analytics.revenue": "View revenue analytics",
   "trust.override": "Override trust scores",
   "audit.read": "Read audit logs",
-  "workflows.manage": "Manage moderation workflows"
+  "workflows.manage": "Manage moderation workflows",
+  "platform.rbac": "Manage admin roles and permissions",
+  "platform.audit": "Export and govern platform audit trails",
+  "platform.operations": "Execute platform operations"
 };
 
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
