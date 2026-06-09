@@ -34,7 +34,7 @@ const fallbackStatus: ConnectStatusResponse = {
   payoutsEnabled: false,
   detailsSubmitted: false,
   requirements: { currentlyDue: [], eventuallyDue: [], pastDue: [], pendingVerification: [] },
-  message: "Create a Stripe Express account to begin seller onboarding.",
+  message: "Set up a Stripe Express account to receive seller payouts.",
   canAcceptPayments: false,
   canReceivePayouts: false
 };
@@ -65,17 +65,17 @@ export function SellerOnboardingCard() {
     try {
       const response = await fetch("/api/stripe/connect/status", { cache: "no-store" });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Could not load Stripe Connect status.");
+      if (!response.ok) throw new Error(data.error ?? "Could not load payout setup status.");
       setConnectStatus(data);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Connect status unavailable.");
+      setErrorMessage(error instanceof Error ? error.message : "Payout status is unavailable right now.");
     } finally {
       setIsLoading(false);
     }
   }
 
   useEffect(() => {
-    refreshStatus();
+    void Promise.resolve().then(() => refreshStatus());
   }, []);
 
   async function startOnboarding() {
@@ -84,10 +84,10 @@ export function SellerOnboardingCard() {
     try {
       const response = await fetch("/api/stripe/connect/onboard", { method: "POST" });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Could not start onboarding.");
+      if (!response.ok) throw new Error(data.error ?? "Could not start payout setup.");
       window.location.href = data.url;
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Onboarding failed.");
+      setErrorMessage(error instanceof Error ? error.message : "Payout setup did not start. Please try again.");
       setIsStarting(false);
     }
   }
@@ -98,10 +98,10 @@ export function SellerOnboardingCard() {
     try {
       const response = await fetch("/api/stripe/connect/login-link", { method: "POST" });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error ?? "Could not open the Stripe Express Dashboard.");
+      if (!response.ok) throw new Error(data.error ?? "Could not open your payout dashboard.");
       window.location.href = data.url;
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Dashboard link failed.");
+      setErrorMessage(error instanceof Error ? error.message : "The payout dashboard link did not open. Please try again.");
       setIsOpeningDashboard(false);
     }
   }
@@ -118,14 +118,14 @@ export function SellerOnboardingCard() {
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Complete Stripe-hosted Express onboarding to accept marketplace payments and receive seller payouts after escrow release.
+          Complete Stripe-hosted setup to accept protected payments and receive seller payouts after an order is completed.
         </p>
 
         <div className="rounded-2xl border border-border bg-secondary/60 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : isReady ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <AlertCircle className="h-4 w-4 text-amber-600" />}
-              <span className="font-semibold">{isLoading ? "Checking Stripe Connect…" : statusLabels[connectStatus.status]}</span>
+              <span className="font-semibold">{isLoading ? "Checking payout setup..." : statusLabels[connectStatus.status]}</span>
             </div>
             <Badge className={isReady ? "border-emerald-200 bg-emerald-50 text-emerald-700" : needsAction ? "border-amber-200 bg-amber-50 text-amber-700" : undefined}>
               {isReady ? "Payments enabled" : "Setup needed"}
@@ -148,7 +148,7 @@ export function SellerOnboardingCard() {
 
         {blockingRequirements.length > 0 ? (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-            <p className="font-semibold">Stripe needs more information</p>
+            <p className="font-semibold">More information is needed</p>
             <p className="mt-1">Continue onboarding to resolve {blockingRequirements.length} requirement{blockingRequirements.length === 1 ? "" : "s"}.</p>
           </div>
         ) : null}
@@ -158,12 +158,12 @@ export function SellerOnboardingCard() {
         <div className="flex flex-wrap gap-3">
           <Button onClick={startOnboarding} disabled={isStarting || isLoading}>
             {isStarting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
-            {isReady ? "Update Stripe profile" : "Continue Stripe onboarding"}
+            {isReady ? "Update payout profile" : "Continue payout setup"}
           </Button>
           {connectStatus.accountId ? (
             <Button variant="outline" onClick={openDashboard} disabled={isOpeningDashboard || isLoading}>
               {isOpeningDashboard ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
-              Express Dashboard
+              Payout dashboard
             </Button>
           ) : null}
           <Button variant="ghost" onClick={refreshStatus} disabled={isLoading}>

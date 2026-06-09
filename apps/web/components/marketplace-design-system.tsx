@@ -1,7 +1,5 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- Marketplace image URLs are intentionally consumer-provided. */
-
 import * as React from "react";
 import Link from "next/link";
 import {
@@ -11,7 +9,10 @@ import {
   CheckCircle2,
   ChevronDown,
   Clock,
+  CreditCard,
   DollarSign,
+  Eye,
+  Heart,
   ImagePlus,
   Loader2,
   MapPin,
@@ -224,9 +225,9 @@ export function ListingCard({ listing, ctaLabel = "View details", className, ...
 
   return (
     <article className={className} {...props}>
-      <Card className="group h-full overflow-hidden transition hover:-translate-y-0.5 hover:shadow-soft">
-        <Link href={href} className="block" aria-label={`${ctaLabel} for ${listing.title}`}>
-          <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-secondary to-accent">
+      <Card className="group h-full overflow-hidden rounded-3xl border-border/80 bg-white/95 shadow-md transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-soft">
+        <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-trust-soft via-ai-soft to-premium-soft sm:aspect-[5/4] lg:aspect-[4/3]">
+          <Link href={href} className="block h-full" aria-label={`${ctaLabel} for ${listing.title}`}>
             {listing.imageUrl ? (
               <RemoteImage
                 src={listing.imageUrl}
@@ -238,11 +239,32 @@ export function ListingCard({ listing, ctaLabel = "View details", className, ...
                 <ImagePlus className="h-10 w-10" aria-hidden="true" />
               </div>
             )}
-            {listing.category ? <Badge className="absolute left-3 top-3 bg-card/90 backdrop-blur">{listing.category}</Badge> : null}
+          </Link>
+          <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-3">
+            {listing.category ? <Badge variant="premium" className="bg-card/90 shadow-sm backdrop-blur">{listing.category}</Badge> : <span />}
+            <button
+              type="button"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/90 text-slate-700 shadow-md backdrop-blur transition hover:-translate-y-0.5 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={`Save ${listing.title} to favorites`}
+            >
+              <Heart className="h-4 w-4" aria-hidden="true" />
+            </button>
           </div>
-        </Link>
+          <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-2">
+            {listing.isVerified ? (
+              <span className="inline-flex items-center gap-1 rounded-full border border-trust-border bg-white/95 px-2.5 py-1 text-xs font-bold text-trust shadow-sm backdrop-blur">
+                <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
+                Verified payment
+              </span>
+            ) : null}
+            <span className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm backdrop-blur">
+              <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+              Quick view
+            </span>
+          </div>
+        </div>
         <CardContent className="space-y-4 p-4 sm:p-5">
-          <div className="flex items-start justify-between gap-3">
+          <div className="grid gap-2 sm:flex sm:items-start sm:justify-between sm:gap-3">
             <div className="min-w-0 space-y-1">
               <h3 className="line-clamp-2 text-base font-bold tracking-tight sm:text-lg">
                 <Link href={href} className="hover:text-primary">
@@ -256,7 +278,7 @@ export function ListingCard({ listing, ctaLabel = "View details", className, ...
                 </p>
               ) : null}
             </div>
-            <PriceDisplay amount={listing.price} currency={listing.currency} size="sm" />
+            <PriceDisplay amount={listing.price} currency={listing.currency} size="sm" className="text-primary sm:text-right" />
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             {listing.condition ? <Badge>{listing.condition}</Badge> : null}
@@ -264,9 +286,16 @@ export function ListingCard({ listing, ctaLabel = "View details", className, ...
             {typeof listing.trustScore === "number" ? <TrustBadge label={`${listing.trustScore}% trust`} tone="info" /> : null}
           </div>
           {listing.sellerName ? <p className="text-sm text-muted-foreground">Listed by {listing.sellerName}</p> : null}
-          <Button asChild className="w-full">
-            <Link href={href}>{ctaLabel}</Link>
-          </Button>
+          <div className="grid grid-cols-[1fr_auto] gap-2">
+            <Button asChild className="w-full" variant="trust">
+              <Link href={href}>{ctaLabel}</Link>
+            </Button>
+            <Button asChild variant="outline" size="icon">
+              <Link href={href} aria-label={`Quick view ${listing.title}`}>
+                <Eye className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </article>
@@ -282,8 +311,8 @@ export type TrustBadgeProps = React.HTMLAttributes<HTMLSpanElement> & {
 };
 
 const trustBadgeToneClasses: Record<TrustBadgeTone, string> = {
-  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
-  info: "border-sky-200 bg-sky-50 text-sky-700",
+  success: "border-trust-border bg-trust-soft text-trust",
+  info: "border-ai-border bg-ai-soft text-ai",
   warning: "border-amber-200 bg-amber-50 text-amber-800",
   neutral: "border-border bg-secondary text-secondary-foreground"
 };
@@ -517,7 +546,7 @@ export type ErrorMessageProps = React.HTMLAttributes<HTMLDivElement> & {
   action?: React.ReactNode;
 };
 
-export function ErrorMessage({ title = "Something went wrong", message, action, className, ...props }: ErrorMessageProps) {
+export function ErrorMessage({ title = "We could not load this section", message, action, className, ...props }: ErrorMessageProps) {
   return (
     <div className={cn("rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-destructive", className)} role="alert" {...props}>
       <div className="flex gap-3">
@@ -613,7 +642,7 @@ export function LocationPicker({ label = "Choose a location", value, options, on
   );
 }
 
-export type OfferStatus = "pending" | "accepted" | "declined" | "expired";
+export type OfferStatus = "pending" | "accepted" | "countered" | "declined" | "expired" | "withdrawn";
 
 export type OfferCardProps = React.HTMLAttributes<HTMLDivElement> & {
   title: string;
@@ -626,15 +655,17 @@ export type OfferCardProps = React.HTMLAttributes<HTMLDivElement> & {
 };
 
 const offerStatusClasses: Record<OfferStatus, string> = {
-  pending: "bg-amber-50 text-amber-800 border-amber-200",
-  accepted: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  pending: "bg-amber-50 text-amber-800 border-amber-200 offer-status-pending",
+  accepted: "bg-emerald-50 text-emerald-700 border-emerald-200 offer-status-accepted",
+  countered: "bg-ai-soft text-ai border-ai-border offer-status-pending",
   declined: "bg-slate-100 text-slate-600 border-slate-200",
-  expired: "bg-destructive/10 text-destructive border-destructive/30"
+  expired: "bg-destructive/10 text-destructive border-destructive/30",
+  withdrawn: "bg-slate-100 text-slate-600 border-slate-200"
 };
 
 export function OfferCard({ title, buyerName, amount, currency, status = "pending", expiresAt, actions, className, ...props }: OfferCardProps) {
   return (
-    <Card className={cn("overflow-hidden", className)} {...props}>
+    <Card className={cn("overflow-hidden interactive-card", className)} {...props}>
       <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
         <div className="min-w-0">
           <CardTitle className="line-clamp-1">{title}</CardTitle>

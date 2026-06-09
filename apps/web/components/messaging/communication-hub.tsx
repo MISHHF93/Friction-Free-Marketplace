@@ -186,13 +186,13 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
   const latestPickup = activeConversation.pickup_schedules[0];
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <Card className="overflow-hidden lg:sticky lg:top-24 lg:h-fit">
+    <div className="grid gap-4 xl:grid-cols-[minmax(17rem,20rem)_minmax(0,1fr)]">
+      <Card className="overflow-hidden xl:sticky xl:top-24 xl:h-fit">
         <CardHeader>
           <CardTitle>Conversations</CardTitle>
           <CardDescription>Supabase Realtime keeps every thread, receipt, and negotiation update live.</CardDescription>
         </CardHeader>
-        <CardContent className="grid max-h-72 gap-2 overflow-y-auto p-3 lg:max-h-[calc(100vh-14rem)]">
+        <CardContent className="grid max-h-72 gap-2 overflow-y-auto p-3 xl:max-h-[calc(100vh-14rem)]">
           {sortedConversations.map((conversation) => {
             const participant = conversation.buyer_id === userId ? conversation.seller : conversation.buyer;
             const latestMessage = conversation.messages[conversation.messages.length - 1];
@@ -216,17 +216,17 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
 
       <div className="grid gap-4">
         <Card className="overflow-hidden">
-          <CardHeader className="grid gap-4 sm:flex sm:flex-row sm:items-start sm:justify-between">
+          <CardHeader className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
             <div>
               <CardTitle>{activeConversation.listing?.title ?? "Conversation"}</CardTitle>
               <CardDescription>With {otherParticipant?.display_name ?? "marketplace user"} · {activeConversation.listing ? money(activeConversation.listing.price_amount, activeConversation.listing.currency) : "No listing attached"}</CardDescription>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:flex">
+            <div className="grid grid-cols-2 gap-2">
               <Button size="sm" onClick={() => runAction(() => activeConversation.messages.at(-1)?.id ? reportMessageAction({ conversationId: activeConversation.id, messageId: activeConversation.messages.at(-1)?.id, reason: reportReason || "Unsafe or inappropriate message" }) : reportUserAction({ conversationId: activeConversation.id, reportedUserId: otherParticipantId ?? "", reason: reportReason || "Unsafe or inappropriate chat" }))} disabled={(!activeConversation.messages.length && !otherParticipantId) || isPending}><Flag className="mr-2 h-4 w-4" />Report</Button>
               <Button variant="destructive" size="sm" onClick={() => otherParticipantId && runAction(() => blockUserAction({ conversationId: activeConversation.id, blockedId: otherParticipantId, reason: "Blocked from chat UI" }))} disabled={!otherParticipantId || activeConversation.status === "blocked" || isPending}><UserX className="mr-2 h-4 w-4" />Block</Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
             {error && <div className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
             {activeConversation.listing && (
               <div className="mb-4 rounded-2xl border bg-secondary/60 p-3 text-sm">
@@ -237,7 +237,7 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
                 </div>
               </div>
             )}
-            <div className="h-[55vh] min-h-[340px] space-y-3 overflow-y-auto rounded-2xl border bg-background p-3 sm:h-[430px] sm:p-4">
+            <div className="h-[52vh] min-h-[300px] space-y-3 overflow-y-auto rounded-2xl border bg-background p-3 sm:h-[430px] sm:p-4">
               {activeConversation.messages.map((message) => {
                 const own = message.sender_id === userId;
                 return (
@@ -260,7 +260,7 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
             <div className="mt-2 h-5 text-xs text-muted-foreground">{(typingUsers[activeConversation.id] ?? []).length > 0 ? `${otherParticipant?.display_name ?? "They"} is typing…` : " "}</div>
             <form className="mt-3 grid gap-3" onSubmit={(event) => { event.preventDefault(); runAction(() => sendMessageAction({ conversationId: activeConversation.id, body, clientToken: crypto.randomUUID(), attachments: attachmentUrl ? [{ storagePath: `external/${crypto.randomUUID()}`, publicUrl: attachmentUrl, fileName: attachmentUrl.split('/').pop() || 'attachment', contentType: 'application/octet-stream', byteSize: 1024 }] : [] }), () => { setBody(""); setAttachmentUrl(""); if (activeConversation) setTypingAction({ conversationId: activeConversation.id, isTyping: false }).catch(() => null); }); }}>
               <Textarea value={body} onChange={(event) => onMessageInput(event.target.value)} placeholder="Write a real-time message…" disabled={activeConversation.status === "blocked"} />
-              <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <Input value={attachmentUrl} onChange={(event) => setAttachmentUrl(event.target.value)} placeholder="Optional attachment URL (uploaded path can be stored here)" />
                 <Button disabled={isPending || activeConversation.status === "blocked" || (!body && !attachmentUrl)}><Send className="mr-2 h-4 w-4" />Send</Button>
               </div>
@@ -268,7 +268,7 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 xl:grid-cols-3">
+        <div className="grid gap-4 2xl:grid-cols-3">
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2"><CircleDollarSign className="h-5 w-5" />Offer desk</CardTitle><CardDescription>Make, counter, accept, and reject offers.</CardDescription></CardHeader>
             <CardContent className="grid gap-3">
@@ -289,7 +289,7 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
               <Button disabled={!offerAmount || isPending || (!canMakeFirstOffer && !canCounterPendingOffer)} onClick={() => runAction(() => makeOfferAction({ conversationId: activeConversation.id, amount: offerAmount, message: offerMessage, parentOfferId: canCounterPendingOffer ? pendingOffer?.id : undefined, depositAmount: depositAmount ? Number(depositAmount) : 0, expiresAt: offerExpiresAt ? new Date(offerExpiresAt).toISOString() : undefined }), () => { setOfferAmount(""); setOfferMessage(""); setOfferExpiresAt(""); })}>
                 {canCounterPendingOffer ? "Send counter" : "Make offer"}
               </Button>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid gap-2 sm:grid-cols-3 2xl:grid-cols-1">
                 <Button disabled={!canRespondToPendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "accepted", message: "Accepted from chat." }))}>Accept</Button>
                 <Button disabled={!canRespondToPendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "declined", message: "Rejected from chat." }))}>Reject</Button>
                 <Button disabled={!canWithdrawPendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "withdrawn", message: "Withdrawn from chat." }))}>Withdraw</Button>

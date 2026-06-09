@@ -9,12 +9,13 @@ function getSafeNext(next?: string | string[]) {
   return value && value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
 }
 
-export default async function LoginPage({ searchParams }: { searchParams?: { next?: string | string[]; loggedOut?: string; authError?: string } }) {
+export default async function LoginPage({ searchParams }: { searchParams?: Promise<{ next?: string | string[]; loggedOut?: string; authError?: string }> }) {
+  const resolvedSearchParams = await searchParams;
   const supabase = createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
-  const next = getSafeNext(searchParams?.next);
+  const next = getSafeNext(resolvedSearchParams?.next);
 
   if (user) {
     redirect(next);
@@ -28,14 +29,14 @@ export default async function LoginPage({ searchParams }: { searchParams?: { nex
           <CardDescription>Access your buyer, seller, or admin workspace.</CardDescription>
         </CardHeader>
         <CardContent>
-          {searchParams?.loggedOut ? (
+          {resolvedSearchParams?.loggedOut ? (
             <p className="mb-5 rounded-lg border border-primary/20 bg-primary/10 p-3 text-sm" role="status">
               You have been logged out securely.
             </p>
           ) : null}
-          {searchParams?.authError ? (
+          {resolvedSearchParams?.authError ? (
             <p className="mb-5 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive" role="alert">
-              {searchParams.authError}
+              {resolvedSearchParams.authError}
             </p>
           ) : null}
           <AuthForm mode="login" next={next} />

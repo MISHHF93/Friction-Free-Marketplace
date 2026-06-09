@@ -12,11 +12,11 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "How it works | Friction-Free Marketplace",
-  description: "Understand how buyers and sellers use Friction-Free Marketplace from discovery and messaging to protected checkout, pickup, delivery, and trust workflows.",
+  description: "Understand how buyers and sellers use Friction-Free Marketplace from search and messaging to protected checkout, pickup, delivery, and trust checks.",
   alternates: { canonical: "/how-it-works" },
   openGraph: {
     title: "How Friction-Free Marketplace works",
-    description: "A step-by-step guide to trusted marketplace discovery, seller profiles, checkout protection, and handoff workflows.",
+    description: "A step-by-step guide to marketplace search, seller profiles, checkout protection, and handoffs.",
     url: "/how-it-works"
   }
 };
@@ -24,14 +24,14 @@ export const metadata: Metadata = {
 const buyerSteps = [
   { icon: Search, title: "Discover", text: "Browse categories or search by keywords, radius, price, condition, and seller trust." },
   { icon: ShieldCheck, title: "Evaluate", text: "Open listing details and seller profiles to review verification, risk, and transaction signals." },
-  { icon: MessageSquare, title: "Coordinate", text: "Message sellers, ask questions, and keep important terms inside platform workflows." },
-  { icon: CreditCard, title: "Checkout", text: "Use protected payment flows for eligible purchases and keep auditability across disputes or refunds." }
+  { icon: MessageSquare, title: "Coordinate", text: "Message sellers, ask questions, and keep important terms inside the marketplace." },
+  { icon: CreditCard, title: "Checkout", text: "Use protected payment for eligible purchases and keep receipts, disputes, and refunds connected." }
 ];
 
 const sellerSteps = [
-  { icon: Store, title: "Create inventory", text: "Publish listings with category, condition, media, price, pickup, shipping, and SEO metadata." },
-  { icon: MessageSquare, title: "Respond to buyers", text: "Use seller workspaces to manage offers, questions, pickup scheduling, and buyer confidence." },
-  { icon: Truck, title: "Fulfill safely", text: "Coordinate pickup or shipping after payment authorization, then resolve transaction milestones." }
+  { icon: Store, title: "Create a listing", text: "Publish with category, condition, photos, price, pickup, and shipping details." },
+  { icon: MessageSquare, title: "Respond to buyers", text: "Manage offers, questions, pickup scheduling, and buyer expectations." },
+  { icon: Truck, title: "Complete the order", text: "Coordinate pickup or shipping after payment authorization, then confirm completion." }
 ];
 
 export default async function HowItWorksPage() {
@@ -43,8 +43,8 @@ export default async function HowItWorksPage() {
         <Badge>Marketplace guide · {stats.source}</Badge>
         <div className="mt-5 grid gap-8 lg:grid-cols-[1fr_340px] lg:items-end">
           <div>
-            <h1 className="max-w-4xl text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">From search to handoff, every step is built to reduce uncertainty.</h1>
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-muted-foreground">The public marketplace combines real listing data, seller trust profiles, protected payment hooks, and safety guidance so buyers and sellers know what happens next.</p>
+            <h1 className="max-w-4xl text-4xl font-black tracking-tight sm:text-5xl lg:text-6xl">From search to handoff, each step is easier to understand.</h1>
+            <p className="mt-5 max-w-3xl text-lg leading-8 text-muted-foreground">The marketplace combines listing data, seller trust profiles, protected payment options, and safety guidance so buyers and sellers know what happens next.</p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Button asChild><Link href="/browse">Start browsing <ArrowRight className="h-4 w-4" /></Link></Button>
               <Button asChild variant="outline"><Link href="/seller">Start selling</Link></Button>
@@ -76,7 +76,7 @@ export default async function HowItWorksPage() {
           </div>
         </div>
         <Card>
-          <CardHeader><CardTitle>Try the flow with live inventory</CardTitle><CardDescription>Recommended listings from the discovery system or demo fallback.</CardDescription></CardHeader>
+          <CardHeader><CardTitle>Try the process with current listings</CardTitle><CardDescription>Recommended listings from marketplace data when available.</CardDescription></CardHeader>
           <CardContent className="grid gap-3">
             {featured.listings.map((listing) => <CompactListingLink key={listing.id} listing={listing} />)}
           </CardContent>

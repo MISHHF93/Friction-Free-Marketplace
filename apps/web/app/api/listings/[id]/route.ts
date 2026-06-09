@@ -9,8 +9,9 @@ function errorResponse(error: unknown, status = 500) {
   return NextResponse.json({ error: message }, { status });
 }
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id: listingId } = await params;
     const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: "Sign in to view this listing." }, { status: 401 });
@@ -18,7 +19,7 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     const { data, error } = await supabase
       .from("listings")
       .select("*, listing_images(*)")
-      .eq("id", params.id)
+      .eq("id", listingId)
       .eq("seller_id", user.id)
       .is("deleted_at", null)
       .single();
@@ -30,29 +31,31 @@ export async function GET(_request: Request, { params }: { params: { id: string 
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id: listingId } = await params;
     const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: "Sign in to edit this listing." }, { status: 401 });
 
-    const { data: owned, error: ownerError } = await supabase.from("listings").select("id").eq("id", params.id).eq("seller_id", user.id).single();
+    const { data: owned, error: ownerError } = await supabase.from("listings").select("id").eq("id", listingId).eq("seller_id", user.id).single();
     if (ownerError || !owned) return NextResponse.json({ error: "Listing not found." }, { status: 404 });
 
-    const listing = await updateListing(supabase, params.id, await request.json());
+    const listing = await updateListing(supabase, listingId, await request.json());
     return NextResponse.json({ listing });
   } catch (error) {
     return errorResponse(error, 400);
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id: listingId } = await params;
     const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: "Sign in to delete this listing." }, { status: 401 });
 
-    await deleteListing(supabase, params.id, user.id);
+    await deleteListing(supabase, listingId, user.id);
     return NextResponse.json({ ok: true });
   } catch (error) {
     return errorResponse(error, 400);

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminLinks } from "@/lib/admin/navigation";
+import { requireAdminPagePermission } from "@/lib/admin/permissions";
 import { scoringFormulas } from "@/lib/trust-safety/engine";
 
 const queueCards = [
@@ -31,7 +32,9 @@ const riskFlags = [
   "Request optional ID verification for high-value, restricted, or repeated high-risk selling patterns."
 ];
 
-export default function AdminReviewQueuePage() {
+export default async function AdminReviewQueuePage() {
+  await requireAdminPagePermission("admin.access", { loginNext: "/admin/review-queue", deniedPath: "/admin" });
+
   return (
     <DashboardShell title="Trust & safety review queue" description="A unified analyst workspace for verification, reports, disputes, fraud signals, automated flags, and marketplace trust decisions." links={adminLinks}>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">

@@ -1,8 +1,10 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { loginAction, signupAction, type AuthActionState } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
+import { FormMessage } from "@/components/ui/form-message";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -12,15 +14,15 @@ function SubmitButton({ mode }: { mode: "login" | "signup" }) {
   const { pending } = useFormStatus();
 
   return (
-    <Button disabled={pending} type="submit">
-      {pending ? "Please wait..." : mode === "login" ? "Log in" : "Create account"}
+    <Button disabled={pending} isLoading={pending} loadingText={mode === "login" ? "Logging in..." : "Creating account..."} type="submit">
+      {mode === "login" ? "Log in" : "Create account"}
     </Button>
   );
 }
 
 export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: string }) {
   const action = mode === "login" ? loginAction : signupAction;
-  const [state, formAction] = useFormState(action, initialState);
+  const [state, formAction] = useActionState(action, initialState);
 
   return (
     <form className="grid gap-5" action={formAction}>
@@ -33,6 +35,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
       <div className="grid gap-2">
         <Label htmlFor="email">Email</Label>
         <Input id="email" name="email" type="email" placeholder="you@example.com" autoComplete="email" required />
+        <p className="text-xs text-muted-foreground">Use the email tied to your marketplace account.</p>
       </div>
       <div className="grid gap-2">
         <Label htmlFor="password">Password</Label>
@@ -45,19 +48,13 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
           required
           minLength={8}
         />
+        <p className="text-xs text-muted-foreground">Password must be at least 8 characters.</p>
       </div>
       {next ? <input type="hidden" name="next" value={next} /> : null}
       {state.message ? (
-        <p
-          className={
-            state.status === "error"
-              ? "rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
-              : "rounded-lg border border-primary/20 bg-primary/10 p-3 text-sm text-foreground"
-          }
-          role={state.status === "error" ? "alert" : "status"}
-        >
+        <FormMessage tone={state.status === "error" ? "error" : "success"}>
           {state.message}
-        </p>
+        </FormMessage>
       ) : null}
       <SubmitButton mode={mode} />
     </form>

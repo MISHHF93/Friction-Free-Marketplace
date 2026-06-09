@@ -23,17 +23,17 @@ export function DashboardShell({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-6">
-      <div className="rounded-3xl border border-border bg-card/90 p-5 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="overflow-hidden rounded-3xl border border-slate-900/10 bg-premium-dark p-4 text-white shadow-admin sm:p-6">
+        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
           <div>
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-primary">
+            <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-emerald-300">
               <Bell className="h-4 w-4" /> {kicker}
             </p>
-            <h2 className="mt-3 text-3xl font-black tracking-tight sm:text-4xl">{title}</h2>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">{description}</p>
+            <h2 className="mt-3 text-2xl font-black tracking-tight sm:text-4xl">{title}</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">{description}</p>
           </div>
-          {actions ? <div className="flex shrink-0 flex-wrap gap-2 md:justify-end">{actions}</div> : null}
+          {actions ? <div className="grid gap-2 sm:flex sm:flex-wrap md:justify-end">{actions}</div> : null}
         </div>
       </div>
       {children}
@@ -43,27 +43,27 @@ export function DashboardShell({
 
 export function DashboardStatCard({ label, value, detail, icon: Icon = Package }: { label: string; value: string; detail: string; icon?: ComponentType<{ className?: string }> }) {
   return (
-    <Card>
-      <CardHeader className="pb-3">
+    <Card className="shadow-md hover:shadow-soft">
+      <CardHeader className="p-4 pb-3 sm:p-6 sm:pb-3">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-sm text-muted-foreground">{label}</CardTitle>
-          <Icon className="h-5 w-5 text-primary" />
+          <span className="rounded-xl bg-trust-soft p-2 text-trust"><Icon className="h-4 w-4" /></span>
         </div>
         <p className="text-3xl font-black">{value}</p>
       </CardHeader>
-      <CardContent className="text-sm leading-6 text-muted-foreground">{detail}</CardContent>
+      <CardContent className="p-4 pt-0 text-sm leading-6 text-muted-foreground sm:p-6 sm:pt-0">{detail}</CardContent>
     </Card>
   );
 }
 
 export function DashboardActionCard({ title, description, icon: Icon = ListChecks, children }: { title: string; description: string; icon?: ComponentType<{ className?: string }>; children?: ReactNode }) {
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <Icon className="h-6 w-6 text-primary" />
+    <Card className="h-full hover:shadow-soft">
+      <CardHeader className="p-4 sm:p-6">
+        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-ai-soft text-ai sm:h-12 sm:w-12"><Icon className="h-5 w-5" /></span>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4 text-sm leading-6 text-muted-foreground">
+      <CardContent className="space-y-4 p-4 pt-0 text-sm leading-6 text-muted-foreground sm:p-6 sm:pt-0">
         <p>{description}</p>
         {children}
       </CardContent>
@@ -87,20 +87,20 @@ export function DashboardSectionCard({
   className?: string;
 }) {
   return (
-    <Card className={className}>
-      <CardHeader>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <Card className={cn("shadow-md", className)}>
+      <CardHeader className="p-4 sm:p-6">
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <Icon className="h-5 w-5 text-primary" />
+              <span className="rounded-xl bg-trust-soft p-2 text-trust"><Icon className="h-4 w-4" /></span>
               <CardTitle>{title}</CardTitle>
             </div>
             {description ? <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p> : null}
           </div>
-          {badge ? <Badge>{badge}</Badge> : null}
+          {badge ? <Badge variant="ai">{badge}</Badge> : null}
         </div>
       </CardHeader>
-      <CardContent className="grid gap-3">{children}</CardContent>
+      <CardContent className="grid gap-3 p-4 pt-0 sm:p-6 sm:pt-0">{children}</CardContent>
     </Card>
   );
 }
@@ -123,19 +123,19 @@ export function DashboardListItem({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col gap-3 rounded-2xl border border-border p-4 sm:flex-row sm:items-center sm:justify-between", className)}>
+    <div className={cn("flex flex-col gap-3 rounded-2xl border border-border/80 bg-card/70 p-4 shadow-xs transition hover:border-primary/30 hover:bg-white sm:flex-row sm:items-center sm:justify-between", className)}>
       <div className="flex min-w-0 gap-3">
         {leading ? <div className="shrink-0">{leading}</div> : null}
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-semibold">{title}</p>
-            {status ? <Badge>{status}</Badge> : null}
+            {status ? <Badge variant="trust">{status}</Badge> : null}
             {meta}
           </div>
           {detail ? <p className="mt-1 text-sm leading-6 text-muted-foreground">{detail}</p> : null}
         </div>
       </div>
-      {children ? <div className="flex shrink-0 flex-wrap gap-2">{children}</div> : null}
+      {children ? <div className="grid shrink-0 gap-2 sm:flex sm:flex-wrap sm:justify-end">{children}</div> : null}
     </div>
   );
 }
@@ -144,17 +144,17 @@ export function DashboardProgressCard({ label, value, detail, icon: Icon = Chevr
   const boundedValue = Math.max(0, Math.min(100, value));
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
+    <Card className="shadow-md">
+      <CardHeader className="p-4 pb-3 sm:p-6 sm:pb-3">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-sm text-muted-foreground">{label}</CardTitle>
-          <Icon className="h-5 w-5 text-primary" />
+          <span className="rounded-xl bg-ai-soft p-2 text-ai"><Icon className="h-4 w-4" /></span>
         </div>
         <p className="text-3xl font-black">{boundedValue}%</p>
       </CardHeader>
-      <CardContent className="space-y-3 text-sm leading-6 text-muted-foreground">
+      <CardContent className="space-y-3 p-4 pt-0 text-sm leading-6 text-muted-foreground sm:p-6 sm:pt-0">
         <div className="h-2 overflow-hidden rounded-full bg-secondary" aria-hidden="true">
-          <div className="h-full rounded-full bg-primary" style={{ width: `${boundedValue}%` }} />
+          <div className="h-full rounded-full bg-gradient-to-r from-trust to-ai" style={{ width: `${boundedValue}%` }} />
         </div>
         <p>{detail}</p>
       </CardContent>
@@ -164,8 +164,8 @@ export function DashboardProgressCard({ label, value, detail, icon: Icon = Chevr
 
 export function DashboardEmptyState({ title, description, action }: { title: string; description: string; action?: ReactNode }) {
   return (
-    <Card className="border-dashed">
-      <CardContent className="flex flex-col items-center justify-center gap-4 p-8 text-center">
+    <Card className="border-dashed bg-white/70">
+      <CardContent className="flex flex-col items-center justify-center gap-4 p-5 text-center sm:p-8">
         <div className="rounded-full bg-secondary p-4">
           <Package className="h-8 w-8 text-primary" />
         </div>

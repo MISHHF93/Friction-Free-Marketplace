@@ -9,6 +9,8 @@ import { getStripe } from "@/lib/stripe/server";
 
 export const dynamic = "force-dynamic";
 
+const MAX_WEBHOOK_BYTES = 1_000_000;
+
 async function updateSellerAccount(account: Stripe.Account) {
   const supabase = createAdminClient() as any;
   await upsertSellerAccountFromStripe(supabase, account);
@@ -88,13 +90,22 @@ async function upsertStripeDispute(dispute: Stripe.Dispute) {
 export async function POST(request: Request) {
   const signature = request.headers.get("stripe-signature");
   if (!signature || !env.STRIPE_WEBHOOK_SECRET) return NextResponse.json({ error: "Missing Stripe webhook signature or secret." }, { status: 400 });
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (contentLength > MAX_WEBHOOK_BYTES) return NextResponse.json({ error: "Stripe webhook payload is too large." }, { status: 413 });
 
   const body = await request.text();
+  if (body.length > MAX_WEBHOOK_BYTES) return NextResponse.json({ error: "Stripe webhook payload is too large." }, { status: 413 });
   let event: Stripe.Event;
   try {
     event = getStripe().webhooks.constructEvent(body, signature, env.STRIPE_WEBHOOK_SECRET);
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Invalid signature." }, { status: 400 });
+    console.error("Invalid Stripe webhook signature", error);
+    return NextResponse.json({ error: "Invalid Stripe webhook signature." }, { status: 400 });
+  }
+
+  const expectedLivemode = env.STRIPE_SECRET_KEY.startsWith("sk_live_");
+  if (event.livemode !== expectedLivemode) {
+    return NextResponse.json({ error: "Stripe webhook livemode does not match configured Stripe key." }, { status: 400 });
   }
 
   const supabase = createAdminClient() as any;

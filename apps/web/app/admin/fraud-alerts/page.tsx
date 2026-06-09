@@ -1,9 +1,140 @@
-import { notFound } from "next/navigation";
-import { AdminFeaturePage } from "@/components/admin/admin-page";
-import { getAdminPageConfig } from "@/lib/admin/platform";
+import { AlertTriangle, Ban, CheckCircle2, Clock, ShieldAlert } from "lucide-react";
+import { DashboardShell } from "@/components/dashboard-shell";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { adminLinks } from "@/lib/admin/navigation";
+import { getAdminDirectoryRows } from "@/lib/admin/queries";
+import { requireAdminPagePermission } from "@/lib/admin/permissions";
 
-export default function Page() {
-  const config = getAdminPageConfig("fraud-alerts");
-  if (!config) notFound();
-  return <AdminFeaturePage config={config} />;
+type FraudSignalRow = {
+  id: string;
+  user_id: string | null;
+  listing_id: string | null;
+  transaction_id: string | null;
+  signal_type: string;
+  risk_score: number | string;
+  source: string;
+  payload: Record<string, unknown> | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+  users?: { email?: string | null; status?: string | null } | null;
+  listings?: { title?: string | null; status?: string | null; price_amount?: number | string | null; currency?: string | null } | null;
+};
+
+function asPayload(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function formatSignalType(value: string) {
+  return value.replace(/_/g, " ");
+}
+
+function scoreSeverity(score: number) {
+  if (score >= 90) return "critical";
+  if (score >= 70) return "high";
+  if (score >= 45) return "medium";
+  return "low";
+}
+
+function statusClass(score: number) {
+  if (score >= 90) return "border-red-200 bg-red-50 text-red-700";
+  if (score >= 70) return "border-amber-200 bg-amber-50 text-amber-800";
+  return "border-blue-200 bg-blue-50 text-blue-700";
+}
+
+export default async function Page() {
+  await requireAdminPagePermission("fraud.review", { loginNext: "/admin/fraud-alerts", deniedPath: "/admin" });
+  const result = await getAdminDirectoryRows("fraud-alerts", 50);
+  const signals = ((result.data ?? []) as FraudSignalRow[]).map((signal) => ({
+    ...signal,
+    score: Number(signal.risk_score),
+    payload: asPayload(signal.payload)
+  }));
+  const openSignals = signals.filter((signal) => !signal.reviewed_at);
+  const highRiskSignals = openSignals.filter((signal) => signal.score >= 70);
+  const blockedListings = signals.filter((signal) => signal.listings?.status === "draft" && asPayload(signal.payload).recommended_action?.toString().toLowerCase().includes("hold"));
+  const newestSignal = signals[0];
+
+  return (
+    <DashboardShell title="Fraud signals" description="First-version fraud detection alerts across listings, images, account velocity, message safety, and report-rate behavior." links={adminLinks}>
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <Card>
+          <CardHeader>
+            <ShieldAlert className="h-5 w-5 text-primary" />
+            <CardDescription>Open fraud signals</CardDescription>
+            <CardTitle className="text-3xl">{openSignals.length}</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Unreviewed rule detections waiting for fraud review.</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <AlertTriangle className="h-5 w-5 text-primary" />
+            <CardDescription>High risk</CardDescription>
+            <CardTitle className="text-3xl">{highRiskSignals.length}</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Signals scoring 70 or higher and routed to admin attention.</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Ban className="h-5 w-5 text-primary" />
+            <CardDescription>Blocked or held</CardDescription>
+            <CardTitle className="text-3xl">{blockedListings.length}</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">Listings currently contained by high-risk detection metadata.</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Clock className="h-5 w-5 text-primary" />
+            <CardDescription>Latest alert</CardDescription>
+            <CardTitle className="text-3xl">{newestSignal ? `${newestSignal.score}` : "0"}</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-muted-foreground">{newestSignal ? formatSignalType(newestSignal.signal_type) : "No fraud signals recorded yet."}</CardContent>
+        </Card>
+      </div>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <Badge>Live fraud queue</Badge>
+              <CardTitle className="mt-3">Rule-triggered alerts</CardTitle>
+              <CardDescription>Signals are generated by the first fraud detection pass and mirrored into admin risk flags for high-risk cases.</CardDescription>
+            </div>
+            <Badge>{signals.length} recent</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {signals.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-border p-6 text-sm text-muted-foreground">No fraud signals have been recorded yet.</div>
+          ) : (
+            signals.map((signal) => {
+              const explanation = typeof signal.payload.explanation === "string" ? signal.payload.explanation : "Fraud rule matched marketplace activity.";
+              const recommendation = typeof signal.payload.recommended_action === "string" ? signal.payload.recommended_action : "Review the alert and related entity history.";
+              const subject = signal.listings?.title ?? signal.users?.email ?? signal.user_id ?? signal.listing_id ?? "Marketplace entity";
+              return (
+                <div className="grid gap-3 rounded-2xl border border-border bg-background p-4 lg:grid-cols-[0.7fr_1.3fr_1fr_0.5fr] lg:items-center" key={signal.id}>
+                  <div>
+                    <Badge className={statusClass(signal.score)}>{scoreSeverity(signal.score)}</Badge>
+                    <p className="mt-2 text-2xl font-black">{signal.score.toFixed(0)}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(signal.created_at).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{formatSignalType(signal.signal_type)}</p>
+                    <h3 className="mt-1 font-bold">{subject}</h3>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{explanation}</p>
+                  </div>
+                  <p className="text-sm leading-6 text-muted-foreground">{recommendation}</p>
+                  <div className="flex items-center gap-2 text-sm font-semibold">
+                    <CheckCircle2 className="h-4 w-4 text-primary" />
+                    {signal.reviewed_at ? "Reviewed" : "Open"}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </CardContent>
+      </Card>
+    </DashboardShell>
+  );
 }

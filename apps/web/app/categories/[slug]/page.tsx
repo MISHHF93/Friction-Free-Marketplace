@@ -14,22 +14,24 @@ export async function generateStaticParams() {
   return categories.map((category) => ({ slug: category.slug }));
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const { category } = await getCategoryPage(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const { category } = await getCategoryPage(slug);
   return {
     title: `${category.name} listings | Friction-Free Marketplace`,
     description: category.description ?? `Browse trusted ${category.name} listings with verified seller signals and protected checkout support.`,
-    alternates: { canonical: `/categories/${params.slug}` },
+    alternates: { canonical: `/categories/${slug}` },
     openGraph: {
       title: `${category.name} listings`,
       description: category.description ?? `Browse trusted ${category.name} marketplace listings.`,
-      url: `/categories/${params.slug}`
+      url: `/categories/${slug}`
     }
   };
 }
 
-export default async function CategoryPage({ params }: { params: { slug: string } }) {
-  const { category, listings, categories, source } = await getCategoryPage(params.slug);
+export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const { category, listings, categories, source } = await getCategoryPage(slug);
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">

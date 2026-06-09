@@ -14,6 +14,6 @@ export const metadata: Metadata = {
   }
 };
 
-export default function SearchPage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
-  return <DiscoveryPage searchParams={searchParams} mode="search" />;
+export default async function SearchPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  return <DiscoveryPage searchParams={await searchParams} mode="search" />;
 }

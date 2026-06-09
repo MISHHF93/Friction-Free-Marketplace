@@ -31,14 +31,13 @@ export function CheckoutCard({ listingId, priceAmount, currency, disabled = fals
   const [cardReady, setCardReady] = useState(false);
   const [shipping, setShipping] = useState(0);
   const [deposit, setDeposit] = useState(0);
-  const [status, setStatus] = useState("Ready for secure checkout.");
+  const [status, setStatus] = useState(publicEnv.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? "Ready for protected checkout." : "Checkout is not configured yet.");
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const cardRef = useRef<{ destroy: () => void } | null>(null);
 
   useEffect(() => {
     if (!publicEnv.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-      setStatus("Stripe publishable key is not configured.");
       return;
     }
 
@@ -74,7 +73,7 @@ export function CheckoutCard({ listingId, priceAmount, currency, disabled = fals
   async function startCheckout() {
     if (!stripe || !cardRef.current) return;
     setIsSubmitting(true);
-    setStatus("Creating a manual-capture PaymentIntent…");
+    setStatus("Preparing protected checkout...");
 
     try {
       const response = await fetch("/api/stripe/payment-intents", {
@@ -90,15 +89,15 @@ export function CheckoutCard({ listingId, priceAmount, currency, disabled = fals
       if (!response.ok) throw new Error(payment.error ?? "Could not start checkout.");
 
       setTransactionId(payment.transactionId);
-      setStatus("Confirming card authorization with Stripe…");
+      setStatus("Authorizing payment...");
       const result = await stripe.confirmCardPayment(payment.clientSecret, {
         payment_method: { card: cardRef.current }
       });
 
-      if (result.error) throw new Error(result.error.message ?? "Card authorization failed.");
-      setStatus(`Payment ${result.paymentIntent?.status}. Funds are authorized and await marketplace capture.`);
+      if (result.error) throw new Error(result.error.message ?? "Payment authorization did not go through.");
+      setStatus(`Payment ${result.paymentIntent?.status}. Funds are authorized and waiting for completion.`);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Checkout failed.");
+      setStatus(error instanceof Error ? error.message : "Checkout did not complete. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -107,10 +106,10 @@ export function CheckoutCard({ listingId, priceAmount, currency, disabled = fals
   return (
     <Card className="border-primary/20 bg-primary/5">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-primary" /> Stripe escrow checkout</CardTitle>
+        <CardTitle className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-primary" /> Protected checkout</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
+      <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
           <div>
             <Label htmlFor="shipping">Shipping estimate</Label>
             <Input id="shipping" type="number" min="0" step="0.01" value={shipping} onChange={(event) => setShipping(Number(event.target.value))} />
@@ -122,9 +121,9 @@ export function CheckoutCard({ listingId, priceAmount, currency, disabled = fals
         </div>
         <div className="rounded-xl border border-border bg-background p-3" id="stripe-card-element" />
         <div className="space-y-1 rounded-xl bg-background p-3 text-sm">
-          <p className="flex justify-between"><span>Item/deposit</span><strong>{currency} ${feeBase.toFixed(2)}</strong></p>
-          <p className="flex justify-between"><span>Platform protection fee</span><strong>{currency} ${platformFee.toFixed(2)}</strong></p>
-          <p className="flex justify-between text-base"><span>Total authorized</span><strong>{currency} ${total.toFixed(2)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2"><span>Item/deposit</span><strong>{currency} ${feeBase.toFixed(2)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2"><span>Protection fee</span><strong>{currency} ${platformFee.toFixed(2)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2 text-base"><span>Total authorized</span><strong>{currency} ${total.toFixed(2)}</strong></p>
         </div>
         <Button className="w-full" size="lg" onClick={startCheckout} disabled={disabled || !cardReady || isSubmitting}>
           <ShieldCheck className="h-4 w-4" /> {isSubmitting ? "Authorizing…" : "Authorize payment"}

@@ -336,6 +336,48 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["disputes"]["Row"]>;
         Relationships: [];
       };
+      notifications: {
+        Row: {
+          id: string;
+          user_id: string;
+          type: string;
+          title: string;
+          body: string | null;
+          channel: "in_app" | "email" | "sms" | "push";
+          status: "queued" | "sent" | "read" | "failed" | "archived";
+          action_url: string | null;
+          payload: Json;
+          sent_at: string | null;
+          read_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["notifications"]["Row"]> & { user_id: string; type: string; title: string };
+        Update: Partial<Database["public"]["Tables"]["notifications"]["Row"]>;
+        Relationships: [];
+      };
+      notification_preferences: {
+        Row: {
+          user_id: string;
+          in_app_enabled: boolean;
+          email_enabled: boolean;
+          messages_enabled: boolean;
+          offers_enabled: boolean;
+          payments_enabled: boolean;
+          disputes_enabled: boolean;
+          saved_searches_enabled: boolean;
+          marketing_enabled: boolean;
+          digest_frequency: "instant" | "daily" | "weekly" | "never";
+          quiet_hours_start: string | null;
+          quiet_hours_end: string | null;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["notification_preferences"]["Row"]> & { user_id: string };
+        Update: Partial<Database["public"]["Tables"]["notification_preferences"]["Row"]>;
+        Relationships: [];
+      };
       ai_agents: {
         Row: {
           id: string;

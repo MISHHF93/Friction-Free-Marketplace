@@ -44,7 +44,7 @@ function formValue(formData: FormData, key: string) {
 
 function filtersFromFormData(formData: FormData) {
   const filters: Record<string, string | number | boolean> = {};
-  for (const key of ["category", "location", "condition"] as const) {
+  for (const key of ["category", "location", "condition", "fulfillment"] as const) {
     const value = formValue(formData, key);
     if (value) filters[key] = value;
   }
@@ -55,6 +55,9 @@ function filtersFromFormData(formData: FormData) {
   }
   const sort = formValue(formData, "sort");
   if (sort) filters.sort = sort;
+  for (const key of ["verifiedOnly", "paymentProtection"] as const) {
+    if (formData.get(key) === "true") filters[key] = true;
+  }
   return filters;
 }
 

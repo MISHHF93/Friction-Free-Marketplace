@@ -51,7 +51,7 @@ export async function getAdminDirectoryRows(kind: string, limit = 50) {
     case "disputes":
       return supabase.from("disputes").select("id,transaction_id,opened_by_id,assigned_admin_id,reason,description,status,resolution,evidence,opened_at,due_at,resolved_at,created_at,updated_at").order("created_at", { ascending: false }).limit(limit);
     case "fraud-alerts":
-      return supabase.from("fraud_signals").select("id,user_id,listing_id,transaction_id,signal_type,risk_score,source,payload,reviewed_by,reviewed_at,created_at").order("risk_score", { ascending: false }).limit(limit);
+      return supabase.from("fraud_signals").select("id,user_id,listing_id,transaction_id,signal_type,risk_score,source,payload,reviewed_by,reviewed_at,created_at,users(email,status),listings(title,status,price_amount,currency)").order("risk_score", { ascending: false }).limit(limit);
     case "transactions":
       return supabase.from("transactions").select("id,listing_id,offer_id,buyer_id,seller_id,status,item_amount,shipping_amount,tax_amount,marketplace_fee_amount,total_amount,currency,paid_at,shipped_at,delivered_at,completed_at,cancelled_at,metadata,created_at,updated_at,escrow_payments(status,amount,provider,provider_payment_id),payouts(status,amount,provider_payout_id)").order("updated_at", { ascending: false }).limit(limit);
     case "payments":

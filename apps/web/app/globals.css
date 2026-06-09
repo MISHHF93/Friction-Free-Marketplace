@@ -4,26 +4,71 @@
 
 @layer base {
   :root {
+    --brand-ink: 222 57% 8%;
+    --brand-slate: 215 25% 27%;
+    --brand-mist: 210 40% 98%;
+    --brand-cloud: 210 38% 94%;
+    --brand-surface: 0 0% 100%;
+
     --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    --foreground: 222 57% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 222 57% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 165 85% 28%;
+    --popover-foreground: 222 57% 8%;
+
+    --primary: 170 81% 28%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 94%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 94%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 35 96% 92%;
-    --accent-foreground: 25 95% 18%;
+
+    --trust: 170 81% 28%;
+    --trust-foreground: 0 0% 100%;
+    --trust-soft: 166 70% 93%;
+    --trust-border: 166 56% 80%;
+
+    --ai: 222 84% 56%;
+    --ai-foreground: 0 0% 100%;
+    --ai-soft: 219 100% 96%;
+    --ai-border: 221 78% 84%;
+
+    --safety: 142 72% 36%;
+    --safety-foreground: 0 0% 100%;
+    --safety-soft: 140 76% 94%;
+    --safety-warning: 35 92% 45%;
+    --safety-risk: 0 72% 51%;
+
+    --premium: 40 64% 57%;
+    --premium-foreground: 222 57% 8%;
+    --premium-soft: 45 100% 93%;
+    --premium-graphite: 222 47% 11%;
+
+    --secondary: 210 38% 94%;
+    --secondary-foreground: 222 57% 8%;
+    --muted: 210 38% 94%;
+    --muted-foreground: 215 18% 43%;
+    --accent: 218 100% 96%;
+    --accent-foreground: 222 84% 24%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 165 85% 28%;
+    --border: 214 30% 88%;
+    --input: 214 30% 88%;
+    --ring: 170 81% 28%;
+
     --radius: 1rem;
+    --radius-card: 1.35rem;
+    --radius-panel: 1.75rem;
+    --radius-hero: 2.35rem;
+
+    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --shadow-sm: 0 8px 26px -18px rgba(15, 23, 42, 0.35);
+    --shadow-md: 0 18px 46px -28px rgba(15, 23, 42, 0.42);
+    --shadow-soft: 0 28px 80px -42px rgba(15, 23, 42, 0.42);
+    --shadow-glow: 0 24px 90px -44px rgba(37, 99, 235, 0.48);
+    --shadow-trust: 0 24px 90px -44px rgba(15, 143, 126, 0.5);
+    --shadow-admin: 0 20px 70px -42px rgba(2, 6, 23, 0.62);
+
+    --motion-fast: 140ms;
+    --motion-base: 200ms;
+    --motion-slow: 320ms;
   }
 
   * {
@@ -31,6 +76,204 @@
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-brand-radial text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    @apply bg-trust-soft text-foreground;
+  }
+}
+
+@layer components {
+  .brand-focus {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .brand-surface {
+    @apply border border-border/80 bg-card/95 shadow-sm backdrop-blur;
+  }
+
+  .brand-panel {
+    @apply rounded-3xl border border-border/80 bg-card/90 shadow-soft backdrop-blur;
+  }
+
+  .brand-admin-panel {
+    @apply rounded-3xl border border-slate-800/20 bg-white shadow-admin;
+  }
+
+  .brand-kicker {
+    @apply text-eyebrow uppercase text-primary;
+  }
+
+  .app-container {
+    @apply mx-auto box-border w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .app-container-wide {
+    @apply mx-auto box-border w-full max-w-[90rem] px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-y {
+    @apply py-10 sm:py-14 lg:py-18;
+  }
+
+  .section-y-lg {
+    @apply py-12 sm:py-16 lg:py-22;
+  }
+
+  .panel-pad {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+
+  .adaptive-grid {
+    @apply grid gap-4 sm:gap-5 lg:gap-6;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  }
+
+  .adaptive-grid-sm {
+    @apply grid gap-3 sm:gap-4;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  }
+
+  .action-stack {
+    @apply grid gap-2 sm:flex sm:flex-wrap sm:items-center;
+  }
+
+  .action-grid {
+    @apply grid grid-cols-1 gap-2 sm:grid-cols-2;
+  }
+
+  .responsive-table-wrap {
+    @apply -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0;
+  }
+
+  .scroll-rail {
+    @apply flex min-w-0 max-w-full gap-2 overflow-x-auto pb-2;
+    scrollbar-width: thin;
+  }
+
+  .interactive-card {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-soft focus-within:border-primary/40 focus-within:shadow-soft;
+  }
+
+  .motion-dropdown {
+    transform-origin: top;
+    animation: dropdown-in var(--motion-base) ease-out;
+  }
+
+  .motion-mobile-panel {
+    animation: mobile-panel-in var(--motion-slow) cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .favorite-pop svg {
+    @apply transition-transform duration-200;
+  }
+
+  .favorite-pop:hover svg {
+    transform: scale(1.08);
+  }
+
+  .favorite-pop[aria-pressed="true"] svg {
+    animation: favorite-pop 320ms ease-out;
+  }
+
+  .offer-status-pending {
+    animation: status-pulse 2200ms ease-in-out infinite;
+  }
+
+  .offer-status-accepted {
+    animation: status-confirm 520ms ease-out;
+  }
+
+  .toast-enter {
+    animation: toast-in var(--motion-slow) cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@layer utilities {
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes mobile-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes favorite-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes status-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.12);
+  }
+}
+
+@keyframes status-confirm {
+  from {
+    transform: translateY(2px);
+    opacity: 0.72;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }

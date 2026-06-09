@@ -11,6 +11,7 @@ import {
   ReceiptText,
   Scale,
   Search,
+  Settings,
   ShieldAlert,
   ShieldCheck,
   SlidersHorizontal,
@@ -39,16 +40,16 @@ export type AdminPageConfig = {
 };
 
 const sharedWorkflow: AdminWorkflowStep[] = [
-  { title: "Triage", description: "Score severity, SLA risk, customer impact, and linked entities before assignment.", owner: "Queue router", automation: "Priority model, duplicate clustering, and policy tags" },
-  { title: "Investigate", description: "Review evidence, entity history, notes, AI explanations, and transaction context.", owner: "Assigned specialist", automation: "Evidence bundle builder and graph enrichment" },
-  { title: "Decide", description: "Apply policy outcome, capture reason codes, notify impacted parties, and schedule follow-up.", owner: "Role-approved admin", automation: "Decision templates and audit-log writer" }
+  { title: "Triage", description: "Review severity, SLA risk, customer impact, and linked records before assignment.", owner: "Queue router", automation: "Priority scoring, duplicate grouping, and policy tags" },
+  { title: "Investigate", description: "Review evidence, account history, notes, AI explanations, and transaction context.", owner: "Assigned specialist", automation: "Evidence summary and relationship mapping" },
+  { title: "Decide", description: "Apply the policy outcome, capture reason codes, notify impacted parties, and schedule follow-up.", owner: "Role-approved admin", automation: "Decision templates and audit-log writer" }
 ];
 
 export const adminPageConfigs: AdminPageConfig[] = [
   {
     slug: "users",
     title: "User management",
-    description: "Search, verify, segment, suspend, ban, reinstate, and support every buyer, seller, admin, and risky account.",
+    description: "Search, verify, suspend, reinstate, and support buyers, sellers, admins, and risky accounts.",
     permission: "users.read",
     icon: Users,
     primaryAction: "Open user profile",
@@ -64,7 +65,7 @@ export const adminPageConfigs: AdminPageConfig[] = [
       { subject: "Northstar Camera", role: "seller", status: "active", trust: "67", action: "Request ID", severity: "medium" }
     ],
     workflows: [
-      { title: "Identify account", description: "Combine profile, login, report, payment, listing, and device signals into a single support view.", owner: "Support", automation: "Identity and duplicate-account matching" },
+      { title: "Identify account", description: "Combine profile, login, report, payment, listing, and device signals into one support view.", owner: "Support", automation: "Identity and duplicate-account matching" },
       { title: "Apply restriction", description: "Use a permissioned status action: warn, suspend buying, suspend selling, ban, or reinstate.", owner: "Risk admin", automation: "Reason-code templates and notification drafts" },
       { title: "Appeal follow-up", description: "Attach evidence, track SLA, and log every status change for accountability.", owner: "Trust lead", automation: "Appeal queue and audit event" }
     ],
@@ -95,7 +96,7 @@ export const adminPageConfigs: AdminPageConfig[] = [
   },
   {
     slug: "fraud-alerts",
-    title: "Fraud alerts",
+    title: "Fraud signals",
     description: "Investigate fraud signals across accounts, listings, payments, messages, devices, and graph clusters.",
     permission: "fraud.review",
     icon: ShieldAlert,
@@ -117,7 +118,7 @@ export const adminPageConfigs: AdminPageConfig[] = [
   },
   {
     slug: "reports",
-    title: "Report review",
+    title: "Reports",
     description: "Resolve user, listing, message, transaction, and safety reports with duplicate merging and evidence bundles.",
     permission: "reports.review",
     icon: FileSearch,
@@ -140,13 +141,13 @@ export const adminPageConfigs: AdminPageConfig[] = [
   {
     slug: "disputes",
     title: "Dispute handling",
-    description: "Manage escrow disputes, evidence requests, party communications, settlement decisions, refunds, and releases.",
+    description: "Manage disputes, evidence requests, party communications, settlement decisions, refunds, and releases.",
     permission: "disputes.decide",
     icon: Gavel,
     primaryAction: "Draft decision",
     metrics: [
       { label: "Open disputes", value: "29", detail: "11 awaiting evidence", trend: "+4" },
-      { label: "Value at risk", value: "$18.4k", detail: "Escrow currently held", trend: "+$2.1k" },
+      { label: "Value at risk", value: "$18.4k", detail: "Funds currently held", trend: "+$2.1k" },
       { label: "SLA risk", value: "6", detail: "Due in 24 hours", trend: "Urgent" }
     ],
     columns: [{ label: "Case", key: "subject" }, { label: "Buyer", key: "buyer" }, { label: "Seller", key: "seller" }, { label: "Amount", key: "amount" }, { label: "Action", key: "action" }],
@@ -162,18 +163,18 @@ export const adminPageConfigs: AdminPageConfig[] = [
   {
     slug: "transactions",
     title: "Transaction monitoring",
-    description: "Observe transaction lifecycles, escrow state, fulfillment events, ledger entries, refunds, and reconciliation exceptions.",
+    description: "Monitor transaction status, held funds, fulfillment events, ledger entries, refunds, and reconciliation issues.",
     permission: "transactions.monitor",
     icon: ReceiptText,
     primaryAction: "Export ledger",
     metrics: [
       { label: "GMV today", value: "$42.7k", detail: "812 orders", trend: "+11%" },
-      { label: "Escrowed", value: "$96.2k", detail: "434 active holds", trend: "+7%" },
+      { label: "Held funds", value: "$96.2k", detail: "434 active holds", trend: "+7%" },
       { label: "Mismatches", value: "5", detail: "Need finance review", trend: "2 new" }
     ],
     columns: [{ label: "Transaction", key: "subject" }, { label: "Buyer", key: "buyer" }, { label: "Seller", key: "seller" }, { label: "Status", key: "status" }, { label: "Action", key: "action" }],
     rows: [
-      { subject: "TX-9F21", buyer: "Maya", seller: "Ari Home", status: "escrowed", action: "Release eligible", severity: "positive" },
+      { subject: "TX-9F21", buyer: "Maya", seller: "Ari Home", status: "held", action: "Release eligible", severity: "positive" },
       { subject: "TX-8A11", buyer: "Devon", seller: "Vault Finds", status: "disputed", action: "Open case", severity: "high" },
       { subject: "TX-7C04", buyer: "Sam", seller: "Parts Depot", status: "paid", action: "Capture", severity: "medium" }
     ],
@@ -184,7 +185,7 @@ export const adminPageConfigs: AdminPageConfig[] = [
   {
     slug: "payments",
     title: "Payment monitoring",
-    description: "Monitor Stripe Connect onboarding, authorizations, captures, escrow holds, refunds, chargebacks, payouts, and webhook health.",
+    description: "Monitor payout setup, authorizations, captures, held funds, refunds, chargebacks, payouts, and webhook health.",
     permission: "payments.monitor",
     icon: BadgeDollarSign,
     primaryAction: "Review payout",
@@ -196,7 +197,7 @@ export const adminPageConfigs: AdminPageConfig[] = [
     columns: [{ label: "Payment", key: "subject" }, { label: "Provider", key: "provider" }, { label: "Status", key: "status" }, { label: "Amount", key: "amount" }, { label: "Action", key: "action" }],
     rows: [
       { subject: "pi_3Qr...", provider: "Stripe", status: "held", amount: "$840", action: "Release when delivered", severity: "medium" },
-      { subject: "po_1Ab...", provider: "Stripe", status: "failed", amount: "$212", action: "Fix seller account", severity: "high" },
+      { subject: "po_1Ab...", provider: "Stripe", status: "failed", amount: "$212", action: "Review seller account", severity: "high" },
       { subject: "dp_4Zx...", provider: "Stripe", status: "chargeback", amount: "$1,220", action: "Submit evidence", severity: "critical" }
     ],
     workflows: sharedWorkflow,
@@ -205,25 +206,25 @@ export const adminPageConfigs: AdminPageConfig[] = [
   },
   {
     slug: "ai-tasks",
-    title: "AI task monitoring",
-    description: "Monitor buyer agents, seller agents, pricing assistants, search agents, listing generation, and moderation automations.",
+    title: "AI usage logs",
+    description: "Monitor AI-assisted tasks, listing generation, moderation checks, errors, latency, usage, and cost attribution.",
     permission: "ai.monitor",
     icon: Bot,
     primaryAction: "Retry task",
     metrics: [
-      { label: "Running", value: "23", detail: "7 moderation tasks", trend: "Normal" },
-      { label: "Failures", value: "11", detail: "Mostly image parsing", trend: "-18%" },
-      { label: "Avg latency", value: "4.8s", detail: "p50 end-to-end", trend: "+0.2s" }
+      { label: "AI calls", value: "8.7k", detail: "Last 24 hours across assistant tasks", trend: "+9%" },
+      { label: "Failures", value: "11", detail: "Mostly image parsing and vendor timeouts", trend: "-18%" },
+      { label: "Estimated cost", value: "$214", detail: "Daily token and vision spend", trend: "+$18" }
     ],
-    columns: [{ label: "Task", key: "subject" }, { label: "Agent", key: "agent" }, { label: "Status", key: "status" }, { label: "Latency", key: "latency" }, { label: "Action", key: "action" }],
+    columns: [{ label: "Usage event", key: "subject" }, { label: "Tool", key: "agent" }, { label: "Status", key: "status" }, { label: "Latency", key: "latency" }, { label: "Action", key: "action" }],
     rows: [
-      { subject: "listing-copy", agent: "Seller Copilot", status: "succeeded", latency: "3.2s", action: "Inspect", severity: "positive" },
-      { subject: "image-moderation", agent: "Safety Worker", status: "failed", latency: "timeout", action: "Retry", severity: "high" },
-      { subject: "search-intent", agent: "Discovery AI", status: "running", latency: "8.1s", action: "Trace", severity: "medium" }
+      { subject: "listing-copy", agent: "Seller assistant", status: "succeeded", latency: "3.2s", action: "Inspect", severity: "positive" },
+      { subject: "image-moderation", agent: "Safety check", status: "failed", latency: "timeout", action: "Retry", severity: "high" },
+      { subject: "search-intent", agent: "Search assistant", status: "running", latency: "8.1s", action: "Trace", severity: "medium" }
     ],
     workflows: sharedWorkflow,
     queries: ["admin_ai_task_monitor", "admin_agent_health", "admin_ai_cost_summary"],
-    actions: ["Retry", "Cancel", "Pause agent", "Inspect IO", "Create incident"]
+    actions: ["Retry", "Cancel", "Pause tool", "Inspect input", "Create incident"]
   },
   {
     slug: "search-analytics",
@@ -316,15 +317,57 @@ export const adminPageConfigs: AdminPageConfig[] = [
     ],
     queries: ["admin_audit_log_search", "admin_sensitive_action_feed", "admin_actor_activity"],
     actions: ["Filter", "Export", "Open target", "Create incident"]
+  },
+  {
+    slug: "settings",
+    title: "Admin settings",
+    description: "Configure policies, queue routing, confirmation requirements, role rules, escalation rules, and console defaults.",
+    permission: "workflows.manage",
+    icon: Settings,
+    primaryAction: "Update policy",
+    metrics: [
+      { label: "Active policies", value: "24", detail: "Moderation, fraud, payment, and support workflows", trend: "Current" },
+      { label: "Approval gates", value: "9", detail: "Sensitive actions require second review", trend: "+2" },
+      { label: "Queue automations", value: "17", detail: "Routing, SLA, escalation, and notifications", trend: "Healthy" }
+    ],
+    columns: [{ label: "Setting", key: "subject" }, { label: "Area", key: "area" }, { label: "Status", key: "status" }, { label: "Owner", key: "owner" }, { label: "Action", key: "action" }],
+    rows: [
+      { subject: "High-risk listing hold", area: "Moderation", status: "enabled", owner: "Risk", action: "Edit threshold", severity: "positive" },
+      { subject: "Refund approval gate", area: "Payments", status: "requires lead", owner: "Finance", action: "Review policy", severity: "medium" },
+      { subject: "Fraud cluster escalation", area: "Fraud", status: "enabled", owner: "Trust", action: "Test routing", severity: "high" }
+    ],
+    workflows: [
+      { title: "Propose policy", description: "Draft policy changes with owner, expected impact, rollout window, and rollback plan.", owner: "Ops lead", automation: "Policy diff and impact checklist" },
+      { title: "Approve rollout", description: "Require role-gated approval for sensitive queues, fraud thresholds, payment gates, and admin permissions.", owner: "Super admin", automation: "Approval gate and audit event" },
+      { title: "Monitor effect", description: "Track false positives, SLA impact, queue volume, and customer outcomes after changes ship.", owner: "Analytics", automation: "Post-change dashboard annotation" }
+    ],
+    queries: ["admin_console_settings", "admin_policy_change_log", "admin_workflow_automation_health"],
+    actions: ["Update", "Require approval", "Disable", "Test routing", "Audit change"]
   }
 ];
 
 export const overviewCards = [
-  { title: "Risk queue", value: "187", detail: "Listings, reports, disputes, and fraud alerts awaiting action", icon: ShieldCheck },
+  { title: "Risk queue", value: "187", detail: "Listings, reports, disputes, and fraud signals awaiting action", icon: ShieldCheck },
   { title: "Users needing action", value: "61", detail: "Suspensions, appeals, verification, and high-risk sellers", icon: Ban },
   { title: "Payments monitored", value: "$96.2k", detail: "Escrow, payout, chargeback, and refund exposure", icon: Scale },
   { title: "Analytics health", value: "99.8%", detail: "Search, revenue, audit, and AI event pipelines", icon: AlertTriangle }
 ];
+
+const primaryAdminSlugs = [
+  "users",
+  "listings",
+  "reports",
+  "disputes",
+  "transactions",
+  "fraud-alerts",
+  "ai-tasks",
+  "search-analytics",
+  "revenue",
+  "audit-logs",
+  "settings"
+] as const;
+
+export const primaryAdminPageConfigs = adminPageConfigs.filter((page) => primaryAdminSlugs.includes(page.slug as (typeof primaryAdminSlugs)[number]));
 
 export function getAdminPageConfig(slug: string) {
   return adminPageConfigs.find((page) => page.slug === slug);

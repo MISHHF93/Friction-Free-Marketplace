@@ -126,7 +126,11 @@ function matchesFallback(document: DiscoveryDocument, params: DiscoverySearchPar
     (params.minPrice === undefined || document.price_amount >= params.minPrice) &&
     (params.maxPrice === undefined || document.price_amount <= params.maxPrice) &&
     (!params.condition?.length || params.condition.includes(document.condition)) &&
-    (params.minSellerTrust === undefined || document.seller_trust_score >= params.minSellerTrust);
+    (params.minSellerTrust === undefined || document.seller_trust_score >= params.minSellerTrust) &&
+    (!params.verifiedOnly || document.seller_trust_score >= 80) &&
+    (!params.paymentProtection || document.seller_trust_score >= 80) &&
+    (params.fulfillment !== "pickup" || document.pickup_available) &&
+    (params.fulfillment !== "delivery" || document.ships_to.length > 0);
 }
 
 function buildFallbackFacets(documents: DiscoveryDocument[]) {

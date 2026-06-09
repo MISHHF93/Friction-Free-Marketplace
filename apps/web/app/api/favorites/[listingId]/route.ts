@@ -11,8 +11,9 @@ async function requireUser() {
   return { supabase, user, response: null };
 }
 
-export async function PUT(_request: Request, { params }: { params: { listingId: string } }) {
-  const listingId = z.string().uuid().safeParse(params.listingId);
+export async function PUT(_request: Request, { params }: { params: Promise<{ listingId: string }> }) {
+  const { listingId: listingIdParam } = await params;
+  const listingId = z.string().uuid().safeParse(listingIdParam);
   if (!listingId.success) return NextResponse.json({ error: "Invalid listing id." }, { status: 400 });
   const { supabase, user, response } = await requireUser();
   if (response || !user) return response;
@@ -25,8 +26,9 @@ export async function PUT(_request: Request, { params }: { params: { listingId: 
   return NextResponse.json({ favorited: true });
 }
 
-export async function DELETE(_request: Request, { params }: { params: { listingId: string } }) {
-  const listingId = z.string().uuid().safeParse(params.listingId);
+export async function DELETE(_request: Request, { params }: { params: Promise<{ listingId: string }> }) {
+  const { listingId: listingIdParam } = await params;
+  const listingId = z.string().uuid().safeParse(listingIdParam);
   if (!listingId.success) return NextResponse.json({ error: "Invalid listing id." }, { status: 400 });
   const { supabase, user, response } = await requireUser();
   if (response || !user) return response;

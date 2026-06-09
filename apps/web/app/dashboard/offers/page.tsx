@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRightLeft, CheckCircle2, Clock, DollarSign, History } from "lucide-react";
-import { DashboardActionCard, DashboardListItem, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
+import { DashboardActionCard, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
+import { OfferCard } from "@/components/marketplace-design-system";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,10 +29,6 @@ type OfferRow = {
   listing: { id: string; title: string; price_amount: number; currency: string; status: string } | null;
   offer_status_history?: Array<{ id: string; from_status: OfferStatus | null; to_status: OfferStatus; reason: string | null; created_at: string }>;
 };
-
-function money(amount: number | string, currency = "USD") {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(Number(amount));
-}
 
 function displayStatus(status: OfferStatus) {
   return status === "declined" ? "rejected" : status;
@@ -62,7 +59,7 @@ export default async function OffersPage() {
       offers = (data ?? []) as OfferRow[];
     }
   } catch (error) {
-    setupError = error instanceof Error ? error.message : "Unable to load offers.";
+    setupError = error instanceof Error ? error.message : "Offers could not be loaded right now.";
   }
 
   const now = Date.now();
@@ -76,17 +73,17 @@ export default async function OffersPage() {
   });
 
   return (
-    <DashboardShell title="Offers" description="Manage buyer and seller negotiations, counters, expirations, status history, notifications, and accepted offer handoffs.">
+    <DashboardShell title="Offers" description="Review active offers, respond before they expire, and keep each negotiation tied to the listing conversation.">
       <div className="grid gap-5 sm:grid-cols-3">
         <DashboardStatCard icon={ArrowRightLeft} label="Open negotiations" value={openOffers.length.toString()} detail={`${openOffers.filter((offer) => offer.seller_id === userId).length} seller-side and ${openOffers.filter((offer) => offer.buyer_id === userId).length} buyer-side.`} />
         <DashboardStatCard icon={Clock} label="Expiring soon" value={expiringSoon.length.toString()} detail="Pending offers with expiration inside the next 24 hours." />
-        <DashboardStatCard icon={CheckCircle2} label="Accepted this month" value={acceptedThisMonth.length.toString()} detail="Accepted offers ready for protected checkout handoff." />
+        <DashboardStatCard icon={CheckCircle2} label="Accepted this month" value={acceptedThisMonth.length.toString()} detail="Accepted offers ready for checkout or handoff." />
       </div>
 
       {setupError && (
         <Card className="border-destructive/40 bg-destructive/10">
           <CardHeader>
-            <CardTitle>Offer setup needed</CardTitle>
+            <CardTitle>Offers need attention</CardTitle>
             <CardDescription>{setupError}</CardDescription>
           </CardHeader>
         </Card>
@@ -96,7 +93,7 @@ export default async function OffersPage() {
         <Card>
           <CardHeader>
             <CardTitle>Sign in to manage offers</CardTitle>
-            <CardDescription>Offers are protected by participant-only access and state-machine validation.</CardDescription>
+            <CardDescription>Only deal participants can view and act on their offers.</CardDescription>
           </CardHeader>
         </Card>
       ) : (
@@ -104,31 +101,35 @@ export default async function OffersPage() {
           <CardHeader><CardTitle>Negotiation inbox</CardTitle></CardHeader>
           <CardContent className="grid gap-3">
             {offers.length === 0 ? (
-              <div className="rounded-2xl border border-dashed p-6 text-sm text-muted-foreground">No offers yet. Buyers can start an offer from an active listing conversation.</div>
+              <div className="rounded-2xl border border-dashed p-6 text-sm text-muted-foreground">No offers yet. Offers will appear here when a buyer starts one from an active listing conversation.</div>
             ) : offers.map((offer) => {
               const role = offer.buyer_id === userId ? "Buyer" : "Seller";
               const awaitingYou = offer.status === "pending" && offer.created_by_id !== userId;
               const latestHistory = offer.offer_status_history?.[0];
               return (
-                <DashboardListItem
+                <OfferCard
                   key={offer.id}
                   title={offer.listing?.title ?? "Marketplace listing"}
-                  detail={`Current offer: ${money(offer.amount, offer.currency)} · ${offer.expires_at ? `expires ${new Date(offer.expires_at).toLocaleString()}` : "no expiration set"}`}
-                  status={awaitingYou ? "Awaiting you" : displayStatus(offer.status)}
-                  meta={<span className="rounded-full bg-secondary px-2.5 py-0.5 text-xs font-semibold text-secondary-foreground">{role}</span>}
-                >
-                  <div className="flex flex-wrap items-center justify-end gap-2">
-                    {latestHistory && <Badge className="gap-1"><History className="h-3 w-3" />{latestHistory.from_status ?? "new"} → {displayStatus(latestHistory.to_status)}</Badge>}
-                    {offer.conversation_id && <Button asChild size="sm"><Link href={`/dashboard/messages?conversation=${offer.conversation_id}`}>Review</Link></Button>}
-                  </div>
-                </DashboardListItem>
+                  buyerName={role}
+                  amount={offer.amount}
+                  currency={offer.currency}
+                  status={offer.status}
+                  expiresAt={offer.expires_at ? new Date(offer.expires_at).toLocaleString() : undefined}
+                  actions={
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      {awaitingYou ? <Badge variant="warning">Awaiting you</Badge> : <Badge>{displayStatus(offer.status)}</Badge>}
+                      {latestHistory && <Badge className="gap-1"><History className="h-3 w-3" />{latestHistory.from_status ?? "new"} → {displayStatus(latestHistory.to_status)}</Badge>}
+                      {offer.conversation_id && <Button asChild size="sm"><Link href={`/dashboard/messages?conversation=${offer.conversation_id}`}>Review</Link></Button>}
+                    </div>
+                  }
+                />
               );
             })}
           </CardContent>
         </Card>
       )}
 
-      <DashboardActionCard icon={DollarSign} title="Offer guardrails" description="The backend state machine only allows pending offers to be accepted, rejected, withdrawn, countered, or expired by the correct participant, and every status change is recorded for auditability." />
+      <DashboardActionCard icon={DollarSign} title="Offer protections" description="Only the right participant can accept, reject, withdraw, counter, or expire an offer. Each status change is recorded for support and review." />
     </DashboardShell>
   );
 }

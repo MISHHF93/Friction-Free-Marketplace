@@ -19,8 +19,9 @@ async function requireUser() {
   return { supabase, user, response: null };
 }
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const parsedId = z.string().uuid().safeParse(params.id);
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const parsedId = z.string().uuid().safeParse(id);
   if (!parsedId.success) return NextResponse.json({ error: "Invalid saved search id." }, { status: 400 });
   const { supabase, user, response } = await requireUser();
   if (response || !user) return response;
@@ -45,8 +46,9 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   return NextResponse.json({ savedSearch: data });
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
-  const parsedId = z.string().uuid().safeParse(params.id);
+export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const parsedId = z.string().uuid().safeParse(id);
   if (!parsedId.success) return NextResponse.json({ error: "Invalid saved search id." }, { status: 400 });
   const { supabase, user, response } = await requireUser();
   if (response || !user) return response;

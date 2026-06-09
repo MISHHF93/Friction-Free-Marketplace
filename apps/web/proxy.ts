@@ -137,7 +137,7 @@ async function getAuthenticatedUser(
     const user = (await response.json()) as SupabaseUser;
     return user?.id ? { user, accessToken } : { user: null, accessToken: null };
   } catch (error) {
-    console.error("Middleware Supabase auth lookup failed", error);
+    console.error("Proxy Supabase auth lookup failed", error);
     return { user: null, accessToken: null };
   }
 }
@@ -163,12 +163,12 @@ async function getAppUserAccess(userId: string, accessToken: string, env: Public
     const users = (await response.json()) as AppUserAccess[];
     return users[0] ?? null;
   } catch (error) {
-    console.error("Middleware app user lookup failed", error);
+    console.error("Proxy app user lookup failed", error);
     return null;
   }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const needsAuthState = isProtectedRoute(pathname) || isAuthRoute(pathname);
 

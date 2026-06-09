@@ -1,9 +1,5 @@
-import { notFound } from "next/navigation";
-import { AdminFeaturePage } from "@/components/admin/admin-page";
-import { getAdminPageConfig } from "@/lib/admin/platform";
+import { AuthorizedAdminFeaturePage } from "@/components/admin/admin-page";
 
 export default function Page() {
-  const config = getAdminPageConfig("transactions");
-  if (!config) notFound();
-  return <AdminFeaturePage config={config} />;
+  return <AuthorizedAdminFeaturePage slug="transactions" />;
 }

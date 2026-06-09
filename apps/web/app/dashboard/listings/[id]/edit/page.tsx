@@ -31,8 +31,11 @@ async function getCategoryOptions(): Promise<ListingCategoryOption[]> {
 export default async function EditListingPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
+  let listing: unknown;
+
   try {
     const supabase = createClient();
     const {
@@ -43,15 +46,17 @@ export default async function EditListingPage({
     const { data, error } = await supabase
       .from("listings")
       .select("*, listing_images(*)")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("seller_id", user.id)
       .is("deleted_at", null)
       .single();
 
     if (error || !data) notFound();
-    const categories = await getCategoryOptions();
-    return <ListingForm listing={data as any} categories={categories} />;
+    listing = data;
   } catch {
     notFound();
   }
+
+  const categories = await getCategoryOptions();
+  return <ListingForm listing={listing as any} categories={categories} />;
 }
