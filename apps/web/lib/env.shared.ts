@@ -30,6 +30,38 @@ export const serverEnvSchema = publicEnvSchema.extend({
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
+export const localDevelopmentEnv: ServerEnv = {
+  NEXT_PUBLIC_APP_URL: "http://localhost:3000",
+  NEXT_PUBLIC_APP_NAME: "Friction-Free Marketplace",
+  NEXT_PUBLIC_SUPABASE_URL: "https://local-dev-placeholder.supabase.co",
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: "local-dev-placeholder",
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_local_dev_placeholder",
+  NEXT_PUBLIC_POSTHOG_HOST: "https://app.posthog.com",
+  SUPABASE_SERVICE_ROLE_KEY: "local-dev-placeholder",
+  STRIPE_SECRET_KEY: "sk_test_local_dev_placeholder",
+  STRIPE_WEBHOOK_SECRET: "whsec_local_dev_placeholder",
+  OPENAI_API_KEY: "sk-local-dev-placeholder",
+  MEILISEARCH_HOST: "http://127.0.0.1:7700",
+  MEILISEARCH_API_KEY: "local-dev-placeholder",
+  RESEND_API_KEY: "re_local_dev_placeholder",
+  RESEND_FROM_EMAIL: "Friction-Free Marketplace <hello@example.com>",
+  POSTHOG_KEY: "phc_local_dev_placeholder",
+  POSTHOG_HOST: "https://app.posthog.com"
+};
+
+export const localDevelopmentPublicEnv: PublicEnv = {
+  NEXT_PUBLIC_APP_URL: localDevelopmentEnv.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_APP_NAME: localDevelopmentEnv.NEXT_PUBLIC_APP_NAME,
+  NEXT_PUBLIC_SUPABASE_URL: localDevelopmentEnv.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: localDevelopmentEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: localDevelopmentEnv.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+  NEXT_PUBLIC_POSTHOG_HOST: localDevelopmentEnv.NEXT_PUBLIC_POSTHOG_HOST
+};
+
+export function shouldUseLocalDevelopmentEnv() {
+  return process.env.NODE_ENV !== "production" && process.env.CI !== "true";
+}
+
 function summarizeZodError(error: z.ZodError) {
   return error.issues.map((issue) => {
     const variable = issue.path.join(".") || "environment";

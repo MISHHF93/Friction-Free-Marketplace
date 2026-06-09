@@ -1,4 +1,4 @@
-import { formatEnvError, serverEnvSchema, type ServerEnv } from "@/lib/env.shared";
+import { formatEnvError, localDevelopmentEnv, serverEnvSchema, shouldUseLocalDevelopmentEnv, type ServerEnv } from "@/lib/env.shared";
 
 if (typeof window !== "undefined") {
   throw new Error("@/lib/env.server can only be imported from server-side code. Use publicEnv from @/lib/env in client code.");
@@ -36,6 +36,10 @@ export function validateServerEnv(input: NodeJS.ProcessEnv = process.env): Serve
   if (!result.success) {
     if (isProductionBuild()) {
       return buildTimeServerEnv;
+    }
+
+    if (shouldUseLocalDevelopmentEnv()) {
+      return localDevelopmentEnv;
     }
 
     throw new Error(formatEnvError(result.error, "server"));

@@ -13,7 +13,11 @@ type MeiliSearchResponse = {
 };
 
 export function isSearchConfigured() {
-  return Boolean(process.env.MEILISEARCH_HOST && process.env.MEILISEARCH_API_KEY);
+  return Boolean(
+    process.env.MEILISEARCH_HOST &&
+      process.env.MEILISEARCH_API_KEY &&
+      process.env.MEILISEARCH_API_KEY !== "local-dev-placeholder"
+  );
 }
 
 function getSearchEnv() {

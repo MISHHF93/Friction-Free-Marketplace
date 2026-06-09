@@ -176,16 +176,30 @@ function sortFallback(documents: DiscoveryDocument[], params: DiscoverySearchPar
   });
 }
 
+function shouldUseDemoMarketplaceData() {
+  return process.env.SUPABASE_SERVICE_ROLE_KEY === "local-dev-placeholder" || process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("local-dev-placeholder");
+}
+
 export async function searchMarketplace(params: DiscoverySearchParams): Promise<DiscoveryResult> {
   if (isSearchConfigured()) {
-    const response = await searchDiscoveryIndex(params);
-    return {
-      listings: response.hits,
-      total: response.estimatedTotalHits ?? response.hits.length,
-      facets: response.facetDistribution ?? {},
-      facetStats: response.facetStats ?? {},
-      source: "meilisearch"
-    };
+    try {
+      const response = await searchDiscoveryIndex(params);
+      return {
+        listings: response.hits,
+        total: response.estimatedTotalHits ?? response.hits.length,
+        facets: response.facetDistribution ?? {},
+        facetStats: response.facetStats ?? {},
+        source: "meilisearch"
+      };
+    } catch {
+      // Fall back to the database or demo data when the configured search service is unavailable.
+    }
+  }
+
+  if (shouldUseDemoMarketplaceData()) {
+    const filtered = sortFallback(demoDocuments().filter((doc) => matchesFallback(doc, params)), params);
+    const fallbackFacets = buildFallbackFacets(filtered);
+    return { listings: filtered.slice(0, params.limit ?? 24), total: filtered.length, ...fallbackFacets, source: "demo" };
   }
 
   try {
