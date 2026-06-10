@@ -29,7 +29,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RemoteImage } from "@/components/ui/remote-image";
+import { createMediaViewerItem, MediaViewer, type MediaViewerItem } from "@/components/media/media-viewer";
 import { createClient } from "@/lib/supabase/server";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { ShareListingButton } from "@/components/listings/share-listing-button";
@@ -140,6 +140,8 @@ function dbListingToDiscoveryDocument(listing: DbListing, fallback?: DiscoveryDo
     image_url: imageUrl,
     seo_tags: Array.isArray(listing.metadata?.seo_tags) ? listing.metadata.seo_tags.filter((tag): tag is string => typeof tag === "string") : fallback?.seo_tags ?? [],
     attributes: fallback?.attributes ?? [],
+    search_terms: fallback?.search_terms ?? [],
+    fulfillment_modes: fallback?.fulfillment_modes ?? [],
     view_count: fallback?.view_count ?? 0,
     saved_count: fallback?.saved_count ?? 0,
     purchase_count: fallback?.purchase_count ?? 0,
@@ -244,7 +246,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   const related = await getFeaturedListings(6);
   const relatedListings = related.listings.filter((item) => item.id !== listing.id && item.category_slug === listing.category_slug).slice(0, 3);
   const recommendations = relatedListings.length ? relatedListings : related.listings.filter((item) => item.id !== listing.id).slice(0, 3);
-  const reportHref = `/trust-and-safety?report=listing&id=${encodeURIComponent(listing.id)}`;
+  const reportHref = `/safety?report=listing&id=${encodeURIComponent(listing.id)}`;
 
   return (
     <main className="app-container section-y">
@@ -400,16 +402,24 @@ function DetailMetric({ icon, label, value }: { icon: React.ReactNode; label: st
 }
 
 function ListingGallery({ title, images }: { title: string; images: Array<{ src: string; alt: string }> }) {
-  const primary = images[0];
-  const thumbnails: Array<{ src: string; alt: string } | null> = images.slice(1, 5);
-  const thumbnailSlots = thumbnails.length ? thumbnails : Array.from<{ src: string; alt: string } | null>({ length: 4 }).fill(null);
+  const mediaItems: MediaViewerItem[] = images.map((image, index) => createMediaViewerItem({
+    id: `${image.src}-${index}`,
+    src: image.src,
+    type: "image",
+    title: `${title} media ${index + 1}`,
+    alt: image.alt,
+    contentType: "image/*"
+  }));
+  const primary = mediaItems[0];
+  const thumbnails: Array<MediaViewerItem | null> = mediaItems.slice(1, 5);
+  const thumbnailSlots: Array<MediaViewerItem | null> = thumbnails.length ? thumbnails : Array.from<MediaViewerItem | null>({ length: 4 }).fill(null);
 
   return (
     <section className="min-w-0 max-w-full overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-soft sm:rounded-[2rem]" aria-label="Listing image gallery">
       <div className="grid min-w-0 grid-cols-1 gap-3 p-2 sm:p-3 lg:grid-cols-[minmax(0,1fr)_12rem] xl:grid-cols-[minmax(0,1fr)_14rem]">
         <div className="min-w-0 overflow-hidden rounded-[1.5rem] bg-gradient-to-br from-trust-soft via-ai-soft to-premium-soft">
           {primary ? (
-            <RemoteImage src={primary.src} alt={primary.alt} className="h-72 w-full object-cover sm:h-96 lg:h-[30rem] xl:h-[32.5rem]" />
+            <MediaViewer items={mediaItems} initialIndex={0} mode="gallery" surface="listingGallery" triggerLabel={`Open ${title} media gallery`} thumbnailClassName="h-72 w-full object-cover sm:h-96 lg:h-[30rem] xl:h-[32.5rem]" />
           ) : (
             <div className="flex h-72 w-full flex-col items-center justify-center gap-3 p-4 text-muted-foreground sm:h-96 lg:h-[30rem] xl:h-[32.5rem]">
               <ImagePlus className="h-16 w-16 text-primary/60" aria-hidden="true" />
@@ -422,7 +432,7 @@ function ListingGallery({ title, images }: { title: string; images: Array<{ src:
           {thumbnailSlots.map((image, index) => (
             <div className="overflow-hidden rounded-2xl border border-border bg-secondary" key={image ? image.src : index}>
               {image ? (
-                <RemoteImage src={image.src} alt={image.alt} className="h-24 w-full object-cover sm:h-28 lg:h-[7rem] xl:h-[7.55rem]" />
+                <MediaViewer items={mediaItems} initialIndex={index + 1} mode="gallery" surface="listingGallery" triggerLabel={`Open ${title} media ${index + 2}`} thumbnailClassName="h-24 w-full object-cover sm:h-28 lg:h-[7rem] xl:h-[7.55rem]" />
               ) : (
                 <div className={cn("flex h-24 items-center justify-center text-muted-foreground sm:h-28 lg:h-[7rem] xl:h-[7.55rem]", index === 0 && primary && "bg-trust-soft")}>
                   <PackageCheck className="h-7 w-7" aria-hidden="true" />

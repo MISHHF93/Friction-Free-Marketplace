@@ -74,6 +74,8 @@ function rowToDiscoveryDocument(row: Row): DiscoveryDocument {
     image_url: typeof row.image_url === "string" ? row.image_url : null,
     seo_tags: Array.isArray(row.seo_tags) ? row.seo_tags.map(String) : [],
     attributes: Array.isArray(row.attributes) ? row.attributes.map(String) : [],
+    search_terms: Array.isArray(row.search_terms) ? row.search_terms.map(String) : [],
+    fulfillment_modes: Array.isArray(row.fulfillment_modes) ? row.fulfillment_modes.map(String) : [],
     view_count: Number(row.view_count ?? 0),
     saved_count: Number(row.saved_count ?? 0),
     purchase_count: Number(row.purchase_count ?? 0),

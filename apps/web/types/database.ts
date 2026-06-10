@@ -69,7 +69,7 @@ export type Database = {
           slug: string | null;
           description: string;
           condition: string | null;
-          status: "draft" | "active" | "reserved" | "sold" | "paused" | "expired" | "removed";
+          status: "draft" | "active" | "reserved" | "sold" | "paused" | "archived" | "expired" | "removed";
           price_amount: number;
           currency: string;
           quantity: number;
@@ -437,6 +437,62 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["ai_agent_audit_events"]["Row"]>;
         Relationships: [];
       };
+      financial_accounts: {
+        Row: {
+          code: string;
+          name: string;
+          account_type: Database["public"]["Enums"]["financial_account_type"];
+          normal_balance: Database["public"]["Enums"]["ledger_entry_direction"];
+          category: string;
+          description: string | null;
+          is_system: boolean;
+          is_active: boolean;
+          metadata: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["financial_accounts"]["Row"]> & { code: string; name: string; account_type: Database["public"]["Enums"]["financial_account_type"]; normal_balance: Database["public"]["Enums"]["ledger_entry_direction"]; category: string };
+        Update: Partial<Database["public"]["Tables"]["financial_accounts"]["Row"]>;
+        Relationships: [];
+      };
+      financial_ledger_journals: {
+        Row: {
+          id: string;
+          transaction_id: string | null;
+          source_type: string;
+          source_id: string;
+          event_type: string;
+          description: string | null;
+          currency: string;
+          idempotency_key: string;
+          posted_at: string;
+          posted_by: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["financial_ledger_journals"]["Row"]> & { source_type: string; source_id: string; event_type: string; idempotency_key: string };
+        Update: Partial<Database["public"]["Tables"]["financial_ledger_journals"]["Row"]>;
+        Relationships: [];
+      };
+      financial_ledger_entries: {
+        Row: {
+          id: string;
+          journal_id: string;
+          transaction_id: string | null;
+          account_code: string;
+          user_id: string | null;
+          debit_amount: number;
+          credit_amount: number;
+          currency: string;
+          provider: string | null;
+          provider_object_id: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: Partial<Database["public"]["Tables"]["financial_ledger_entries"]["Row"]> & { journal_id: string; account_code: string };
+        Update: Partial<Database["public"]["Tables"]["financial_ledger_entries"]["Row"]>;
+        Relationships: [];
+      };
       audit_logs: {
         Row: {
           id: string;
@@ -457,8 +513,38 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      financial_account_balances: {
+        Row: {
+          account_code: string | null;
+          name: string | null;
+          account_type: Database["public"]["Enums"]["financial_account_type"] | null;
+          normal_balance: Database["public"]["Enums"]["ledger_entry_direction"] | null;
+          category: string | null;
+          currency: string | null;
+          debit_total: number | null;
+          credit_total: number | null;
+          balance: number | null;
+          last_entry_at: string | null;
+        };
+      };
+      financial_revenue_summary: {
+        Row: {
+          currency: string | null;
+          platform_fee_revenue: number | null;
+          deferred_platform_fees: number | null;
+          seller_payables: number | null;
+          stripe_cash_balance: number | null;
+          chargeback_losses: number | null;
+          stripe_processing_fees: number | null;
+        };
+      };
+    };
     Functions: {
+      post_financial_journal: {
+        Args: { p_transaction_id: string | null; p_source_type: string; p_source_id: string; p_event_type: string; p_currency: string; p_description: string | null; p_idempotency_key: string; p_metadata: Json; p_entries: Json };
+        Returns: string;
+      };
       create_negotiation_offer: {
         Args: { p_conversation_id: string; p_amount: number; p_message?: string | null; p_parent_offer_id?: string | null; p_reservation_deposit_amount?: number; p_expires_at?: string | null };
         Returns: Database["public"]["Tables"]["offers"]["Row"];
@@ -467,11 +553,15 @@ export type Database = {
         Args: { p_offer_id: string; p_status: Database["public"]["Enums"]["offer_status"]; p_message?: string | null };
         Returns: Database["public"]["Tables"]["offers"]["Row"];
       };
+      set_listing_lifecycle_status: {
+        Args: { p_listing_id: string; p_status: Database["public"]["Tables"]["listings"]["Row"]["status"]; p_reason?: string | null };
+        Returns: Database["public"]["Tables"]["listings"]["Row"];
+      };
       expire_due_offers: { Args: Record<string, never>; Returns: number };
     };
     Enums: {
       user_role: "buyer" | "seller" | "admin" | "super_admin";
-      listing_status: "draft" | "active" | "reserved" | "sold" | "paused" | "expired" | "removed";
+      listing_status: "draft" | "active" | "reserved" | "sold" | "paused" | "archived" | "expired" | "removed";
       media_status: "pending" | "ready" | "rejected" | "deleted";
       conversation_status: "open" | "archived" | "blocked" | "closed";
       message_kind: "text" | "attachment" | "offer" | "system" | "pickup_schedule" | "deposit";
@@ -482,6 +572,8 @@ export type Database = {
       ghosting_penalty_status: "pending" | "applied" | "waived" | "appealed" | "reversed";
       ai_task_status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
       seller_connect_status: "not_started" | "onboarding" | "pending" | "active" | "restricted";
+      financial_account_type: "asset" | "liability" | "revenue" | "expense" | "contra_revenue" | "equity";
+      ledger_entry_direction: "debit" | "credit";
     };
     CompositeTypes: Record<string, never>;
   };

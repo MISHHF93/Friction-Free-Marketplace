@@ -12,6 +12,12 @@ type MeiliSearchResponse = {
   facetStats?: Record<string, { min: number; max: number }>;
 };
 
+type MeiliTask = {
+  uid: number;
+  status: "enqueued" | "processing" | "succeeded" | "failed" | "canceled";
+  error?: { message?: string; code?: string };
+};
+
 export function isSearchConfigured() {
   return Boolean(
     process.env.MEILISEARCH_HOST &&
@@ -81,8 +87,8 @@ export function buildMeiliSearchPayload(params: DiscoverySearchParams) {
     params.minSellerTrust !== undefined ? `seller_trust_score >= ${params.minSellerTrust}` : undefined,
     params.verifiedOnly ? "seller_trust_score >= 80" : undefined,
     params.paymentProtection ? "seller_trust_score >= 80" : undefined,
-    params.fulfillment === "pickup" ? "pickup_available = true" : undefined,
-    params.fulfillment === "delivery" ? "ships_to EXISTS" : undefined,
+    params.fulfillment === "pickup" ? "fulfillment_modes = \"pickup\"" : undefined,
+    params.fulfillment === "delivery" ? "(fulfillment_modes = \"shipping\" OR fulfillment_modes = \"local_delivery\")" : undefined,
     params.lat !== undefined && params.lng !== undefined && params.radiusMiles !== undefined
       ? `_geoRadius(${params.lat}, ${params.lng}, ${Math.round(params.radiusMiles * 1609.344)})`
       : undefined
@@ -136,6 +142,13 @@ export async function configureDiscoveryIndex() {
       sortableAttributes: listingSortableAttributes,
       rankingRules: listingRankingRules,
       displayedAttributes: ["*"],
+      synonyms: {
+        couch: ["sofa", "sectional"],
+        bike: ["bicycle", "cycle"],
+        cellphone: ["phone", "smartphone"],
+        pickup: ["local pickup", "collect"],
+        shipping: ["delivery", "ship"]
+      },
       typoTolerance: { enabled: true, minWordSizeForTypos: { oneTypo: 4, twoTypos: 8 } },
       faceting: { maxValuesPerFacet: 100 },
       pagination: { maxTotalHits: 5000 }
@@ -164,4 +177,18 @@ export async function deleteDiscoveryDocuments(ids: string[]) {
     method: "POST",
     body: JSON.stringify(ids)
   });
+}
+
+export async function waitForMeiliTask(taskUid: number, timeoutMs = 15_000) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    const task = await meiliRequest<MeiliTask>(`/tasks/${taskUid}`);
+    if (task.status === "succeeded") return task;
+    if (task.status === "failed" || task.status === "canceled") {
+      throw new Error(`Meilisearch task ${taskUid} ${task.status}: ${task.error?.message ?? task.error?.code ?? "unknown error"}`);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  throw new Error(`Timed out waiting for Meilisearch task ${taskUid}.`);
 }

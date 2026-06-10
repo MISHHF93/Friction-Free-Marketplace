@@ -23,8 +23,8 @@ export function DashboardShell({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-5 sm:space-y-6">
-      <div className="overflow-hidden rounded-3xl border border-slate-900/10 bg-premium-dark p-4 text-white shadow-admin sm:p-6">
+    <div className="dashboard-shell">
+      <div className="dashboard-hero">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
           <div>
             <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-emerald-300">
@@ -43,11 +43,11 @@ export function DashboardShell({
 
 export function DashboardStatCard({ label, value, detail, icon: Icon = Package }: { label: string; value: string; detail: string; icon?: ComponentType<{ className?: string }> }) {
   return (
-    <Card className="shadow-md hover:shadow-soft">
+    <Card className="dashboard-stat">
       <CardHeader className="p-4 pb-3 sm:p-6 sm:pb-3">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-sm text-muted-foreground">{label}</CardTitle>
-          <span className="rounded-xl bg-trust-soft p-2 text-trust"><Icon className="h-4 w-4" /></span>
+          <span className="brand-icon brand-icon-sm brand-icon-trust"><Icon className="h-4 w-4" /></span>
         </div>
         <p className="text-3xl font-black">{value}</p>
       </CardHeader>
@@ -58,9 +58,9 @@ export function DashboardStatCard({ label, value, detail, icon: Icon = Package }
 
 export function DashboardActionCard({ title, description, icon: Icon = ListChecks, children }: { title: string; description: string; icon?: ComponentType<{ className?: string }>; children?: ReactNode }) {
   return (
-    <Card className="h-full hover:shadow-soft">
+    <Card className="card-interactive h-full">
       <CardHeader className="p-4 sm:p-6">
-        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-ai-soft text-ai sm:h-12 sm:w-12"><Icon className="h-5 w-5" /></span>
+        <span className="brand-icon brand-icon-lg brand-icon-ai"><Icon className="h-5 w-5" /></span>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4 pt-0 text-sm leading-6 text-muted-foreground sm:p-6 sm:pt-0">
@@ -87,12 +87,12 @@ export function DashboardSectionCard({
   className?: string;
 }) {
   return (
-    <Card className={cn("shadow-md", className)}>
+    <Card className={cn("shadow-card", className)}>
       <CardHeader className="p-4 sm:p-6">
         <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-xl bg-trust-soft p-2 text-trust"><Icon className="h-4 w-4" /></span>
+              <span className="brand-icon brand-icon-sm brand-icon-trust"><Icon className="h-4 w-4" /></span>
               <CardTitle>{title}</CardTitle>
             </div>
             {description ? <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p> : null}
@@ -123,7 +123,7 @@ export function DashboardListItem({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col gap-3 rounded-2xl border border-border/80 bg-card/70 p-4 shadow-xs transition hover:border-primary/30 hover:bg-white sm:flex-row sm:items-center sm:justify-between", className)}>
+    <div className={cn("dashboard-list-item", className)}>
       <div className="flex min-w-0 gap-3">
         {leading ? <div className="shrink-0">{leading}</div> : null}
         <div className="min-w-0">
@@ -144,11 +144,11 @@ export function DashboardProgressCard({ label, value, detail, icon: Icon = Chevr
   const boundedValue = Math.max(0, Math.min(100, value));
 
   return (
-    <Card className="shadow-md">
+    <Card className="dashboard-stat">
       <CardHeader className="p-4 pb-3 sm:p-6 sm:pb-3">
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-sm text-muted-foreground">{label}</CardTitle>
-          <span className="rounded-xl bg-ai-soft p-2 text-ai"><Icon className="h-4 w-4" /></span>
+          <span className="brand-icon brand-icon-sm brand-icon-ai"><Icon className="h-4 w-4" /></span>
         </div>
         <p className="text-3xl font-black">{boundedValue}%</p>
       </CardHeader>
@@ -166,7 +166,7 @@ export function DashboardEmptyState({ title, description, action }: { title: str
   return (
     <Card className="border-dashed bg-white/70">
       <CardContent className="flex flex-col items-center justify-center gap-4 p-5 text-center sm:p-8">
-        <div className="rounded-full bg-secondary p-4">
+        <div className="brand-icon brand-icon-lg">
           <Package className="h-8 w-8 text-primary" />
         </div>
         <div>

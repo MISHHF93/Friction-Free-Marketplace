@@ -2,6 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Json } from "@/types/database";
 import { evaluateListingFraud } from "@/lib/fraud/detection";
 import {
+  assertListingLifecyclePermission,
+  getListingForPermission,
+} from "@/lib/listings/permissions";
+import {
   listingFormSchema,
   listingPatchSchema,
   listingStatusSchema,
@@ -16,6 +20,55 @@ import {
 type Db = SupabaseClient<any>;
 
 const LISTING_IMAGE_BUCKET = "listing-images";
+
+type ListingAuditAction =
+  | "listing.create"
+  | "listing.update"
+  | "listing.publish"
+  | "listing.archive"
+  | "listing.mark_sold"
+  | "listing.delete";
+
+async function writeListingAudit({
+  supabase,
+  actorId,
+  action,
+  listingId,
+  oldValues,
+  newValues,
+  metadata = {},
+}: {
+  supabase: Db;
+  actorId: string | null;
+  action: ListingAuditAction;
+  listingId: string;
+  oldValues?: Json | null;
+  newValues?: Json | null;
+  metadata?: Record<string, Json>;
+}) {
+  const { error } = await supabase.from("audit_logs").insert({
+    actor_id: actorId,
+    actor_type: actorId ? "user" : "system",
+    action,
+    table_name: "listings",
+    record_id: listingId,
+    old_values: oldValues ?? null,
+    new_values: newValues ?? null,
+    metadata: {
+      source: "listing_lifecycle_service",
+      ...metadata,
+    } satisfies Json,
+  });
+
+  if (error) throw error;
+}
+
+function actionForStatus(status: string): ListingAuditAction {
+  if (status === "active") return "listing.publish";
+  if (status === "archived") return "listing.archive";
+  if (status === "sold") return "listing.mark_sold";
+  return "listing.update";
+}
 
 async function getCategoryId(
   supabase: Db,
@@ -72,6 +125,9 @@ export async function createListing(
   rawInput: unknown,
 ) {
   const input = listingFormSchema.parse(rawInput);
+  if (input.publish && input.images.length === 0) {
+    throw new Error("Add at least one listing photo before publishing.");
+  }
   const categoryId = await getCategoryId(
     supabase,
     input.category,
@@ -128,6 +184,19 @@ export async function createListing(
 
   const blocked = await applyFraudDetection(listing.id);
   await syncListingChange(listing.id, blocked);
+  await writeListingAudit({
+    supabase,
+    actorId: sellerId,
+    action: "listing.create",
+    listingId: listing.id,
+    oldValues: null,
+    newValues: listing as Json,
+    metadata: {
+      initial_status: status,
+      requested_publish: input.publish,
+      search_sync_removed: blocked,
+    },
+  });
 
   if (!blocked) return listing;
 
@@ -143,15 +212,24 @@ export async function updateListing(
   supabase: Db,
   listingId: string,
   rawInput: unknown,
+  actorId?: string,
 ) {
+  if (actorId) {
+    const permissionListing = await getListingForPermission(supabase, listingId);
+    assertListingLifecyclePermission(permissionListing, actorId, "edit");
+  }
+
   const existing = await supabase
     .from("listings")
-    .select("metadata, listing_images(storage_path)")
+    .select("*, listing_images(storage_path)")
     .eq("id", listingId)
     .single();
   if (existing.error) throw existing.error;
 
   const input = listingPatchSchema.parse(rawInput);
+  if (input.publish && input.images?.length === 0) {
+    throw new Error("Add at least one listing photo before publishing.");
+  }
   const currentMetadata = (existing.data.metadata ?? {}) as Record<
     string,
     unknown
@@ -279,6 +357,17 @@ export async function updateListing(
 
   const blocked = await applyFraudDetection(listing.id);
   await syncListingChange(listing.id, blocked || listing.status !== "active");
+  await writeListingAudit({
+    supabase,
+    actorId: actorId ?? listing.seller_id ?? null,
+    action: "listing.update",
+    listingId: listing.id,
+    oldValues: existing.data as Json,
+    newValues: listing as Json,
+    metadata: {
+      search_sync_removed: blocked || listing.status !== "active",
+    },
+  });
 
   if (!blocked) return listing;
 
@@ -294,23 +383,49 @@ export async function setListingStatus(
   supabase: Db,
   listingId: string,
   rawStatus: unknown,
+  actorId?: string,
 ) {
   const status = listingStatusSchema.parse(rawStatus);
   const now = new Date().toISOString();
+  const lifecycleAction =
+    status === "active"
+      ? "publish"
+      : status === "archived"
+        ? "archive"
+        : status === "sold"
+          ? "mark_sold"
+          : "edit";
+  const permissionListing = await getListingForPermission(supabase, listingId);
+  if (actorId) {
+    assertListingLifecyclePermission(permissionListing, actorId, lifecycleAction);
+  }
   const existing = await supabase
     .from("listings")
-    .select("metadata")
+    .select("*")
     .eq("id", listingId)
     .single();
   if (existing.error) throw existing.error;
+  const existingMetadata = (existing.data.metadata ?? {}) as Record<string, unknown>;
   const metadata =
     status === "sold"
       ? ({
-          ...((existing.data.metadata ?? {}) as Record<string, unknown>),
+          ...existingMetadata,
           lifecycle_event: "sold",
           sold_at: now,
         } as Json)
-      : undefined;
+      : status === "archived"
+        ? ({
+            ...existingMetadata,
+            lifecycle_event: "archived",
+            archived_at: now,
+          } as Json)
+        : status === "active"
+          ? ({
+              ...existingMetadata,
+              lifecycle_event: "published",
+              last_published_at: now,
+            } as Json)
+          : undefined;
 
   const { data: listing, error } = await supabase
     .from("listings")
@@ -318,6 +433,7 @@ export async function setListingStatus(
       status,
       ...(status === "active" ? { published_at: now } : {}),
       ...(status === "sold" ? { quantity: 0, metadata } : {}),
+      ...(status === "archived" || status === "active" ? { metadata } : {}),
     })
     .eq("id", listingId)
     .is("deleted_at", null)
@@ -327,6 +443,19 @@ export async function setListingStatus(
   if (error) throw error;
   const blocked = status === "active" ? await applyFraudDetection(listing.id) : false;
   await syncListingChange(listing.id, blocked || status !== "active");
+  await writeListingAudit({
+    supabase,
+    actorId: actorId ?? listing.seller_id ?? null,
+    action: actionForStatus(status),
+    listingId: listing.id,
+    oldValues: existing.data as Json,
+    newValues: listing as Json,
+    metadata: {
+      from_status: existing.data.status,
+      to_status: status,
+      search_sync_removed: blocked || status !== "active",
+    },
+  });
 
   if (!blocked) return listing;
 
@@ -343,23 +472,41 @@ export async function deleteListing(
   listingId: string,
   sellerId: string,
 ) {
+  const existing = await getListingForPermission(supabase, listingId);
+  assertListingLifecyclePermission(existing, sellerId, "delete");
+
   const { data: images } = await supabase
     .from("listing_images")
     .select("storage_path")
     .eq("listing_id", listingId);
+  const imagePaths = (images ?? [])
+    .map((image) => image.storage_path)
+    .filter(Boolean);
+  const deletedAt = new Date().toISOString();
 
   const { error } = await supabase
     .from("listings")
-    .update({ status: "removed", deleted_at: new Date().toISOString() })
+    .update({ status: "removed", deleted_at: deletedAt })
     .eq("id", listingId)
     .eq("seller_id", sellerId)
     .is("deleted_at", null);
 
   if (error) throw error;
+  await writeListingAudit({
+    supabase,
+    actorId: sellerId,
+    action: "listing.delete",
+    listingId,
+    oldValues: existing as Json,
+    newValues: {
+      status: "removed",
+      deleted_at: deletedAt,
+    } as Json,
+    metadata: {
+      removed_image_count: imagePaths.length,
+    },
+  });
 
-  const imagePaths = (images ?? [])
-    .map((image) => image.storage_path)
-    .filter(Boolean);
   if (imagePaths.length > 0) {
     const { error: storageError } = await supabase.storage
       .from(LISTING_IMAGE_BUCKET)

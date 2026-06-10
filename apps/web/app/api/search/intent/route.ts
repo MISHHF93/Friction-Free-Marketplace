@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getOpenAI } from "@/lib/openai/client";
 import { searchMarketplace } from "@/lib/search/discovery";
+import { createClient } from "@/lib/supabase/server";
 
 const intentSchema = z.object({ query: z.string().min(2), location: z.string().optional(), budget: z.number().optional() });
 
@@ -22,7 +23,13 @@ function fallbackIntent(query: string) {
 }
 
 export async function POST(request: Request) {
-  const input = intentSchema.parse(await request.json());
+  const supabase = createClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) return NextResponse.json({ error: "Sign in to use AI search intent extraction." }, { status: 401 });
+
+  const payload = intentSchema.safeParse(await request.json().catch(() => null));
+  if (!payload.success) return NextResponse.json({ error: payload.error.flatten() }, { status: 400 });
+  const input = payload.data;
   let intent = fallbackIntent(input.query);
 
   const completion = await getOpenAI().chat.completions.create({

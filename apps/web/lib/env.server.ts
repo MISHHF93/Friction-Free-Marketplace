@@ -21,6 +21,7 @@ const buildTimeServerEnv: ServerEnv = {
   OPENAI_API_KEY: "sk-build-time-placeholder",
   MEILISEARCH_HOST: "http://127.0.0.1:7700",
   MEILISEARCH_API_KEY: "build-time-placeholder",
+  ADMIN_WORKER_SECRET: "admin-worker-build-time-placeholder",
   RESEND_API_KEY: "re_build_time_placeholder",
   RESEND_FROM_EMAIL: "Friction-Free Marketplace <hello@example.com>",
   POSTHOG_KEY: "phc_build_time_placeholder",
@@ -47,4 +48,8 @@ export function validateServerEnv(input: NodeJS.ProcessEnv = process.env): Serve
   return result.data;
 }
 
-export const env = validateServerEnv();
+export const env = new Proxy({} as ServerEnv, {
+  get(_target, property: keyof ServerEnv) {
+    return validateServerEnv()[property];
+  }
+});

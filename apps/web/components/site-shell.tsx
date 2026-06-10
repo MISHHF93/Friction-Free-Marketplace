@@ -11,10 +11,10 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { href: "/browse", label: "Browse" },
-  { href: "/search", label: "Search" },
-  { href: "/assistant", label: "AI assistant" },
-  { href: "/trust-and-safety", label: "Safety" },
-  { href: "/how-it-works", label: "How it works" }
+  { href: "/categories", label: "Categories" },
+  { href: "/how-it-works", label: "How it works" },
+  { href: "/safety", label: "Safety" },
+  { href: "/pricing", label: "Pricing" }
 ];
 
 const categoryLinks = [
@@ -35,8 +35,8 @@ const footerSections = [
     links: [
       { href: "/browse", label: "Browse listings" },
       { href: "/search", label: "Search marketplace" },
+      { href: "/categories", label: "Categories" },
       { href: "/categories/vehicles", label: "Vehicles" },
-      { href: "/categories/electronics", label: "Electronics" },
       { href: "/seller", label: "Start selling" }
     ]
   },
@@ -45,14 +45,15 @@ const footerSections = [
     links: [
       { href: "/how-it-works", label: "How it works" },
       { href: "/pricing", label: "Pricing" },
+      { href: "/company", label: "Company" },
       { href: "/assistant", label: "Marketplace assistant" },
-      { href: "/customer-portal", label: "Customer support" }
+      { href: "/contact", label: "Contact" }
     ]
   },
   {
     title: "Safety",
     links: [
-      { href: "/trust-and-safety", label: "Trust and safety" },
+      { href: "/safety", label: "Trust and safety" },
       { href: "/dashboard/trust-score", label: "Trust scores" },
       { href: "/dashboard/verification", label: "Verification" },
       { href: "/admin/fraud-alerts", label: "Fraud review" }
@@ -61,7 +62,7 @@ const footerSections = [
   {
     title: "Legal",
     links: [
-      { href: "/trust-and-safety", label: "Community standards" },
+      { href: "/safety", label: "Community standards" },
       { href: "/pricing", label: "Fees" },
       { href: "/account/settings", label: "Privacy settings" },
       { href: "/dashboard/settings", label: "Notification preferences" }
@@ -290,8 +291,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <div className="app-container flex flex-col gap-3 py-5 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
             <p>© {new Date().getFullYear()} Friction-Free Marketplace. Built for safer local buying and selling.</p>
             <div className="flex flex-wrap gap-4">
-              <Link href="/trust-and-safety" className="hover:text-white">Safety</Link>
+              <Link href="/safety" className="hover:text-white">Safety</Link>
               <Link href="/pricing" className="hover:text-white">Fees</Link>
+              <Link href="/company" className="hover:text-white">Company</Link>
               <Link href="/account/settings" className="hover:text-white">Privacy</Link>
             </div>
           </div>

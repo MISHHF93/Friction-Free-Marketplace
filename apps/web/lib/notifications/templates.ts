@@ -8,6 +8,8 @@ export type NotificationTemplateKey =
   | "offer_accepted"
   | "offer_declined"
   | "offer_countered"
+  | "offer_expired"
+  | "offer_withdrawn"
   | "payment_authorized"
   | "payment_captured"
   | "payment_released"
@@ -94,6 +96,10 @@ export function renderNotificationTemplate(key: NotificationTemplateKey, input: 
       return render(key, "offers", "Offer declined", `An offer for ${money(input.amount, input.currency ?? "USD")} on ${listingTitle} was declined.`, actionUrl);
     case "offer_countered":
       return render(key, "offers", "Counter offer received", `A counter offer for ${money(input.amount, input.currency ?? "USD")} is waiting on ${listingTitle}.`, actionUrl);
+    case "offer_expired":
+      return render(key, "offers", "Offer expired", `An offer for ${money(input.amount, input.currency ?? "USD")} on ${listingTitle} expired.`, actionUrl);
+    case "offer_withdrawn":
+      return render(key, "offers", "Offer withdrawn", `An offer for ${money(input.amount, input.currency ?? "USD")} on ${listingTitle} was withdrawn.`, actionUrl);
     case "payment_authorized":
       return render(key, "payments", "Payment authorization started", `${money(input.amount, input.currency ?? "USD")} is being authorized for ${listingTitle}.`, actionUrl);
     case "payment_captured":

@@ -53,7 +53,7 @@ const defaultFooterSections: AppFooterSection[] = [
     title: "Trust",
     links: [
       { href: "/how-it-works", label: "How it works" },
-      { href: "/trust-and-safety", label: "Trust & safety" },
+      { href: "/safety", label: "Trust & safety" },
       { href: "/pricing", label: "Pricing" }
     ]
   },
@@ -68,7 +68,7 @@ const defaultFooterSections: AppFooterSection[] = [
 ];
 
 const defaultBottomLinks: AppNavLink[] = [
-  { href: "/trust-and-safety", label: "Safety" },
+  { href: "/safety", label: "Safety" },
   { href: "/pricing", label: "Pricing" }
 ];
 

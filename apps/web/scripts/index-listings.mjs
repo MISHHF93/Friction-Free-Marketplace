@@ -11,8 +11,8 @@ const limit = Number(process.argv.find((arg) => arg.startsWith("--limit="))?.spl
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/$/, "");
 const meiliHost = process.env.MEILISEARCH_HOST.replace(/\/$/, "");
 
-const searchableAttributes = ["title", "description", "category_name", "category_slug", "condition", "seller_display_name", "seo_tags", "attributes", "location_label", "location_city", "location_region"];
-const filterableAttributes = ["status", "category_id", "category_slug", "condition", "currency", "price_amount", "seller_trust_score", "seller_completed_transactions", "seller_fraud_risk_level", "pickup_available", "ships_to", "location_city", "location_region", "location_country", "published_at", "created_at", "saved_count", "view_count", "conversion_score", "safety_score", "trend_score", "value_score", "_geo"];
+const searchableAttributes = ["title", "description", "category_name", "category_slug", "condition", "seller_display_name", "seo_tags", "attributes", "search_terms", "location_label", "location_city", "location_region"];
+const filterableAttributes = ["id", "status", "category_id", "category_slug", "condition", "currency", "price_amount", "seller_trust_score", "seller_completed_transactions", "seller_fraud_risk_level", "pickup_available", "fulfillment_modes", "ships_to", "location_city", "location_region", "location_country", "published_at", "created_at", "saved_count", "view_count", "conversion_score", "safety_score", "trend_score", "value_score", "_geo"];
 const sortableAttributes = ["published_at", "created_at", "updated_at", "price_amount", "seller_trust_score", "seller_completed_transactions", "view_count", "saved_count", "trend_score", "value_score", "safety_score", "conversion_score", "_geo"];
 const rankingRules = ["words", "typo", "proximity", "attribute", "sort", "exactness", "desc(safety_score)", "desc(seller_trust_score)", "desc(value_score)", "desc(trend_score)", "desc(published_at)"];
 const facets = ["category_slug", "condition", "location_city", "location_region", "location_country", "seller_fraud_risk_level", "pickup_available", "price_amount", "seller_trust_score"];
@@ -74,6 +74,13 @@ await meili(`/indexes/${indexUid}/settings`, {
     filterableAttributes: Array.from(new Set([...filterableAttributes, ...facets])),
     sortableAttributes,
     rankingRules,
+    synonyms: {
+      couch: ["sofa", "sectional"],
+      bike: ["bicycle", "cycle"],
+      cellphone: ["phone", "smartphone"],
+      pickup: ["local pickup", "collect"],
+      shipping: ["delivery", "ship"]
+    },
     typoTolerance: { enabled: true, minWordSizeForTypos: { oneTypo: 4, twoTypos: 8 } },
     displayedAttributes: ["*"],
     faceting: { maxValuesPerFacet: 100 },

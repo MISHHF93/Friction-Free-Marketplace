@@ -79,6 +79,29 @@ export type DuplicateImageRiskResult = {
   recommendedAction: string;
 };
 
+export type CompositeRiskInput = {
+  trustScore?: number | null;
+  sellerScore?: number | null;
+  buyerScore?: number | null;
+  verificationChecks: VerificationCheck[];
+  openReports: number;
+  openDisputes: number;
+  openRiskFlags: number;
+  confirmedRiskFlags: number;
+  highRiskSignals: number;
+  recentScamMessages?: number;
+  highValueExposure?: number;
+};
+
+export type CompositeRiskResult = {
+  score: number;
+  severity: Exclude<RiskSeverity, "info">;
+  action: "allow" | "review" | "hold" | "restrict";
+  reasons: string[];
+  recommendedWorkflow: "standard" | "verification_review" | "fraud_review" | "dispute_review" | "account_restriction";
+  formulaVersion: string;
+};
+
 export const TRUST_ENGINE_VERSION = "trust-engine-v1";
 
 const EMAIL_POINTS = 12;
@@ -105,7 +128,9 @@ export const scoringFormulas = {
   listingFraudV1:
     "listing_fraud_v1 = strongest rule score + 35% of supporting rule scores, clamped to 100. Rules: suspicious low price, duplicate title, duplicate image hash, new account expensive item, listing velocity, and category mismatch. Hold >=70; block publish >=85.",
   messageFraudV1:
-    "message_fraud_v1 creates signals for repeated external payment language and high message report rate. Repeated off-platform payment detections hold messages >=70 and remove/block >=85."
+    "message_fraud_v1 creates signals for repeated external payment language and high message report rate. Repeated off-platform payment detections hold messages >=70 and remove/block >=85.",
+  compositeAccountRisk:
+    "composite_account_risk = low trust score penalty + missing verification + open reports/disputes + open/confirmed risk flags + high-risk signals + scam-message history + high-value exposure. Review >=45, hold >=70, restrict >=90."
 } as const;
 
 export const defaultTrustBadges: TrustBadgeDefinition[] = [
@@ -262,5 +287,86 @@ export function scoreDuplicateImageMatch(similarity: number, isCrossSeller: bool
     title: score >= 75 ? "Potential duplicate image fraud" : "Duplicate image similarity detected",
     explanation: `Image similarity is ${similarity.toFixed(1)}%${isCrossSeller ? " across different sellers" : ""}${matchedRecently ? " with a recent listing match" : ""}.`,
     recommendedAction: score >= 75 ? "Queue for listing review and request proof of ownership." : "Keep listing live and monitor reports."
+  };
+}
+
+export function calculateCompositeRisk(input: CompositeRiskInput): CompositeRiskResult {
+  const identityPoints = calculateIdentityPoints(input.verificationChecks);
+  const trustScore = Math.max(0, Math.min(100, input.trustScore ?? input.sellerScore ?? input.buyerScore ?? 50));
+  const reasons: string[] = [];
+  let score = 0;
+
+  if (trustScore < 45) {
+    const penalty = 45 - trustScore;
+    score += penalty;
+    reasons.push(`Low trust score contributes ${penalty.toFixed(0)} risk points.`);
+  }
+
+  if (identityPoints < 24) {
+    score += 15;
+    reasons.push("Limited verification coverage.");
+  }
+
+  if (input.openReports > 0) {
+    const points = Math.min(20, input.openReports * 5);
+    score += points;
+    reasons.push(`${input.openReports} open report(s).`);
+  }
+
+  if (input.openDisputes > 0) {
+    const points = Math.min(25, input.openDisputes * 8);
+    score += points;
+    reasons.push(`${input.openDisputes} open dispute(s).`);
+  }
+
+  if (input.openRiskFlags > 0) {
+    const points = Math.min(30, input.openRiskFlags * 8);
+    score += points;
+    reasons.push(`${input.openRiskFlags} open risk flag(s).`);
+  }
+
+  if (input.confirmedRiskFlags > 0) {
+    const points = Math.min(40, input.confirmedRiskFlags * 20);
+    score += points;
+    reasons.push(`${input.confirmedRiskFlags} confirmed risk flag(s).`);
+  }
+
+  if (input.highRiskSignals > 0) {
+    const points = Math.min(25, input.highRiskSignals * 10);
+    score += points;
+    reasons.push(`${input.highRiskSignals} high-risk fraud signal(s).`);
+  }
+
+  if ((input.recentScamMessages ?? 0) > 0) {
+    const points = Math.min(20, (input.recentScamMessages ?? 0) * 7);
+    score += points;
+    reasons.push(`${input.recentScamMessages} recent scam-message detection(s).`);
+  }
+
+  if ((input.highValueExposure ?? 0) >= 2500 && identityPoints < 40) {
+    score += 12;
+    reasons.push("High-value exposure with incomplete identity verification.");
+  }
+
+  const boundedScore = clampScore(score);
+  const severity: Exclude<RiskSeverity, "info"> = boundedScore >= 90 ? "critical" : boundedScore >= 70 ? "high" : boundedScore >= 45 ? "medium" : "low";
+  const action = boundedScore >= 90 ? "restrict" : boundedScore >= 70 ? "hold" : boundedScore >= 45 ? "review" : "allow";
+  const recommendedWorkflow = input.confirmedRiskFlags > 0 || input.highRiskSignals > 0
+    ? "fraud_review"
+    : input.openDisputes > 0
+      ? "dispute_review"
+      : identityPoints < 24
+        ? "verification_review"
+        : boundedScore >= 90
+          ? "account_restriction"
+          : "standard";
+
+  return {
+    score: boundedScore,
+    severity,
+    action,
+    reasons: reasons.length ? reasons : ["No elevated risk signals detected."],
+    recommendedWorkflow,
+    formulaVersion: TRUST_ENGINE_VERSION
   };
 }

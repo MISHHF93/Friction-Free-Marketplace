@@ -51,6 +51,7 @@ describe("listing validation", () => {
   it("accepts lifecycle statuses used by seller listing management", () => {
     expect(listingStatusSchema.parse("draft")).toBe("draft");
     expect(listingStatusSchema.parse("active")).toBe("active");
+    expect(listingStatusSchema.parse("archived")).toBe("archived");
     expect(listingStatusSchema.parse("sold")).toBe("sold");
     expect(() => listingStatusSchema.parse("deleted")).toThrow();
   });

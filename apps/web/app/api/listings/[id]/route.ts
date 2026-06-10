@@ -6,7 +6,8 @@ import { deleteListing, updateListing } from "@/lib/listings/persistence";
 
 function errorResponse(error: unknown, status = 500) {
   const message = error instanceof Error ? error.message : "Unable to process listing request.";
-  return NextResponse.json({ error: message }, { status });
+  const resolvedStatus = typeof error === "object" && error && "status" in error && typeof error.status === "number" ? error.status : status;
+  return NextResponse.json({ error: message }, { status: resolvedStatus });
 }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -41,7 +42,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { data: owned, error: ownerError } = await supabase.from("listings").select("id").eq("id", listingId).eq("seller_id", user.id).single();
     if (ownerError || !owned) return NextResponse.json({ error: "Listing not found." }, { status: 404 });
 
-    const listing = await updateListing(supabase, listingId, await request.json());
+    const listing = await updateListing(supabase, listingId, await request.json(), user.id);
     return NextResponse.json({ listing });
   } catch (error) {
     return errorResponse(error, 400);

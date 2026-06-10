@@ -1,17 +1,19 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CheckCircle2, Clock, LockKeyhole, ShieldCheck } from "lucide-react";
+import { Activity, AlertTriangle, ArrowRight, CheckCircle2, Clock, Database, LockKeyhole, ShieldCheck } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { recordPlatformAdminAction } from "@/app/admin/actions";
 import { adminLinks } from "@/lib/admin/navigation";
-import { overviewCards, primaryAdminPageConfigs } from "@/lib/admin/platform";
+import { getPlatformAdministrationData } from "@/lib/admin/platform-administration";
 import { can, permissionLabels, requireAdminPagePermission, rolePermissions, type AdminPermission } from "@/lib/admin/permissions";
 
 export default async function AdminDashboardPage({ searchParams }: { searchParams?: Promise<{ permission?: string; adminDenied?: string }> }) {
   const resolvedSearchParams = await searchParams;
   const auth = await requireAdminPagePermission("admin.access", { loginNext: "/admin", deniedPath: "/dashboard" });
-  const availableFeatures = primaryAdminPageConfigs.filter((feature) => can(auth.role, feature.permission));
+  const platform = await getPlatformAdministrationData(auth.role);
+  const availableAreas = platform.areas.filter((area) => area.allowed.read);
   const deniedPermission = resolvedSearchParams?.adminDenied && resolvedSearchParams.permission && resolvedSearchParams.permission in permissionLabels
     ? permissionLabels[resolvedSearchParams.permission as AdminPermission]
     : null;
@@ -27,29 +29,26 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
       ) : null}
 
       <section className="rounded-[2rem] border border-border bg-slate-950 p-6 text-white shadow-soft sm:p-8 lg:p-10">
-        <Badge variant="dark"><ShieldCheck className="mr-2 h-3.5 w-3.5" /> Admin console</Badge>
-        <h1 className="mt-5 max-w-4xl text-4xl font-black tracking-tight sm:text-6xl">Run marketplace operations with clear ownership and audit trails.</h1>
-        <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300">Manage users, listings, reports, disputes, transactions, fraud alerts, AI logs, analytics, audit logs, and console settings with role-based controls.</p>
+        <Badge variant="dark"><ShieldCheck className="mr-2 h-3.5 w-3.5" /> Platform administration</Badge>
+        <h1 className="mt-5 max-w-4xl text-4xl font-black tracking-tight sm:text-6xl">Operate users, listings, transactions, finance, fraud, AI, and reports with RBAC and audit trails.</h1>
+        <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300">Every administrative surface declares its read/write permissions, API route, owner, and audit action. High-impact decisions require a reason and write to the shared audit stream.</p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button asChild variant="trust"><Link href="/admin/listings">Open moderation queue <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+          <Button asChild variant="trust"><Link href="/admin/review-queue">Open review queue <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
           <Button className="border-white/20 bg-white/10 text-white hover:bg-white/15" variant="outline" asChild><Link href="/admin/audit-logs">View audit logs</Link></Button>
         </div>
       </section>
 
       <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        {overviewCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <Card key={card.title}>
-              <CardHeader>
-                <span className="rounded-2xl bg-trust-soft p-3 text-trust"><Icon className="h-5 w-5" /></span>
-                <CardTitle>{card.title}</CardTitle>
-                <p className="text-3xl font-black">{card.value}</p>
-              </CardHeader>
-              <CardContent className="text-sm leading-6 text-muted-foreground">{card.detail}</CardContent>
-            </Card>
-          );
-        })}
+        {availableAreas.slice(0, 4).map((area) => (
+          <Card key={area.key}>
+            <CardHeader>
+              <Badge variant={area.allowed.write ? "trust" : "default"} className="w-fit">{area.owner}</Badge>
+              <CardTitle>{area.label}</CardTitle>
+              <p className="text-3xl font-black">{area.metrics[0]?.value ?? "0"}</p>
+            </CardHeader>
+            <CardContent className="text-sm leading-6 text-muted-foreground">{area.metrics[0]?.detail ?? area.description}</CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
@@ -57,34 +56,29 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <Badge variant="warning"><AlertTriangle className="mr-1 h-3.5 w-3.5" /> Moderation queues</Badge>
-                <CardTitle className="mt-3">Priority queue</CardTitle>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">High-priority listings, reports, disputes, fraud alerts, and payment exceptions.</p>
+                <Badge variant="warning"><AlertTriangle className="mr-1 h-3.5 w-3.5" /> Area control plane</Badge>
+                <CardTitle className="mt-3">Platform areas</CardTitle>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">Live operating areas with route, API, owner, permissions, and primary audit action.</p>
               </div>
-              <Button asChild variant="surface"><Link href="/admin/review-queue">Open queue</Link></Button>
+              <Button asChild variant="surface"><Link href="/api/admin/platform">Open API</Link></Button>
             </div>
           </CardHeader>
-          <CardContent className="responsive-table-wrap">
-            <table className="w-full min-w-[760px] text-left text-sm">
+          <CardContent className="table-scroll p-0">
+            <table className="table-base">
               <thead>
-                <tr className="border-b border-border bg-secondary/60 text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                  {["Queue", "Volume", "Risk", "SLA", "Owner", "Actions"].map((column) => <th className="px-3 py-3 font-bold" key={column}>{column}</th>)}
+                <tr>
+                  {["Area", "Primary metric", "Permission", "API", "Owner", "Actions"].map((column) => <th key={column}>{column}</th>)}
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { queue: "Fraud alerts", volume: "42 open", risk: 91, sla: "9 critical", owner: "Risk", href: "/admin/fraud-alerts" },
-                  { queue: "Listing moderation", volume: "86 pending", risk: 74, sla: "21 high-value", owner: "Moderation", href: "/admin/listings" },
-                  { queue: "Reports", volume: "118 open", risk: 68, sla: "32 unassigned", owner: "Support", href: "/admin/reports" },
-                  { queue: "Disputes", volume: "29 cases", risk: 82, sla: "$18.4k at risk", owner: "Trust", href: "/admin/disputes" }
-                ].map((row) => (
-                  <tr className="border-b border-border last:border-0" key={row.queue}>
-                    <td className="px-3 py-4 font-bold">{row.queue}</td>
-                    <td className="px-3 py-4 text-muted-foreground">{row.volume}</td>
-                    <td className="px-3 py-4"><RiskIndicator value={row.risk} /></td>
-                    <td className="px-3 py-4 text-muted-foreground">{row.sla}</td>
-                    <td className="px-3 py-4"><Badge variant="ai">{row.owner}</Badge></td>
-                    <td className="px-3 py-4"><Button asChild size="sm" variant="outline"><Link href={row.href}>Review</Link></Button></td>
+                {availableAreas.map((area) => (
+                  <tr key={area.key}>
+                    <td className="font-bold">{area.label}</td>
+                    <td className="text-muted-foreground">{area.metrics[0]?.value} · {area.metrics[0]?.label}</td>
+                    <td><Badge variant={area.allowed.write ? "trust" : "warning"}>{permissionLabels[area.readPermission]}</Badge></td>
+                    <td className="text-muted-foreground">{area.apiRoute}</td>
+                    <td><Badge variant="ai">{area.owner}</Badge></td>
+                    <td><Button asChild size="sm" variant="outline"><Link href={area.href}>Open</Link></Button></td>
                   </tr>
                 ))}
               </tbody>
@@ -94,45 +88,40 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
 
         <Card>
           <CardHeader>
-            <Badge variant="premium" className="w-fit"><Clock className="mr-1 h-3.5 w-3.5" /> Shift brief</Badge>
-            <CardTitle>Recommended admin actions</CardTitle>
+            <Badge variant="premium" className="w-fit"><Clock className="mr-1 h-3.5 w-3.5" /> Audited operation</Badge>
+            <CardTitle>Record platform action</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3">
-            {[
-              { title: "Freeze linked seller accounts", detail: "4 linked sellers, duplicate image hashes, and high chargeback risk.", href: "/admin/fraud-alerts", tone: "risk" as const },
-              { title: "Review luxury refunds", detail: "Refunds in the luxury category are above the weekly target.", href: "/admin/revenue", tone: "warning" as const },
-              { title: "Export sensitive actions", detail: "Daily audit export is ready for compliance review.", href: "/admin/audit-logs", tone: "trust" as const }
-            ].map((item) => (
-              <div className="rounded-2xl border border-border bg-card/80 p-4" key={item.title}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <Badge variant={item.tone}>{item.tone}</Badge>
-                    <h3 className="mt-3 font-black">{item.title}</h3>
-                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.detail}</p>
-                  </div>
-                  <Button asChild size="sm" variant="outline"><Link href={item.href}>Open</Link></Button>
-                </div>
-              </div>
-            ))}
+          <CardContent>
+            <form action={recordPlatformAdminAction} className="grid gap-3">
+              <select className="form-control min-h-10 font-semibold" name="area" aria-label="Admin area">
+                {availableAreas.filter((area) => area.allowed.write).map((area) => <option key={area.key} value={area.key}>{area.label}</option>)}
+              </select>
+              <input className="form-control min-h-10" name="action" defaultValue="platform.admin_review" aria-label="Audit action" />
+              <input className="form-control min-h-10" name="targetType" placeholder="Target type, for example users or listings" aria-label="Target type" />
+              <input className="form-control min-h-10" name="targetId" placeholder="Optional target UUID" aria-label="Target UUID" />
+              <textarea className="form-control min-h-28 py-3" name="reason" placeholder="Reason code and decision context. Required for audit." required />
+              <Button><Activity className="h-4 w-4" /> Record audited action</Button>
+            </form>
           </CardContent>
         </Card>
       </div>
 
       <div className="mt-6 grid gap-5 md:grid-cols-2 2xl:grid-cols-3">
-        {availableFeatures.map((feature) => {
-          const Icon = feature.icon;
-          return (
-            <Link className="group rounded-2xl border border-border bg-card p-5 transition hover:-translate-y-1 hover:shadow-soft" href={`/admin/${feature.slug}`} key={feature.slug}>
+        {availableAreas.map((area) => (
+          <Card key={area.key}>
+            <CardHeader>
               <div className="flex items-start justify-between gap-3">
-                <span className="rounded-2xl bg-primary/10 p-3 text-primary"><Icon className="h-5 w-5" /></span>
-                <ArrowRight className="h-5 w-5 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-primary" />
+                <Badge variant={area.allowed.write ? "trust" : "default"}>{area.allowed.write ? "write enabled" : "read only"}</Badge>
+                <Button asChild size="sm" variant="ghost"><Link href={area.href}>Open <ArrowRight className="h-4 w-4" /></Link></Button>
               </div>
-              <h2 className="mt-4 text-xl font-bold">{feature.title}</h2>
-              <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">{feature.description}</p>
-              <Badge className="mt-4">{permissionLabels[feature.permission]}</Badge>
-            </Link>
-          );
-        })}
+              <CardTitle>{area.label}</CardTitle>
+              <p className="text-sm leading-6 text-muted-foreground">{area.description}</p>
+            </CardHeader>
+            <CardContent className="grid gap-3">
+              {area.metrics.map((metric) => <div className="rounded-2xl border border-border bg-background p-3" key={metric.label}><p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">{metric.label}</p><p className="mt-1 text-2xl font-black">{metric.value}</p><p className="mt-1 text-xs leading-5 text-muted-foreground">{metric.detail}</p></div>)}
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <Card className="mt-6">
@@ -152,21 +141,31 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
           ))}
         </CardContent>
       </Card>
-    </DashboardShell>
-  );
-}
 
-function RiskIndicator({ value }: { value: number }) {
-  const tone = value >= 85 ? "bg-red-500" : value >= 70 ? "bg-amber-500" : "bg-emerald-500";
-  return (
-    <div className="min-w-32">
-      <div className="flex items-center justify-between gap-2 text-xs font-bold">
-        <span>{value}</span>
-        <span className="text-muted-foreground">risk</span>
-      </div>
-      <div className="mt-1 h-2 overflow-hidden rounded-full bg-secondary">
-        <div className={`h-full rounded-full ${tone}`} style={{ width: `${value}%` }} />
-      </div>
-    </div>
+      <Card className="mt-6">
+        <CardHeader>
+          <Badge className="w-fit"><Database className="mr-2 h-3.5 w-3.5" /> Audit logs</Badge>
+          <CardTitle>Recent platform audit activity</CardTitle>
+        </CardHeader>
+        <CardContent className="table-scroll p-0">
+          <table className="table-base">
+            <thead>
+              <tr>{["Action", "Table", "Actor", "Record", "Created"].map((column) => <th key={column}>{column}</th>)}</tr>
+            </thead>
+            <tbody>
+              {platform.audit.map((entry) => (
+                <tr key={String(entry.id)}>
+                  <td className="font-bold">{String(entry.action)}</td>
+                  <td className="text-muted-foreground">{String(entry.table_name ?? "platform")}</td>
+                  <td><Badge variant="ai">{String(entry.actor_type ?? "admin")}</Badge></td>
+                  <td className="text-muted-foreground">{String(entry.record_id ?? "none")}</td>
+                  <td className="text-muted-foreground">{entry.created_at ? new Date(String(entry.created_at)).toLocaleString() : "Unknown"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+    </DashboardShell>
   );
 }

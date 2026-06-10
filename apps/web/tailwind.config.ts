@@ -43,9 +43,25 @@ const config: Config = {
         brand: {
           ink: "hsl(var(--brand-ink))",
           slate: "hsl(var(--brand-slate))",
+          steel: "hsl(var(--brand-steel))",
           mist: "hsl(var(--brand-mist))",
           cloud: "hsl(var(--brand-cloud))",
+          pearl: "hsl(var(--brand-pearl))",
           surface: "hsl(var(--brand-surface))"
+        },
+        surface: {
+          canvas: "hsl(var(--surface-canvas))",
+          elevated: "hsl(var(--surface-elevated))",
+          sunken: "hsl(var(--surface-sunken))",
+          overlay: "hsl(var(--surface-overlay))",
+          inverse: "hsl(var(--surface-inverse))"
+        },
+        commerce: {
+          DEFAULT: "hsl(var(--commerce))",
+          foreground: "hsl(var(--commerce-foreground))",
+          soft: "hsl(var(--commerce-soft))",
+          border: "hsl(var(--commerce-border))",
+          dark: "hsl(var(--commerce-dark))"
         },
         trust: {
           DEFAULT: "hsl(var(--trust))",
@@ -63,30 +79,55 @@ const config: Config = {
           DEFAULT: "hsl(var(--safety))",
           foreground: "hsl(var(--safety-foreground))",
           soft: "hsl(var(--safety-soft))",
+          border: "hsl(var(--safety-border))",
           warning: "hsl(var(--safety-warning))",
+          "warning-soft": "hsl(var(--safety-warning-soft))",
           risk: "hsl(var(--safety-risk))"
         },
         premium: {
           DEFAULT: "hsl(var(--premium))",
           foreground: "hsl(var(--premium-foreground))",
           soft: "hsl(var(--premium-soft))",
+          border: "hsl(var(--premium-border))",
           graphite: "hsl(var(--premium-graphite))"
+        },
+        data: {
+          1: "hsl(var(--data-1))",
+          2: "hsl(var(--data-2))",
+          3: "hsl(var(--data-3))",
+          4: "hsl(var(--data-4))",
+          5: "hsl(var(--data-5))"
         }
       },
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"]
+        sans: ["Inter", "ui-sans-serif", "system-ui", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+        display: ["Inter", "ui-sans-serif", "system-ui", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+        mono: ["JetBrains Mono", "SFMono-Regular", "Cascadia Code", "Consolas", "Liberation Mono", "monospace"]
       },
       fontSize: {
         display: ["clamp(3rem,8vw,5.75rem)", { lineHeight: "0.92", letterSpacing: "-0.055em", fontWeight: "900" }],
         hero: ["clamp(2.5rem,6vw,4.5rem)", { lineHeight: "0.96", letterSpacing: "-0.045em", fontWeight: "900" }],
         section: ["clamp(2rem,4vw,3.25rem)", { lineHeight: "1.02", letterSpacing: "-0.035em", fontWeight: "900" }],
-        eyebrow: ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.22em", fontWeight: "900" }]
+        title: ["1.5rem", { lineHeight: "1.15", letterSpacing: "-0.03em", fontWeight: "850" }],
+        body: ["1rem", { lineHeight: "1.7", letterSpacing: "-0.011em" }],
+        "body-sm": ["0.875rem", { lineHeight: "1.6", letterSpacing: "-0.006em" }],
+        label: ["0.8125rem", { lineHeight: "1.15", letterSpacing: "-0.006em", fontWeight: "750" }],
+        meta: ["0.75rem", { lineHeight: "1.35", letterSpacing: "0.01em", fontWeight: "650" }],
+        eyebrow: ["0.75rem", { lineHeight: "1rem", letterSpacing: "0.22em", fontWeight: "900" }],
+        metric: ["2rem", { lineHeight: "1", letterSpacing: "-0.045em", fontWeight: "900" }]
       },
       spacing: {
+        13: "3.25rem",
+        15: "3.75rem",
         18: "4.5rem",
         22: "5.5rem",
         26: "6.5rem",
-        30: "7.5rem"
+        30: "7.5rem",
+        gutter: "clamp(1rem, 2.4vw, 2rem)",
+        "section-sm": "clamp(2.5rem, 5vw, 4rem)",
+        section: "clamp(3rem, 7vw, 6rem)",
+        "section-lg": "clamp(4rem, 9vw, 8rem)",
+        touch: "2.75rem"
       },
       borderRadius: {
         xs: "calc(var(--radius) - 10px)",
@@ -96,21 +137,52 @@ const config: Config = {
         xl: "var(--radius)",
         "2xl": "var(--radius-card)",
         "3xl": "var(--radius-panel)",
-        "4xl": "var(--radius-hero)"
+        "4xl": "var(--radius-hero)",
+        control: "var(--radius-control)",
+        card: "var(--radius-card)",
+        panel: "var(--radius-panel)",
+        shell: "var(--radius-shell)"
       },
       boxShadow: {
         xs: "var(--shadow-xs)",
         sm: "var(--shadow-sm)",
         md: "var(--shadow-md)",
+        input: "var(--shadow-input)",
+        control: "var(--shadow-control)",
+        card: "var(--shadow-card)",
+        "card-hover": "var(--shadow-card-hover)",
+        panel: "var(--shadow-panel)",
         soft: "var(--shadow-soft)",
         glow: "var(--shadow-glow)",
         trust: "var(--shadow-trust)",
+        ai: "var(--shadow-ai)",
+        commerce: "var(--shadow-commerce)",
+        danger: "var(--shadow-danger)",
         admin: "var(--shadow-admin)"
+      },
+      ringWidth: {
+        3: "3px"
       },
       backgroundImage: {
         "brand-radial": "radial-gradient(circle at top left, hsl(var(--trust) / 0.18), transparent 34rem), radial-gradient(circle at 80% 0%, hsl(var(--ai) / 0.12), transparent 28rem), linear-gradient(180deg, hsl(var(--background)), hsl(var(--brand-cloud)))",
         "trust-gradient": "linear-gradient(135deg, hsl(var(--trust)), hsl(var(--ai)))",
+        "commerce-gradient": "linear-gradient(135deg, hsl(var(--commerce-dark)), hsl(var(--commerce)), hsl(var(--trust)))",
+        "ai-gradient": "linear-gradient(135deg, hsl(var(--ai)), hsl(var(--premium-graphite)))",
         "premium-dark": "radial-gradient(circle at top right, hsl(var(--trust) / 0.32), transparent 32rem), linear-gradient(135deg, hsl(var(--premium-graphite)), hsl(var(--brand-ink)))"
+      },
+      keyframes: {
+        "soft-enter": {
+          from: { opacity: "0", transform: "translateY(8px) scale(0.985)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" }
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" }
+        }
+      },
+      animation: {
+        "soft-enter": "soft-enter 220ms cubic-bezier(0.16, 1, 0.3, 1)",
+        shimmer: "shimmer 1.8s ease-in-out infinite"
       }
     }
   },

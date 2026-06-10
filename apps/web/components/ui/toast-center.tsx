@@ -2,10 +2,10 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AlertCircle, CheckCircle2, Info, X } from "lucide-react";
+import { AlertCircle, AlertTriangle, CheckCircle2, Info, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type ToastTone = "success" | "error" | "info";
+type ToastTone = "success" | "error" | "info" | "warning";
 type ToastPayload = { title?: string; message: string; tone?: ToastTone };
 
 const urlToastMessages: Record<string, ToastPayload> = {
@@ -44,7 +44,7 @@ function ToastCenterInner() {
   if (!toast) return null;
 
   const tone = toast.tone ?? "info";
-  const Icon = tone === "success" ? CheckCircle2 : tone === "error" ? AlertCircle : Info;
+  const Icon = tone === "success" ? CheckCircle2 : tone === "error" ? AlertCircle : tone === "warning" ? AlertTriangle : Info;
 
   return (
     <div className="fixed right-4 top-24 z-[80] w-[min(24rem,calc(100vw-2rem))]" aria-live="polite" aria-atomic="true">
@@ -53,11 +53,12 @@ function ToastCenterInner() {
           "toast-enter rounded-2xl border bg-card p-4 shadow-soft backdrop-blur",
           tone === "success" && "border-trust-border",
           tone === "error" && "border-destructive/30",
-          tone === "info" && "border-ai-border"
+          tone === "info" && "border-ai-border",
+          tone === "warning" && "border-amber-200"
         )}
       >
         <div className="flex gap-3">
-          <Icon className={cn("mt-0.5 h-5 w-5 shrink-0", tone === "success" && "text-trust", tone === "error" && "text-destructive", tone === "info" && "text-ai")} aria-hidden="true" />
+          <Icon className={cn("mt-0.5 h-5 w-5 shrink-0", tone === "success" && "text-trust", tone === "error" && "text-destructive", tone === "info" && "text-ai", tone === "warning" && "text-amber-700")} aria-hidden="true" />
           <div className="min-w-0 flex-1">
             {toast.title ? <p className="font-black">{toast.title}</p> : null}
             <p className="text-sm leading-6 text-muted-foreground">{toast.message}</p>

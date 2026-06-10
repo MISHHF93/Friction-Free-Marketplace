@@ -39,8 +39,18 @@ export const LISTING_STATUSES = [
   "reserved",
   "sold",
   "paused",
+  "archived",
   "expired",
   "removed",
+] as const;
+
+export const LISTING_LIFECYCLE_ACTIONS = [
+  "create",
+  "edit",
+  "delete",
+  "publish",
+  "archive",
+  "mark_sold",
 ] as const;
 
 export const imageSchema = z.object({
@@ -132,6 +142,7 @@ export const listingPatchSchema = listingFormBaseSchema
   .partial()
   .extend({ publish: z.boolean().optional() });
 export const listingStatusSchema = z.enum(LISTING_STATUSES);
+export const listingLifecycleActionSchema = z.enum(LISTING_LIFECYCLE_ACTIONS);
 
 export const aiListingResponseSchema = z.object({
   title: z.string().min(3).max(160),
@@ -157,12 +168,31 @@ export const aiListingResponseSchema = z.object({
       riskFactors: z.array(z.string()).max(8),
     })
     .optional(),
+  fraudIndicators: z
+    .object({
+      riskScore: z.number().min(0).max(100),
+      riskLevel: z.enum(["low", "medium", "high", "critical"]),
+      reviewRequired: z.boolean(),
+      indicators: z
+        .array(
+          z.object({
+            type: z.string(),
+            severity: z.string(),
+            evidence: z.string(),
+            recommendation: z.string(),
+          }),
+        )
+        .max(8),
+      buyerWarning: z.string().max(700),
+    })
+    .optional(),
   fraudRiskScore: z.number().min(0).max(100).optional(),
   missingInformationQuestions: z.array(z.string()).max(8).optional(),
   rationale: z.string().max(1200),
 });
 
 export type ListingFormInput = z.infer<typeof listingFormSchema>;
+export type ListingLifecycleAction = z.infer<typeof listingLifecycleActionSchema>;
 export type AiListingResponse = z.infer<typeof aiListingResponseSchema>;
 
 export function slugifyListingTitle(title: string) {

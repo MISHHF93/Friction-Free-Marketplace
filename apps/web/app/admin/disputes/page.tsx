@@ -1,5 +1,5 @@
-import { AuthorizedAdminFeaturePage } from "@/components/admin/admin-page";
+import { FinanceDashboardPage } from "@/components/admin/finance-dashboard";
 
 export default function Page() {
-  return <AuthorizedAdminFeaturePage slug="disputes" />;
+  return <FinanceDashboardPage section="disputes" />;
 }

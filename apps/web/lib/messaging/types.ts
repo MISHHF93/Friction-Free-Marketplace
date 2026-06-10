@@ -1,8 +1,9 @@
 import type { Json } from "@/types/database";
+import type { OfferStatus } from "@/lib/offers/state-machine";
+export type { OfferStatus } from "@/lib/offers/state-machine";
 
 export type ConversationStatus = "open" | "archived" | "blocked" | "closed";
 export type MessageKind = "text" | "attachment" | "offer" | "system" | "pickup_schedule" | "deposit";
-export type OfferStatus = "pending" | "accepted" | "countered" | "declined" | "expired" | "withdrawn";
 export type PickupScheduleStatus = "proposed" | "confirmed" | "reschedule_requested" | "completed" | "cancelled" | "no_show";
 export type ReservationDepositStatus = "pending" | "authorized" | "held" | "released" | "forfeited" | "refunded" | "failed" | "cancelled";
 

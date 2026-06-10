@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ConversationSummary, MessagingUser } from "./types";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 type EmbeddedUser = {
   id: string;
@@ -27,12 +28,31 @@ function normalizeProfile(user: EmbeddedUser): MessagingUser | null {
   };
 }
 
-function normalizeConversation(conversation: ConversationSummary & { buyer: EmbeddedUser; seller: EmbeddedUser }) {
+async function signedAttachmentUrl(storagePath: string, fallback: string | null) {
+  if (fallback) return fallback;
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin.storage.from("message-attachments").createSignedUrl(storagePath, 60 * 60);
+    return data?.signedUrl ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function normalizeConversation(conversation: ConversationSummary & { buyer: EmbeddedUser; seller: EmbeddedUser }) {
+  const messages = await Promise.all((conversation.messages ?? []).map(async (message) => ({
+    ...message,
+    message_attachments: await Promise.all((message.message_attachments ?? []).map(async (attachment) => ({
+      ...attachment,
+      public_url: await signedAttachmentUrl(attachment.storage_path, attachment.public_url)
+    })))
+  })));
+
   return {
     ...conversation,
     buyer: normalizeProfile(conversation.buyer),
     seller: normalizeProfile(conversation.seller),
-    messages: conversation.messages ?? [],
+    messages,
     offers: conversation.offers ?? [],
     pickup_schedules: conversation.pickup_schedules ?? [],
     reservation_deposits: conversation.reservation_deposits ?? []
@@ -49,7 +69,7 @@ export async function getConversationSummaries(supabase: SupabaseClient<any>, us
     .limit(50);
 
   if (error) throw error;
-  return ((data ?? []) as Array<ConversationSummary & { buyer: EmbeddedUser; seller: EmbeddedUser }>).map(normalizeConversation);
+  return Promise.all(((data ?? []) as Array<ConversationSummary & { buyer: EmbeddedUser; seller: EmbeddedUser }>).map(normalizeConversation));
 }
 
 export async function getConversationSummaryById(supabase: SupabaseClient<any>, conversationId: string) {

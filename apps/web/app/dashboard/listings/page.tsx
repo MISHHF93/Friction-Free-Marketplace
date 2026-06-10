@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle2, Edit, Plus, ShieldAlert, Trash2 } from "lucide-react";
+import { Archive, CheckCircle2, Edit, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import {
   changeListingStatusAction,
   deleteListingAction,
@@ -69,6 +69,11 @@ async function markListingSoldFromDashboard(listingId: string) {
   await changeListingStatusAction(listingId, "sold");
 }
 
+async function archiveListingFromDashboard(listingId: string) {
+  "use server";
+  await changeListingStatusAction(listingId, "archived");
+}
+
 async function deleteListingFromDashboard(listingId: string) {
   "use server";
   await deleteListingAction(listingId);
@@ -119,6 +124,10 @@ export default async function ListingsDashboardPage() {
 
       <div className="grid gap-4">
         {listings.map((listing) => {
+          const canPublish = ["draft", "paused", "archived", "expired"].includes(listing.status);
+          const canMarkSold = ["active", "reserved"].includes(listing.status);
+          const canArchive = ["draft", "active", "reserved", "paused", "expired", "sold"].includes(listing.status);
+          const canDelete = ["draft", "active", "paused", "archived", "expired"].includes(listing.status);
           const moderationStatus =
             typeof listing.metadata?.moderation_status === "string"
               ? listing.metadata.moderation_status
@@ -173,7 +182,7 @@ export default async function ListingsDashboardPage() {
                       <Edit className="h-4 w-4" /> Edit
                     </Link>
                   </Button>
-                  {listing.status !== "active" && (
+                  {canPublish && (
                     <form
                       action={publishListingFromDashboard.bind(
                         null,
@@ -185,7 +194,7 @@ export default async function ListingsDashboardPage() {
                       </Button>
                     </form>
                   )}
-                  {listing.status !== "sold" && (
+                  {canMarkSold && (
                     <form
                       action={markListingSoldFromDashboard.bind(
                         null,
@@ -197,13 +206,27 @@ export default async function ListingsDashboardPage() {
                       </Button>
                     </form>
                   )}
-                  <form
-                    action={deleteListingFromDashboard.bind(null, listing.id)}
-                  >
-                    <Button type="submit" variant="ghost">
-                      <Trash2 className="h-4 w-4" /> Delete
-                    </Button>
-                  </form>
+                  {canArchive && (
+                    <form
+                      action={archiveListingFromDashboard.bind(
+                        null,
+                        listing.id,
+                      )}
+                    >
+                      <Button type="submit" variant="outline">
+                        <Archive className="h-4 w-4" /> Archive
+                      </Button>
+                    </form>
+                  )}
+                  {canDelete && (
+                    <form
+                      action={deleteListingFromDashboard.bind(null, listing.id)}
+                    >
+                      <Button type="submit" variant="ghost">
+                        <Trash2 className="h-4 w-4" /> Delete
+                      </Button>
+                    </form>
+                  )}
                 </div>
               </CardHeader>
             </Card>

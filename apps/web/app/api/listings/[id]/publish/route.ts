@@ -14,10 +14,11 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     const { data: owned, error: ownerError } = await supabase.from("listings").select("id").eq("id", listingId).eq("seller_id", user.id).single();
     if (ownerError || !owned) return NextResponse.json({ error: "Listing not found." }, { status: 404 });
 
-    const listing = await setListingStatus(supabase, listingId, "active");
+    const listing = await setListingStatus(supabase, listingId, "active", user.id);
     return NextResponse.json({ listing });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to publish listing.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    const status = typeof error === "object" && error && "status" in error && typeof error.status === "number" ? error.status : 400;
+    return NextResponse.json({ error: message }, { status });
   }
 }
