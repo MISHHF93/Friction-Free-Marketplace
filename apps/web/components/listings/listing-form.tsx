@@ -35,12 +35,6 @@ import {
 
 const MAX_IMAGES = 12;
 const FULFILLMENT_OPTIONS = ["shipping", "pickup", "local_delivery"] as const;
-const MODERATION_STATUS_OPTIONS = [
-  "pending",
-  "approved",
-  "needs_review",
-  "rejected",
-] as const;
 
 type UploadedImage = {
   storagePath: string;
@@ -137,8 +131,6 @@ const listingClientFormSchema = z.object({
     .array(z.enum(FULFILLMENT_OPTIONS))
     .min(1, "Choose at least one fulfillment option."),
   seoTags: z.string().max(500),
-  moderationStatus: z.enum(MODERATION_STATUS_OPTIONS),
-  moderationNotes: z.string().max(1000),
   ai: z.object({
     generated: z.boolean(),
     priceMin: z.number().min(0).optional(),
@@ -197,8 +189,6 @@ const defaultState: FormState = {
   shipsTo: "US",
   fulfillmentOptions: ["shipping", "pickup"],
   seoTags: "",
-  moderationStatus: "pending",
-  moderationNotes: "",
   ai: { generated: false },
   images: [],
 };
@@ -255,13 +245,6 @@ function listingToState(listing?: ListingRecord): FormState {
           listing.pickup_available ? "pickup" : "shipping",
         ]) as FormState["fulfillmentOptions"],
     seoTags: getMetadataArray(metadata, "seo_tags").join(", "),
-    moderationStatus: (typeof metadata.moderation_status === "string"
-      ? metadata.moderation_status
-      : "pending") as FormState["moderationStatus"],
-    moderationNotes:
-      typeof metadata.moderation_notes === "string"
-        ? metadata.moderation_notes
-        : "",
     ai: {
       ...aiListing,
       priceMin: aiListing.priceMin ?? priceSuggestion.min,
@@ -287,6 +270,25 @@ function csv(value: string) {
 
 function helperText(message?: string) {
   return message ? <p className="text-xs text-destructive">{message}</p> : null;
+}
+
+function getReadinessItems(values: FormState) {
+  return [
+    { label: "Clear title", complete: values.title.trim().length >= 3 },
+    { label: "Buyer-ready description", complete: values.description.trim().length >= 20 },
+    { label: "Price and quantity", complete: Number(values.priceAmount) > 0 && Number(values.quantity) >= 1 },
+    { label: "Location", complete: Boolean(values.locationCity.trim() && values.locationRegion.trim() && values.locationCountry.trim()) },
+    { label: "Fulfillment option", complete: values.fulfillmentOptions.length > 0 },
+    { label: "At least one photo", complete: values.images.length > 0 }
+  ];
+}
+
+function statusConfirmation(status: ListingStatus) {
+  if (status === "active") return "Publish this listing? Buyers will be able to find it, save it, and start conversations.";
+  if (status === "sold") return "Mark this listing as sold? Buyers will no longer treat it as available.";
+  if (status === "archived") return "Archive this listing? It will be removed from active marketplace discovery.";
+  if (status === "paused") return "Pause this listing? It will temporarily stop appearing as active inventory.";
+  return null;
 }
 
 export function ListingForm({
@@ -343,6 +345,9 @@ export function ListingForm({
   const priceSuggestion = watched.ai?.priceMin === undefined || watched.ai?.priceMax === undefined
     ? null
     : `$${watched.ai.priceMin.toLocaleString()} - $${watched.ai.priceMax.toLocaleString()}`;
+  const readinessItems = getReadinessItems(watched);
+  const completedReadinessItems = readinessItems.filter((item) => item.complete).length;
+  const isReadyToPublish = completedReadinessItems === readinessItems.length;
 
   function updateImages(nextImages: UploadedImage[]) {
     setValue(
@@ -458,18 +463,6 @@ export function ListingForm({
       suggestion.fraudRiskScore ??
       0;
     setValue(
-      "moderationStatus",
-      fraudRiskScore >= 70 ? "needs_review" : "pending",
-      { shouldDirty: true },
-    );
-    setValue(
-      "moderationNotes",
-      fraudRiskScore >= 70
-        ? "AI flagged this draft for elevated scam risk. Review proof, payment, and shipping details before publishing."
-        : watched.moderationNotes,
-      { shouldDirty: true },
-    );
-    setValue(
       "ai",
       {
         generated: true,
@@ -498,6 +491,7 @@ export function ListingForm({
   }
 
   function payload(values: FormState, publish: boolean) {
+    const elevatedRisk = (values.ai.fraudRiskScore ?? 0) >= 70 || values.ai.fraudIndicators?.reviewRequired === true;
     return {
       title: values.title,
       description: values.description,
@@ -512,8 +506,10 @@ export function ListingForm({
       shipsTo: csv(values.shipsTo),
       fulfillmentOptions: values.fulfillmentOptions,
       seoTags: csv(values.seoTags),
-      moderationStatus: values.moderationStatus,
-      moderationNotes: values.moderationNotes,
+      moderationStatus: elevatedRisk ? "needs_review" : "pending",
+      moderationNotes: elevatedRisk
+        ? "AI flagged this draft for elevated risk. Review proof, payment, and fulfillment details before publishing."
+        : undefined,
       ai: values.ai,
       images: values.images.map((image, index) => ({
         ...image,
@@ -546,6 +542,8 @@ export function ListingForm({
 
   function changeStatus(status: ListingStatus) {
     if (!listing) return;
+    const confirmation = statusConfirmation(status);
+    if (confirmation && !window.confirm(confirmation)) return;
     setBusy(`Setting listing ${status}`);
     setError(null);
     startTransition(async () => {
@@ -930,6 +928,28 @@ export function ListingForm({
       </div>
 
       <aside className="space-y-5 xl:sticky xl:top-24 xl:h-fit">
+        <Card className={isReadyToPublish ? "border-primary/30 bg-primary/5" : undefined}>
+          <CardHeader>
+            <CardTitle>Publish readiness</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 p-4 pt-0 sm:p-6 sm:pt-0">
+            <div className="flex items-center justify-between gap-3 rounded-2xl bg-secondary/70 p-3 text-sm">
+              <span className="font-semibold">{completedReadinessItems}/{readinessItems.length} fundamentals complete</span>
+              <Badge variant={isReadyToPublish ? "trust" : "default"}>{isReadyToPublish ? "Ready" : "Needs work"}</Badge>
+            </div>
+            <div className="grid gap-2 text-sm">
+              {readinessItems.map((item) => (
+                <div key={item.label} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-3 py-2">
+                  <span>{item.label}</span>
+                  <span className={item.complete ? "font-bold text-primary" : "text-muted-foreground"}>{item.complete ? "Done" : "Missing"}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs leading-5 text-muted-foreground">
+              Admin-only moderation stays out of the seller form. AI risk signals are submitted for review automatically when needed.
+            </p>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader>
             <CardTitle>Listing status management</CardTitle>
@@ -1009,7 +1029,7 @@ export function ListingForm({
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Moderation and SEO</CardTitle>
+            <CardTitle>Publishing guidance and SEO</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
             <div className="grid gap-2">
@@ -1020,25 +1040,6 @@ export function ListingForm({
                 {...register("seoTags")}
               />
               {helperText(errors.seoTags?.message)}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="moderationStatus">Moderation status</Label>
-              <select
-                id="moderationStatus"
-                className="h-11 rounded-lg border border-input bg-background px-3 text-sm"
-                {...register("moderationStatus")}
-              >
-                <option value="pending">pending</option>
-                <option value="approved">approved</option>
-                <option value="needs_review">needs review</option>
-                <option value="rejected">rejected</option>
-              </select>
-              {helperText(errors.moderationStatus?.message)}
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="moderationNotes">Moderation notes</Label>
-              <Textarea id="moderationNotes" {...register("moderationNotes")} />
-              {helperText(errors.moderationNotes?.message)}
             </div>
             {watched.ai?.generated && (
               <div className="space-y-3 rounded-2xl bg-secondary p-4 text-sm">

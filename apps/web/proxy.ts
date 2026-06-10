@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { DEV_AUTH_BYPASS_COOKIE, isDevAuthBypassCookieValue } from "@/lib/auth/dev-bypass";
 
 type SupabaseUser = { id: string };
 type AppUserAccess = { role: string | null; status: string | null };
@@ -173,6 +174,16 @@ export async function proxy(request: NextRequest) {
   const needsAuthState = isProtectedRoute(pathname) || isAuthRoute(pathname);
 
   if (!needsAuthState) {
+    return NextResponse.next();
+  }
+
+  const hasDevAuthBypass = isDevAuthBypassCookieValue(request.cookies.get(DEV_AUTH_BYPASS_COOKIE)?.value);
+
+  if (hasDevAuthBypass && isAuthRoute(pathname)) {
+    return NextResponse.redirect(getAuthenticatedRedirectUrl(request));
+  }
+
+  if (hasDevAuthBypass && isProtectedRoute(pathname) && !pathname.startsWith("/admin")) {
     return NextResponse.next();
   }
 

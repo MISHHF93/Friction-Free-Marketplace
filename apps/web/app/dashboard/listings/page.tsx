@@ -166,7 +166,9 @@ export default async function ListingsDashboardPage() {
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <Badge>{listing.status}</Badge>
-                      <Badge>moderation: {moderationStatus}</Badge>
+                      <Badge variant={moderationStatus === "approved" ? "trust" : "default"}>
+                        {moderationStatus === "approved" ? "Review approved" : "Review pending"}
+                      </Badge>
                       {fraudScore !== null && (
                         <Badge>
                           <ShieldAlert className="h-3 w-3" /> fraud {fraudScore}

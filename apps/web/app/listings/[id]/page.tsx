@@ -316,7 +316,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               <div className="flex flex-wrap gap-2">
                 <Badge variant="premium">{listing.condition}</Badge>
                 <Badge>{listing.category_name}</Badge>
-                <Badge variant={moderationStatus === "active" ? "trust" : "warning"}>moderation: {moderationStatus}</Badge>
+                <Badge variant={moderationStatus === "active" || moderationStatus === "approved" ? "trust" : "warning"}>{moderationStatus === "active" || moderationStatus === "approved" ? "Marketplace reviewed" : "Review pending"}</Badge>
               </div>
               <div className="space-y-3">
                 <h1 id="listing-title" className="text-3xl font-black tracking-tight sm:text-4xl">{listing.title}</h1>

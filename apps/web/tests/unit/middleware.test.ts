@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { DEV_AUTH_BYPASS_COOKIE } from "@/lib/auth/dev-bypass";
 import { config, getSafeRedirectPath, isAuthRoute, isProtectedRoute, proxy } from "../../proxy";
 
 const supabaseUrl = "https://example-project.supabase.co";
@@ -84,5 +85,46 @@ describe("middleware", () => {
     expect(fetchMock).toHaveBeenCalledWith(`${supabaseUrl}/auth/v1/user`, expect.any(Object));
     expect(consoleErrorMock).toHaveBeenCalledWith("Proxy Supabase auth lookup failed", expect.any(Error));
     expect(response.headers.get("location")).toBe("https://marketplace.example/login?next=%2Fdashboard%3Ftab%3Dlistings");
+  });
+
+  it("allows development bypass cookies through dashboard routes", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("CI", "false");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", supabaseUrl);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", anonKey);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await proxy(createRequest("/dashboard/listings/create", `${DEV_AUTH_BYPASS_COOKIE}=1`));
+
+    expect(response.headers.get("location")).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("does not allow development bypass cookies into admin routes", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("CI", "false");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", supabaseUrl);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", anonKey);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await proxy(createRequest("/admin/users", `${DEV_AUTH_BYPASS_COOKIE}=1`));
+
+    expect(response.headers.get("location")).toBe("https://marketplace.example/login?next=%2Fadmin%2Fusers");
+  });
+
+  it("redirects auth routes when development bypass is active", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("CI", "false");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", supabaseUrl);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", anonKey);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await proxy(createRequest("/login?next=/dashboard/listings/create", `${DEV_AUTH_BYPASS_COOKIE}=1`));
+
+    expect(response.headers.get("location")).toBe("https://marketplace.example/dashboard/listings/create");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

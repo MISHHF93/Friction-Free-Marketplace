@@ -1,11 +1,13 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import { ChevronDown, Download, Facebook, Instagram, Linkedin, Mail, MapPin, Menu, MessageSquare, Search, ShieldCheck, Store, Twitter, UserRound } from "lucide-react";
 import { logoutAction } from "@/app/auth/actions";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ToastCenter } from "@/components/ui/toast-center";
+import { DEV_AUTH_BYPASS_COOKIE, isDevAuthBypassCookieValue } from "@/lib/auth/dev-bypass";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +39,7 @@ const footerSections = [
       { href: "/search", label: "Search marketplace" },
       { href: "/categories", label: "Categories" },
       { href: "/categories/vehicles", label: "Vehicles" },
-      { href: "/seller", label: "Start selling" }
+      { href: "/login?next=/dashboard/listings/create", label: "Start selling" }
     ]
   },
   {
@@ -75,8 +77,10 @@ async function AuthNav() {
   const {
     data: { user }
   } = await supabase.auth.getUser();
+  const cookieStore = await cookies();
+  const hasDevBypass = isDevAuthBypassCookieValue(cookieStore.get(DEV_AUTH_BYPASS_COOKIE)?.value);
 
-  if (!user) {
+  if (!user && !hasDevBypass) {
     return (
       <>
         <Link href="/login" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden sm:inline-flex")}>
@@ -98,7 +102,7 @@ async function AuthNav() {
       <details className="group relative">
         <summary className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card/90 px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label="Open user menu">
           <UserRound className="h-4 w-4" />
-          <span className="hidden max-w-28 truncate sm:inline">{user.email ?? "Account"}</span>
+          <span className="hidden max-w-28 truncate sm:inline">{user?.email ?? "Dev bypass"}</span>
           <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
         </summary>
         <div className="absolute right-0 z-50 mt-3 w-64 rounded-2xl border border-border bg-card p-2 shadow-soft motion-dropdown">
@@ -227,7 +231,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             </nav>
             <div className="flex items-center gap-1.5 sm:gap-2">
               <Button asChild className="hidden shadow-trust sm:inline-flex" variant="trust">
-                <Link href="/dashboard/listings/create">Sell</Link>
+                <Link href="/login?next=/dashboard/listings/create">Sell</Link>
               </Button>
               <AuthNav />
             </div>

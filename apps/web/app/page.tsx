@@ -77,7 +77,7 @@ export default async function HomePage() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link href="/dashboard/listings/create">Start selling</Link>
+              <Link href="/login?next=/dashboard/listings/create">Start selling</Link>
             </Button>
           </div>
           <div className="mt-6 flex flex-wrap gap-2">

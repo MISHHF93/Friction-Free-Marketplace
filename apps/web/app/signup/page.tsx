@@ -2,17 +2,24 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/forms/auth-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { isDevAuthBypassEnabled } from "@/lib/auth/dev-bypass";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function SignupPage() {
+function getSafeNext(next?: string | string[]) {
+  const value = Array.isArray(next) ? next[0] : next;
+  return value && value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
+}
+
+export default async function SignupPage({ searchParams }: { searchParams?: Promise<{ next?: string | string[] }> }) {
+  const resolvedSearchParams = await searchParams;
   const supabase = createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
 
-  if (user) {
-    redirect("/dashboard");
-  }
+  const next = getSafeNext(resolvedSearchParams?.next);
+
+  if (user) redirect(next);
 
   return (
     <section className="mx-auto grid min-h-[70vh] max-w-6xl place-items-center px-4 py-12 sm:px-6 lg:px-8">
@@ -22,9 +29,9 @@ export default async function SignupPage() {
           <CardDescription>Start buying, selling, and managing protected marketplace workflows.</CardDescription>
         </CardHeader>
         <CardContent>
-          <AuthForm mode="signup" />
+          <AuthForm mode="signup" next={next} showDevBypass={isDevAuthBypassEnabled()} />
           <p className="mt-5 text-center text-sm text-muted-foreground">
-            Already have an account? <Link className="font-semibold text-primary" href="/login">Log in</Link>
+            Already have an account? <Link className="font-semibold text-primary" href={`/login?next=${encodeURIComponent(next)}`}>Log in</Link>
           </p>
         </CardContent>
       </Card>

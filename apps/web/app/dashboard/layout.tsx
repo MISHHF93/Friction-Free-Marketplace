@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus, Search, ShieldCheck, Sparkles, UserRound } from "lucide-react";
@@ -6,6 +7,7 @@ import { dashboardLinks, getSerializableDashboardLinks } from "@/components/dash
 import { DashboardMobileBottomNav, DashboardMobileNavigation, DashboardSidebar } from "@/components/dashboard-navigation";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Button } from "@/components/ui/button";
+import { DEV_AUTH_BYPASS_COOKIE, DEV_AUTH_BYPASS_USER, isDevAuthBypassCookieValue } from "@/lib/auth/dev-bypass";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -36,13 +38,18 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const {
     data: { user }
   } = await supabase.auth.getUser();
+  const cookieStore = await cookies();
+  const devBypassUser = isDevAuthBypassCookieValue(cookieStore.get(DEV_AUTH_BYPASS_COOKIE)?.value)
+    ? DEV_AUTH_BYPASS_USER
+    : null;
 
-  if (!user) {
+  if (!user && !devBypassUser) {
     redirect("/login?next=/dashboard");
   }
 
-  const profile = await getDashboardProfile(user.id);
-  const displayName = profile?.display_name ?? user.email ?? "Marketplace member";
+  const dashboardUser = user ?? devBypassUser;
+  const profile = user ? await getDashboardProfile(user.id) : null;
+  const displayName = profile?.display_name ?? dashboardUser?.email ?? "Marketplace member";
   const navigationLinks = getSerializableDashboardLinks(dashboardLinks);
 
   return (
@@ -50,7 +57,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <a className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-background focus:px-4 focus:py-2 focus:shadow" href="#dashboard-content">
         Skip to dashboard content
       </a>
-      <DashboardSidebar links={navigationLinks} user={{ name: displayName, email: user.email ?? "No email on file", location: profile?.location_label ?? profile?.username ?? "Marketplace workspace" }} />
+      <DashboardSidebar links={navigationLinks} user={{ name: displayName, email: dashboardUser?.email ?? "No email on file", location: profile?.location_label ?? profile?.username ?? (devBypassUser ? "Local development bypass" : "Marketplace workspace") }} />
       <div className="min-w-0 space-y-6">
         <DashboardMobileNavigation links={navigationLinks} showQuickLinks={false} />
         <div className="overflow-hidden rounded-[1.75rem] border border-slate-900/10 bg-premium-dark p-4 text-white shadow-admin sm:rounded-[2rem] sm:p-6">
@@ -75,7 +82,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                 </span>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold">{displayName}</p>
-                  <p className="truncate text-xs text-slate-300">{user.email ?? "Authenticated account"}</p>
+                  <p className="truncate text-xs text-slate-300">{dashboardUser?.email ?? "Authenticated account"}</p>
                 </div>
               </div>
             </div>

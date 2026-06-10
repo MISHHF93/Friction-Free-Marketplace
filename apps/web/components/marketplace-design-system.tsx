@@ -46,7 +46,7 @@ const defaultFooterSections: AppFooterSection[] = [
     links: [
       { href: "/browse", label: "Browse listings" },
       { href: "/search", label: "Search" },
-      { href: "/seller", label: "Start selling" }
+      { href: "/login?next=/dashboard/listings/create", label: "Start selling" }
     ]
   },
   {

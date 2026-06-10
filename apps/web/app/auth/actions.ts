@@ -1,9 +1,11 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { DEV_AUTH_BYPASS_COOKIE, isDevAuthBypassEnabled } from "@/lib/auth/dev-bypass";
 import { publicEnv } from "@/lib/env";
 import { authSchema, profileSettingsSchema, signupSchema } from "@/lib/validations/auth";
 
@@ -13,6 +15,7 @@ export type AuthActionState = {
 };
 
 const defaultRedirectPath = "/dashboard";
+const oauthProviderSchema = z.enum(["google", "apple"]);
 
 function getFormString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -64,7 +67,8 @@ export async function signupAction(_previousState: AuthActionState, formData: Fo
   }
 
   const supabase = createClient();
-  const redirectTo = new URL("/auth/callback?next=/dashboard", publicEnv.NEXT_PUBLIC_APP_URL).toString();
+  const next = getSafeRedirectPath(formData.get("next"));
+  const redirectTo = new URL(`/auth/callback?next=${encodeURIComponent(next)}`, publicEnv.NEXT_PUBLIC_APP_URL).toString();
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
@@ -97,7 +101,7 @@ export async function signupAction(_previousState: AuthActionState, formData: Fo
     });
 
     revalidatePath("/", "layout");
-    redirect(defaultRedirectPath);
+    redirect(next);
   }
 
   return {
@@ -106,9 +110,53 @@ export async function signupAction(_previousState: AuthActionState, formData: Fo
   };
 }
 
+export async function oauthSignInAction(formData: FormData) {
+  const provider = oauthProviderSchema.safeParse(getFormString(formData, "provider"));
+  const next = getSafeRedirectPath(formData.get("next"));
+
+  if (!provider.success) {
+    redirect(`/login?next=${encodeURIComponent(next)}&authError=${encodeURIComponent("Unsupported sign-on provider.")}`);
+  }
+
+  const supabase = createClient();
+  const redirectTo = new URL(`/auth/callback?next=${encodeURIComponent(next)}`, publicEnv.NEXT_PUBLIC_APP_URL).toString();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: provider.data,
+    options: { redirectTo }
+  });
+
+  if (error || !data.url) {
+    redirect(`/login?next=${encodeURIComponent(next)}&authError=${encodeURIComponent(error?.message ?? "Unable to start sign-on.")}`);
+  }
+
+  redirect(data.url);
+}
+
+export async function devBypassAction(formData: FormData) {
+  const next = getSafeRedirectPath(formData.get("next"));
+
+  if (!isDevAuthBypassEnabled()) {
+    redirect(`/login?next=${encodeURIComponent(next)}&authError=${encodeURIComponent("Developer bypass is not available in this environment.")}`);
+  }
+
+  const cookieStore = await cookies();
+  cookieStore.set(DEV_AUTH_BYPASS_COOKIE, "1", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: false,
+    path: "/",
+    maxAge: 60 * 60 * 8
+  });
+
+  revalidatePath("/", "layout");
+  redirect(next);
+}
+
 export async function logoutAction() {
   const supabase = createClient();
   await supabase.auth.signOut();
+  const cookieStore = await cookies();
+  cookieStore.delete(DEV_AUTH_BYPASS_COOKIE);
   revalidatePath("/", "layout");
   redirect("/login?loggedOut=1");
 }

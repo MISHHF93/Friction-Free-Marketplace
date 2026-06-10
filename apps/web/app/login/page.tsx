@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/forms/auth-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { isDevAuthBypassEnabled } from "@/lib/auth/dev-bypass";
 import { createClient } from "@/lib/supabase/server";
 
 function getSafeNext(next?: string | string[]) {
@@ -39,9 +40,9 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
               {resolvedSearchParams.authError}
             </p>
           ) : null}
-          <AuthForm mode="login" next={next} />
+          <AuthForm mode="login" next={next} showDevBypass={isDevAuthBypassEnabled()} />
           <p className="mt-5 text-center text-sm text-muted-foreground">
-            New here? <Link className="font-semibold text-primary" href="/signup">Create an account</Link>
+            New here? <Link className="font-semibold text-primary" href={`/signup?next=${encodeURIComponent(next)}`}>Create an account</Link>
           </p>
         </CardContent>
       </Card>
