@@ -48,4 +48,8 @@ export function validateServerEnv(input: NodeJS.ProcessEnv = process.env): Serve
   return result.data;
 }
 
-export const env = validateServerEnv();
+export const env = new Proxy({} as ServerEnv, {
+  get(_target, property: keyof ServerEnv) {
+    return validateServerEnv()[property];
+  }
+});
