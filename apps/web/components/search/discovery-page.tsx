@@ -9,14 +9,12 @@ import {
   Flame,
   Grid3X3,
   ListFilter,
-  Map,
   MapPin,
   PackageOpen,
   Search,
   ShieldCheck,
   SlidersHorizontal,
   Sparkles,
-  Star,
   Truck,
   WalletCards,
   X
@@ -31,77 +29,25 @@ import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form"
 import { SaveSearchForm } from "@/components/saved-searches/save-search-form";
 import { getFavoriteListingIds } from "@/lib/saves/user-saves";
 import { searchMarketplace } from "@/lib/search/discovery";
-import type { DiscoveryDocument, DiscoverySearchParams, DiscoverySort } from "@/lib/search/schema";
+import type { DiscoveryDocument, DiscoverySearchParams } from "@/lib/search/schema";
+import {
+  discoveryCategorySlugs,
+  discoveryConditionOptions,
+  discoveryPageSize,
+  discoveryParamEntries,
+  discoverySortOptions,
+  getDiscoveryActiveChips,
+  parseDiscoveryParamsFromRecord,
+  serializeDiscoveryParams,
+  titleizeDiscoveryValue
+} from "@/lib/search/filters";
 import { cn } from "@/lib/utils";
-
-const sortOptions: Array<{ value: DiscoverySort; label: string; description: string }> = [
-  { value: "newest", label: "Newest", description: "Latest active listings first" },
-  { value: "closest", label: "Closest", description: "Uses radius when coordinates are supplied" },
-  { value: "price_low", label: "Price: low", description: "Lowest price first" },
-  { value: "price_high", label: "Price: high", description: "Highest price first" },
-  { value: "best_value", label: "Best value", description: "Price advantage plus seller quality" },
-  { value: "safest_seller", label: "Safest seller", description: "Trust, low risk, completed sales" },
-  { value: "trending", label: "Trending", description: "Views, saves, and freshness signals" }
-];
-
-const conditions = ["New", "Like new", "Excellent", "Good", "Fair"];
-const categories = ["vehicles", "electronics", "furniture", "home", "fashion", "tools", "real-estate", "services", "collectibles", "sports", "baby-kids", "free-items", "outdoors", "books-media"];
-const pageSize = 18;
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
-function first(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function number(value: string | string[] | undefined) {
-  const parsed = Number(first(value));
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function booleanParam(value: string | string[] | undefined) {
-  return first(value) === "true" || first(value) === "on";
-}
-
-function selectedList(value: string | string[] | undefined) {
-  const raw = Array.isArray(value) ? value.join(",") : value;
-  return raw ? raw.split(",").map((item) => item.trim()).filter(Boolean) : undefined;
-}
-
-function sortParam(value: string | string[] | undefined): DiscoverySort {
-  const raw = first(value);
-  return sortOptions.some((option) => option.value === raw) ? raw as DiscoverySort : "newest";
-}
-
-function fulfillmentParam(value: string | string[] | undefined): DiscoverySearchParams["fulfillment"] {
-  const raw = first(value);
-  return raw === "pickup" || raw === "delivery" || raw === "any" ? raw : undefined;
-}
-
-function parseDiscoveryParams(searchParams: SearchParams): DiscoverySearchParams {
-  return {
-    q: first(searchParams.q),
-    category: first(searchParams.category),
-    location: first(searchParams.location),
-    lat: number(searchParams.lat),
-    lng: number(searchParams.lng),
-    radiusMiles: number(searchParams.radiusMiles),
-    minPrice: number(searchParams.minPrice),
-    maxPrice: number(searchParams.maxPrice),
-    condition: selectedList(searchParams.condition),
-    minSellerTrust: number(searchParams.minSellerTrust),
-    verifiedOnly: booleanParam(searchParams.verifiedOnly),
-    paymentProtection: booleanParam(searchParams.paymentProtection),
-    fulfillment: fulfillmentParam(searchParams.fulfillment),
-    sort: sortParam(searchParams.sort),
-    page: Math.max(number(searchParams.page) ?? 1, 1),
-    limit: pageSize
-  };
-}
-
 
 function titleize(value: string) {
-  return value.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return titleizeDiscoveryValue(value);
 }
 
 function topFacetEntries(facets: Record<string, Record<string, number>>, field: string, limit = 5) {
@@ -111,23 +57,12 @@ function topFacetEntries(facets: Record<string, Record<string, number>>, field: 
 }
 
 function ActiveFilterChips({ params }: { params: DiscoverySearchParams }) {
-  const chips = [
-    params.q ? ["Query", params.q] : undefined,
-    params.category ? ["Category", titleize(params.category)] : undefined,
-    params.location ? ["Location", params.location] : undefined,
-    params.minPrice !== undefined ? ["Min price", `$${params.minPrice}`] : undefined,
-    params.maxPrice !== undefined ? ["Max price", `$${params.maxPrice}`] : undefined,
-    params.condition?.length ? ["Condition", params.condition.join(", ")] : undefined,
-    params.minSellerTrust !== undefined ? ["Seller trust", `${params.minSellerTrust}+`] : undefined,
-    params.verifiedOnly ? ["Verified", "Yes"] : undefined,
-    params.paymentProtection ? ["Payment protection", "Available"] : undefined,
-    params.fulfillment && params.fulfillment !== "any" ? ["Fulfillment", titleize(params.fulfillment)] : undefined
-  ].filter(Boolean) as string[][];
+  const chips = getDiscoveryActiveChips(params);
 
   if (chips.length === 0) return null;
   return (
     <div className="flex flex-wrap gap-2">
-      {chips.map(([label, value]) => (
+      {chips.map(({ label, value }) => (
         <Badge key={`${label}-${value}`} variant="trust">{label}: {value}</Badge>
       ))}
     </div>
@@ -159,26 +94,15 @@ function FacetLinkList({ title, field, facets, currentHref }: { title: string; f
 }
 
 function hiddenInputs(params: DiscoverySearchParams, omit: Array<keyof DiscoverySearchParams> = []) {
-  return Object.entries(params).flatMap(([key, value]) => {
-    if (omit.includes(key as keyof DiscoverySearchParams) || value === undefined || value === "" || value === false || key === "limit") return [];
-    if (Array.isArray(value)) return <input key={key} type="hidden" name={key} value={value.join(",")} />;
-    return <input key={key} type="hidden" name={key} value={String(value)} />;
-  });
+  return discoveryParamEntries(params, omit).map(([key, value]) => <input key={key} type="hidden" name={key} value={value} />);
 }
 
 function currentSearchString(params: DiscoverySearchParams, overrides: Partial<Record<keyof DiscoverySearchParams, string | number | boolean | undefined>> = {}) {
-  const query = new URLSearchParams();
-  const merged: Record<string, unknown> = { ...params, ...overrides };
-  for (const [key, value] of Object.entries(merged)) {
-    if (value === undefined || value === "" || value === false || key === "limit") continue;
-    if (Array.isArray(value)) query.set(key, value.join(","));
-    else query.set(key, String(value));
-  }
-  return query.toString();
+  return serializeDiscoveryParams(params, overrides);
 }
 
 export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchParams: SearchParams; mode?: "browse" | "search" }) {
-  const params = parseDiscoveryParams(searchParams);
+  const params = parseDiscoveryParamsFromRecord(searchParams, { sort: mode === "browse" ? "recommended" : "newest", limit: discoveryPageSize });
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const [results, recommended, trending, broadRecommendations, favoriteIds] = await Promise.all([
@@ -197,7 +121,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
 
   const priceStats = results.facetStats.price_amount;
   const trustStats = results.facetStats.seller_trust_score;
-  const totalPages = Math.max(1, Math.ceil(results.total / pageSize));
+  const totalPages = Math.max(1, Math.ceil(results.total / discoveryPageSize));
   const currentPage = Math.max(params.page ?? 1, 1);
   const modeHref = mode === "search" ? "/search" : "/browse";
   const emptyRecommendations = recommended.listings.length ? recommended.listings : broadRecommendations.listings;
@@ -217,8 +141,8 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
           <div className="grid gap-3 rounded-3xl border border-border/80 bg-white/80 p-3 shadow-md backdrop-blur md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
             <div className="flex flex-wrap gap-2">
               <MobileFilterDrawer params={params} modeHref={modeHref} trustStats={trustStats} />
-              <MapListToggle />
-              <SavedSearchQuickAction params={params} userSignedIn={Boolean(user)} />
+              <ListModeIndicator />
+              <SavedSearchQuickAction params={params} userSignedIn={Boolean(user)} modeHref={modeHref} />
             </div>
             <SortMenu params={params} modeHref={modeHref} />
           </div>
@@ -304,7 +228,7 @@ function FilterFields({ params, trustStats }: { params: DiscoverySearchParams; t
       <label className="grid gap-2 text-sm font-semibold">Category
         <select name="category" defaultValue={params.category ?? ""} className="h-11 rounded-xl border border-input bg-card px-3 text-sm shadow-xs">
           <option value="">All categories</option>
-          {categories.map((category) => <option key={category} value={category}>{titleize(category)}</option>)}
+          {discoveryCategorySlugs.map((category) => <option key={category} value={category}>{titleize(category)}</option>)}
         </select>
       </label>
       <label className="grid gap-2 text-sm font-semibold">Location
@@ -320,7 +244,7 @@ function FilterFields({ params, trustStats }: { params: DiscoverySearchParams; t
       <label className="grid gap-2 text-sm font-semibold">Condition
         <select name="condition" defaultValue={params.condition?.join(",") ?? ""} className="h-11 rounded-xl border border-input bg-card px-3 text-sm shadow-xs">
           <option value="">Any condition</option>
-          {conditions.map((condition) => <option key={condition} value={condition}>{condition}</option>)}
+          {discoveryConditionOptions.map((condition) => <option key={condition} value={condition}>{condition}</option>)}
         </select>
       </label>
       <label className="grid gap-2 text-sm font-semibold">Seller trust level
@@ -396,9 +320,9 @@ function SavedSearchPanel({ params, userSignedIn, modeHref }: { params: Discover
   );
 }
 
-function SavedSearchQuickAction({ params, userSignedIn }: { params: DiscoverySearchParams; userSignedIn: boolean }) {
+function SavedSearchQuickAction({ params, userSignedIn, modeHref }: { params: DiscoverySearchParams; userSignedIn: boolean; modeHref: string }) {
   if (!userSignedIn) {
-    return <Button asChild variant="outline" size="sm"><Link href="/login?next=/search"><Bell className="h-4 w-4" aria-hidden="true" /> Save search</Link></Button>;
+    return <Button asChild variant="outline" size="sm"><Link href={`/login?next=${modeHref}`}><Bell className="h-4 w-4" aria-hidden="true" /> Save search</Link></Button>;
   }
   return (
     <details className="relative">
@@ -419,18 +343,17 @@ function SortMenu({ params, modeHref }: { params: DiscoverySearchParams; modeHre
       {hiddenInputs(params, ["sort", "page"])}
       <label className="sr-only" htmlFor="discovery-sort">Sort listings</label>
       <select id="discovery-sort" name="sort" defaultValue={params.sort ?? "newest"} className="h-10 min-w-0 rounded-xl border border-input bg-card px-3 text-sm font-bold shadow-xs">
-        {sortOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        {discoverySortOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
       <Button size="sm" variant="surface">Sort</Button>
     </form>
   );
 }
 
-function MapListToggle() {
+function ListModeIndicator() {
   return (
-    <div className="inline-flex rounded-xl border border-border bg-card p-1 shadow-xs" aria-label="Map and list view toggle">
-      <Button type="button" size="sm" variant="trust" className="h-8 px-3"><Grid3X3 className="h-4 w-4" aria-hidden="true" /> List</Button>
-      <Button type="button" size="sm" variant="ghost" className="h-8 px-3" disabled><Map className="h-4 w-4" aria-hidden="true" /> Map soon</Button>
+    <div className="inline-flex rounded-xl border border-border bg-card p-1 shadow-xs" aria-label="Current result view">
+      <Button type="button" size="sm" variant="trust" className="h-8 px-3"><Grid3X3 className="h-4 w-4" aria-hidden="true" /> List view</Button>
     </div>
   );
 }
@@ -440,7 +363,7 @@ function DiscoveryListingCard({ listing, isFavorited, featured = false }: { list
     <Card className={cn("group overflow-hidden shadow-md transition hover:-translate-y-1 hover:shadow-soft", featured && "border-premium bg-premium-soft/60")}>
       <div className="relative">
         {listing.image_url ? <RemoteImage src={listing.image_url} alt={listing.title} className="h-40 w-full object-cover transition duration-300 group-hover:scale-105 sm:h-44" /> : <div className="flex h-40 items-center justify-center bg-gradient-to-br from-trust-soft via-ai-soft to-premium-soft sm:h-44"><PackageOpen className="h-10 w-10 text-primary/60" aria-hidden="true" /></div>}
-        {featured ? <Badge variant="premium" className="absolute left-3 top-3 shadow-md"><Star className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Sponsored</Badge> : null}
+        {featured ? <Badge variant="premium" className="absolute left-3 top-3 shadow-md">Top match</Badge> : null}
       </div>
       <CardContent className="space-y-4 p-4 sm:p-5">
         <div className="grid gap-3 sm:flex sm:items-start sm:justify-between sm:gap-4">

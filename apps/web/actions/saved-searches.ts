@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { captureServerEvent } from "@/lib/analytics/posthog";
+import { discoveryParamEntries, parseDiscoveryParamsFromRecord } from "@/lib/search/filters";
 
 export type SavedSearchActionResult<T = unknown> =
   | { ok: true; data: T }
@@ -43,20 +44,20 @@ function formValue(formData: FormData, key: string) {
 }
 
 function filtersFromFormData(formData: FormData) {
+  const record: Record<string, string | string[] | undefined> = {};
+  for (const [key, value] of formData.entries()) {
+    if (typeof value !== "string") continue;
+    const existing = record[key];
+    if (Array.isArray(existing)) existing.push(value);
+    else if (existing) record[key] = [existing, value];
+    else record[key] = value;
+  }
+  const params = parseDiscoveryParamsFromRecord(record);
   const filters: Record<string, string | number | boolean> = {};
-  for (const key of ["category", "location", "condition", "fulfillment"] as const) {
-    const value = formValue(formData, key);
-    if (value) filters[key] = value;
-  }
-  for (const key of ["radiusMiles", "minPrice", "maxPrice", "minSellerTrust"] as const) {
-    const raw = formValue(formData, key);
-    const value = raw ? Number(raw) : undefined;
-    if (Number.isFinite(value)) filters[key] = value as number;
-  }
-  const sort = formValue(formData, "sort");
-  if (sort) filters.sort = sort;
-  for (const key of ["verifiedOnly", "paymentProtection"] as const) {
-    if (formData.get(key) === "true") filters[key] = true;
+  for (const [key, value] of discoveryParamEntries(params, ["q", "intent", "page", "limit", "sessionId"])) {
+    if (value === "true") filters[key] = true;
+    else if (/^-?\d+(\.\d+)?$/.test(value)) filters[key] = Number(value);
+    else filters[key] = value;
   }
   return filters;
 }
