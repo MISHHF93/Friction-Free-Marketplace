@@ -1,6 +1,19 @@
+export const designLanguage = {
+  name: "Harbor & Pine",
+  version: "1.0",
+  direction: "A flagship solid-color marketplace system built from evergreen, marine blue, porcelain, platinum, and semantic safety colors.",
+  principles: [
+    "Solid fills instead of blended color treatments or decorative glass.",
+    "Evergreen owns commerce and trust.",
+    "Marine blue identifies intelligence, guidance, and neutral analysis.",
+    "Platinum is reserved for premium proof and elevated neutral moments.",
+    "Warning and risk colors appear only when action is genuinely required."
+  ]
+} as const;
+
 export const brandPersonality = {
-  promise: "Premium local commerce with AI convenience and payment-grade trust.",
-  traits: ["trustworthy", "modern", "intelligent", "premium", "safe", "commerce-first"],
+  promise: "Warm, clear local commerce with useful intelligence and payment-grade trust.",
+  traits: ["trustworthy", "human", "editorial", "useful", "safe", "commerce-first"],
   voice: {
     headline: "Confident, clear, and outcome-focused.",
     body: "Plainspoken, reassuring, and specific about safety signals.",
@@ -10,28 +23,28 @@ export const brandPersonality = {
 
 export const brandColorPalette = {
   foundation: {
-    ink: "#0B1220",
-    slate: "#334155",
-    steel: "#64748B",
-    mist: "#F8FAFC",
-    cloud: "#EEF4F8",
-    pearl: "#F3F7FA",
-    surface: "#FFFFFF"
+    ink: "#142C22",
+    slate: "#3D574B",
+    steel: "#69766F",
+    mist: "#FAF7EF",
+    cloud: "#EEE9DD",
+    pearl: "#F8F4EA",
+    surface: "#FDFBF6"
   },
   commerce: {
-    marketplaceTeal: "#0A756B",
-    marketplaceDeep: "#0B4B46",
-    commerceSoft: "#E2F8F3"
+    marketplaceTeal: "#216345",
+    marketplaceDeep: "#173F30",
+    commerceSoft: "#E6EEE7"
   },
   primary: {
-    trustTeal: "#0A756B",
-    trustTealDeep: "#0B5F59",
-    trustTealSoft: "#DDF8F1"
+    trustTeal: "#216345",
+    trustTealDeep: "#173F30",
+    trustTealSoft: "#E6EEE7"
   },
   intelligence: {
-    aiBlue: "#2563EB",
-    aiIndigo: "#4F46E5",
-    aiSoft: "#EAF1FF"
+    harborBlue: "#1D6F93",
+    harborBlueDeep: "#15536F",
+    aiSoft: "#E5F0F4"
   },
   safety: {
     safeGreen: "#16A34A",
@@ -39,16 +52,16 @@ export const brandColorPalette = {
     riskRed: "#DC2626"
   },
   premium: {
-    gold: "#D6A84F",
-    champagne: "#FFF6DD",
-    graphite: "#111827"
+    platinum: "#7C929D",
+    platinumSoft: "#E9EFF1",
+    graphite: "#142C22"
   },
   data: {
-    teal: "#0A756B",
-    blue: "#2563EB",
-    gold: "#D6A84F",
-    violet: "#7C3AED",
-    rose: "#E11D48"
+    forest: "#216345",
+    harbor: "#1D6F93",
+    platinum: "#7C929D",
+    lake: "#39758A",
+    berry: "#A54A63"
   }
 } as const;
 
@@ -74,11 +87,11 @@ export const spacingScale = {
 } as const;
 
 export const radiusSystem = {
-  control: "0.875rem",
-  card: "1.25rem",
-  panel: "1.75rem",
-  shell: "2rem",
-  hero: "2.5rem",
+  control: "0.75rem",
+  card: "1rem",
+  panel: "1.35rem",
+  shell: "1.6rem",
+  hero: "2rem",
   pill: "999px"
 } as const;
 
@@ -99,10 +112,10 @@ export const componentStyleRules = {
   icons: [
     "Use lucide-react with 1.75px to 2px visual weight and the brand-icon classes for framed icons.",
     "Pair icons with labels for important actions; icon-only controls need aria-label.",
-    "Use teal for trust, blue/indigo for AI, amber/red only for warning/risk."
+    "Use evergreen for trust, marine blue for AI, and amber/red only for warning/risk."
   ],
   buttons: [
-    "Primary buttons use the commerce gradient and are reserved for high-confidence purchase, sell, and continue actions.",
+    "Primary buttons use a solid forest fill and are reserved for high-confidence purchase, sell, and continue actions.",
     "Secondary buttons feel like calm surfaces, not gray classifieds controls.",
     "AI, trust, premium, and destructive variants are semantically meaningful, not decorative.",
     "Danger buttons are reserved for irreversible or risk workflows."
@@ -123,7 +136,7 @@ export const componentStyleRules = {
     "Labels are clear, compact, and never rely on placeholder-only instructions."
   ],
   badges: [
-    "Trust badges are green/teal; AI badges are blue; warnings are amber; risk is red.",
+    "Trust badges are evergreen; AI badges are marine blue; warnings are amber; risk is red.",
     "Badges should communicate proof, status, or routing rather than decoration."
   ],
   navigation: [
@@ -141,6 +154,7 @@ export const componentStyleRules = {
 } as const;
 
 export const brandSystem = {
+  designLanguage,
   brandPersonality,
   brandColorPalette,
   typographyScale,

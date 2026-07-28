@@ -1,6 +1,7 @@
 import { Heart } from "lucide-react";
 import { toggleFavoriteFormAction } from "@/actions/favorites";
 import { Button } from "@/components/ui/button";
+import { PreviewFavoriteButton } from "@/components/favorites/preview-favorite-button";
 import { cn } from "@/lib/utils";
 
 function isUuid(value: string) {
@@ -25,12 +26,7 @@ export function FavoriteToggleForm({
   size?: "default" | "sm" | "lg" | "icon";
 }) {
   if (!isUuid(listingId)) {
-    return (
-      <Button type="button" variant={variant} size={size} className={cn("favorite-pop", className)} disabled>
-        <Heart className="h-4 w-4" />
-        Live favorite
-      </Button>
-    );
+    return <PreviewFavoriteButton variant={variant} size={size} className={className} />;
   }
 
   return (

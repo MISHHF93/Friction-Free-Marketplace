@@ -25,7 +25,8 @@
     "mobile:android": "npm --workspace @ffm/mobile run open:android",
     "mobile:ios": "npm --workspace @ffm/mobile run open:ios",
     "mobile:doctor": "npm --workspace @ffm/mobile run doctor",
-    "release:check": "npm run shared:typecheck && npm run web:lint && npm run web:typecheck && npm run web:test && npm run web:build && npm --workspace @ffm/mobile run build",
+    "text:check": "node scripts/check-text-encoding.mjs",
+    "release:check": "npm run text:check && npm run shared:typecheck && npm run web:lint && npm run web:typecheck && npm run web:test && npm run web:build && npm --workspace @ffm/mobile run build",
     "production:smoke": "node scripts/production-smoke.mjs"
   },
   "overrides": {

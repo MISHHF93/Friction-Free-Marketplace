@@ -10,7 +10,7 @@ vi.mock("@/lib/openai/client", () => ({
   isOpenAIConfigured: configured
 }));
 
-import { fallbackRun, runMarketplaceAgent } from "@/lib/ai/runner";
+import { fallbackRun, groundedBlocksFromTools, runMarketplaceAgent } from "@/lib/ai/runner";
 
 describe("marketplace AI agent runner", () => {
   beforeEach(() => {
@@ -47,9 +47,24 @@ describe("marketplace AI agent runner", () => {
       { tool: "compare_listings", reason: "Compare value and trust.", arguments: undefined }
     ]);
     expect(result.fallback).toBe(false);
+    expect(result.contractVersion).toBe("1.0");
+    expect(result.blocks).toEqual([{ type: "text", text: result.answer }]);
     expect(result.tokenUsage).toMatchObject({ total_tokens: 140 });
     expect(elapsedMs).toBeLessThan(250);
     expect(createCompletion).toHaveBeenCalledOnce();
+  });
+
+  it("rejects malformed model output through the versioned response contract", async () => {
+    createCompletion.mockResolvedValue({
+      choices: [{ message: { content: JSON.stringify({ answer: 42, blocks: [{ type: "unsafe_html", html: "<script />" }] }) } }],
+      usage: { total_tokens: 20 },
+    });
+
+    const result = await runMarketplaceAgent({ agent: "buyer", message: "Show me a safe result." });
+
+    expect(result.safetyFlags).toContain("invalid_model_response");
+    expect(result.answer).toContain("could not safely structure");
+    expect(result.blocks[0]).toMatchObject({ type: "text" });
   });
 
   it("uses the local interactive fallback without making a network request", async () => {
@@ -124,5 +139,32 @@ describe("marketplace AI agent runner", () => {
     expect(result.auditSummary).toContain("no OpenAI request was sent");
     expect(result.answer).toContain("proposed tool plan");
     expect(result.fallback).toBe(true);
+  });
+
+  it("turns verified tool results into listing and price evidence blocks", () => {
+    const listing = {
+      id: "listing-1",
+      title: "Mirrorless camera",
+      price: 900,
+      currency: "USD",
+      condition: "Excellent",
+    };
+    const blocks = groundedBlocksFromTools([
+      {
+        tool: "estimate_price",
+        arguments: { itemSummary: "camera" },
+        ok: true,
+        result: {
+          currency: "USD",
+          comparableCount: 1,
+          observedMin: 900,
+          observedMax: 900,
+          caveat: "Active listing evidence.",
+          comparables: [listing],
+        },
+      },
+    ]);
+
+    expect(blocks.map((block) => block.type)).toEqual(["price_estimate", "listing_collection"]);
   });
 });

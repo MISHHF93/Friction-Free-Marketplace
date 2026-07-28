@@ -12,8 +12,8 @@ type PublicPageLoadingProps = {
 
 export function PublicPageLoading({ label, helperText = "Fetching live marketplace data and preparing responsive page sections." }: PublicPageLoadingProps) {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8" aria-busy="true">
-      <div className="rounded-[2rem] border border-border bg-card p-6 shadow-soft sm:p-8 lg:p-10">
+    <section className="app-container py-section-sm" aria-busy="true">
+      <div className="rounded-shell border border-border bg-card p-6 shadow-soft sm:p-8 lg:p-10">
         <LoadingSpinner label={label} size="lg" />
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground">{helperText}</p>
         <div className="mt-8 grid gap-4 lg:grid-cols-[1fr_340px]">

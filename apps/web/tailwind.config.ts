@@ -82,7 +82,10 @@ const config: Config = {
           border: "hsl(var(--safety-border))",
           warning: "hsl(var(--safety-warning))",
           "warning-soft": "hsl(var(--safety-warning-soft))",
-          risk: "hsl(var(--safety-risk))"
+          "warning-border": "hsl(var(--safety-warning-border))",
+          risk: "hsl(var(--safety-risk))",
+          "risk-soft": "hsl(var(--safety-risk-soft))",
+          "risk-border": "hsl(var(--safety-risk-border))"
         },
         premium: {
           DEFAULT: "hsl(var(--premium))",
@@ -100,8 +103,8 @@ const config: Config = {
         }
       },
       fontFamily: {
-        sans: ["Inter", "ui-sans-serif", "system-ui", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
-        display: ["Inter", "ui-sans-serif", "system-ui", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+        sans: ["Avenir Next", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+        display: ["Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Georgia", "serif"],
         mono: ["JetBrains Mono", "SFMono-Regular", "Cascadia Code", "Consolas", "Liberation Mono", "monospace"]
       },
       fontSize: {
@@ -162,13 +165,6 @@ const config: Config = {
       },
       ringWidth: {
         3: "3px"
-      },
-      backgroundImage: {
-        "brand-radial": "radial-gradient(circle at top left, hsl(var(--trust) / 0.18), transparent 34rem), radial-gradient(circle at 80% 0%, hsl(var(--ai) / 0.12), transparent 28rem), linear-gradient(180deg, hsl(var(--background)), hsl(var(--brand-cloud)))",
-        "trust-gradient": "linear-gradient(135deg, hsl(var(--trust)), hsl(var(--ai)))",
-        "commerce-gradient": "linear-gradient(135deg, hsl(var(--commerce-dark)), hsl(var(--commerce)), hsl(var(--trust)))",
-        "ai-gradient": "linear-gradient(135deg, hsl(var(--ai)), hsl(var(--premium-graphite)))",
-        "premium-dark": "radial-gradient(circle at top right, hsl(var(--trust) / 0.32), transparent 32rem), linear-gradient(135deg, hsl(var(--premium-graphite)), hsl(var(--brand-ink)))"
       },
       keyframes: {
         "soft-enter": {

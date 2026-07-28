@@ -154,7 +154,7 @@ export function DashboardProgressCard({ label, value, detail, icon: Icon = Chevr
       </CardHeader>
       <CardContent className="space-y-3 p-4 pt-0 text-sm leading-6 text-muted-foreground sm:p-6 sm:pt-0">
         <div className="h-2 overflow-hidden rounded-full bg-secondary" aria-hidden="true">
-          <div className="h-full rounded-full bg-gradient-to-r from-trust to-ai" style={{ width: `${boundedValue}%` }} />
+      <div className="h-full rounded-full bg-trust" style={{ width: `${boundedValue}%` }} />
         </div>
         <p>{detail}</p>
       </CardContent>

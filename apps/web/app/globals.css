@@ -4,45 +4,45 @@
 
 @layer base {
   :root {
-    --brand-ink: 222 57% 8%;
-    --brand-slate: 215 25% 27%;
-    --brand-steel: 214 18% 43%;
-    --brand-mist: 210 40% 98%;
-    --brand-cloud: 210 38% 94%;
-    --brand-pearl: 210 32% 96%;
-    --brand-surface: 0 0% 100%;
+    --brand-ink: 158 34% 12%;
+    --brand-slate: 155 18% 29%;
+    --brand-steel: 150 10% 43%;
+    --brand-mist: 42 42% 96%;
+    --brand-cloud: 40 30% 91%;
+    --brand-pearl: 42 36% 95%;
+    --brand-surface: 40 33% 99%;
 
-    --surface-canvas: 210 40% 98%;
-    --surface-elevated: 0 0% 100%;
-    --surface-sunken: 210 32% 92%;
-    --surface-overlay: 210 28% 99%;
-    --surface-inverse: 222 57% 8%;
+    --surface-canvas: 42 42% 96%;
+    --surface-elevated: 40 33% 99%;
+    --surface-sunken: 39 25% 90%;
+    --surface-overlay: 40 40% 98%;
+    --surface-inverse: 158 34% 12%;
 
-    --background: 210 40% 98%;
-    --foreground: 222 57% 8%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 57% 8%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 57% 8%;
+    --background: 42 42% 96%;
+    --foreground: 158 34% 12%;
+    --card: 40 33% 99%;
+    --card-foreground: 158 34% 12%;
+    --popover: 40 33% 99%;
+    --popover-foreground: 158 34% 12%;
 
-    --commerce: 168 84% 25%;
+    --commerce: 158 48% 25%;
     --commerce-foreground: 0 0% 100%;
-    --commerce-soft: 166 72% 94%;
-    --commerce-border: 166 56% 80%;
-    --commerce-dark: 175 76% 17%;
+    --commerce-soft: 148 28% 91%;
+    --commerce-border: 151 24% 72%;
+    --commerce-dark: 160 42% 16%;
 
-    --primary: 168 84% 25%;
+    --primary: 158 48% 25%;
     --primary-foreground: 0 0% 100%;
 
-    --trust: 168 84% 25%;
+    --trust: 158 48% 25%;
     --trust-foreground: 0 0% 100%;
-    --trust-soft: 166 70% 93%;
-    --trust-border: 166 56% 80%;
+    --trust-soft: 148 28% 91%;
+    --trust-border: 151 24% 72%;
 
-    --ai: 222 84% 56%;
+    --ai: 201 68% 36%;
     --ai-foreground: 0 0% 100%;
-    --ai-soft: 219 100% 96%;
-    --ai-border: 221 78% 84%;
+    --ai-soft: 202 42% 92%;
+    --ai-border: 201 34% 70%;
 
     --safety: 142 72% 36%;
     --safety-foreground: 0 0% 100%;
@@ -50,52 +50,55 @@
     --safety-border: 141 54% 78%;
     --safety-warning: 35 92% 45%;
     --safety-warning-soft: 42 96% 92%;
+    --safety-warning-border: 38 78% 74%;
     --safety-risk: 0 72% 51%;
+    --safety-risk-soft: 0 86% 97%;
+    --safety-risk-border: 0 70% 84%;
 
-    --premium: 40 64% 57%;
-    --premium-foreground: 222 57% 8%;
-    --premium-soft: 45 100% 93%;
-    --premium-border: 42 70% 76%;
-    --premium-graphite: 222 47% 11%;
+    --premium: 204 18% 54%;
+    --premium-foreground: 158 34% 12%;
+    --premium-soft: 204 24% 92%;
+    --premium-border: 204 16% 70%;
+    --premium-graphite: 160 38% 13%;
 
     --data-1: 168 84% 25%;
-    --data-2: 222 84% 56%;
-    --data-3: 40 64% 57%;
-    --data-4: 262 83% 58%;
-    --data-5: 350 77% 55%;
+    --data-2: 201 68% 36%;
+    --data-3: 204 18% 54%;
+    --data-4: 197 38% 40%;
+    --data-5: 342 42% 48%;
 
-    --secondary: 210 38% 94%;
-    --secondary-foreground: 222 57% 8%;
-    --muted: 210 38% 94%;
-    --muted-foreground: 215 18% 43%;
-    --accent: 218 100% 96%;
-    --accent-foreground: 222 84% 24%;
+    --secondary: 39 25% 91%;
+    --secondary-foreground: 158 34% 12%;
+    --muted: 39 25% 91%;
+    --muted-foreground: 150 10% 43%;
+    --accent: 202 42% 92%;
+    --accent-foreground: 201 68% 28%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 30% 88%;
-    --input: 214 30% 88%;
-    --ring: 168 84% 25%;
+    --border: 38 20% 82%;
+    --input: 38 20% 78%;
+    --ring: 158 48% 25%;
 
-    --radius: 0.875rem;
-    --radius-control: 0.875rem;
-    --radius-card: 1.25rem;
-    --radius-panel: 1.75rem;
-    --radius-shell: 2rem;
-    --radius-hero: 2.5rem;
+    --radius: 0.75rem;
+    --radius-control: 0.75rem;
+    --radius-card: 1rem;
+    --radius-panel: 1.35rem;
+    --radius-shell: 1.6rem;
+    --radius-hero: 2rem;
 
-    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
-    --shadow-sm: 0 8px 24px -18px rgba(15, 23, 42, 0.32);
-    --shadow-md: 0 18px 44px -28px rgba(15, 23, 42, 0.42);
-    --shadow-input: 0 1px 2px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.72);
-    --shadow-control: 0 10px 26px -18px rgba(15, 23, 42, 0.45);
-    --shadow-card: 0 16px 48px -34px rgba(15, 23, 42, 0.52);
-    --shadow-card-hover: 0 24px 64px -38px rgba(15, 23, 42, 0.62);
-    --shadow-panel: 0 28px 80px -48px rgba(15, 23, 42, 0.55);
-    --shadow-soft: 0 28px 80px -42px rgba(15, 23, 42, 0.42);
-    --shadow-glow: 0 24px 90px -44px rgba(37, 99, 235, 0.48);
-    --shadow-trust: 0 24px 90px -44px rgba(15, 143, 126, 0.5);
-    --shadow-ai: 0 24px 90px -44px rgba(37, 99, 235, 0.52);
-    --shadow-commerce: 0 22px 70px -42px rgba(13, 148, 136, 0.58);
+    --shadow-xs: 0 1px 2px rgba(42, 55, 45, 0.07);
+    --shadow-sm: 0 8px 24px -18px rgba(42, 55, 45, 0.28);
+    --shadow-md: 0 18px 44px -30px rgba(42, 55, 45, 0.34);
+    --shadow-input: 0 1px 2px rgba(42, 55, 45, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    --shadow-control: 0 10px 26px -20px rgba(42, 55, 45, 0.38);
+    --shadow-card: 0 18px 45px -34px rgba(42, 55, 45, 0.42);
+    --shadow-card-hover: 0 26px 58px -38px rgba(42, 55, 45, 0.5);
+    --shadow-panel: 0 30px 72px -48px rgba(42, 55, 45, 0.48);
+    --shadow-soft: 0 30px 72px -44px rgba(42, 55, 45, 0.38);
+    --shadow-glow: 0 24px 90px -48px rgba(29, 111, 147, 0.34);
+    --shadow-trust: 0 24px 90px -48px rgba(46, 105, 75, 0.42);
+    --shadow-ai: 0 24px 90px -48px rgba(29, 111, 147, 0.4);
+    --shadow-commerce: 0 22px 70px -44px rgba(46, 105, 75, 0.48);
     --shadow-danger: 0 20px 70px -44px rgba(220, 38, 38, 0.48);
     --shadow-admin: 0 20px 70px -42px rgba(2, 6, 23, 0.62);
 
@@ -114,35 +117,55 @@
   }
 
   .dark {
-    --brand-ink: 210 40% 98%;
-    --brand-slate: 215 18% 72%;
-    --brand-steel: 215 16% 62%;
-    --brand-mist: 222 47% 11%;
-    --brand-cloud: 222 47% 14%;
-    --brand-pearl: 222 42% 16%;
-    --brand-surface: 222 47% 11%;
+    --brand-ink: 42 36% 95%;
+    --brand-slate: 42 15% 74%;
+    --brand-steel: 40 10% 62%;
+    --brand-mist: 158 30% 10%;
+    --brand-cloud: 158 26% 13%;
+    --brand-pearl: 157 22% 16%;
+    --brand-surface: 158 27% 11%;
 
-    --surface-canvas: 222 47% 8%;
-    --surface-elevated: 222 42% 12%;
-    --surface-sunken: 222 50% 6%;
-    --surface-overlay: 222 38% 15%;
-    --surface-inverse: 210 40% 98%;
+    --surface-canvas: 158 31% 8%;
+    --surface-elevated: 158 27% 11%;
+    --surface-sunken: 160 34% 6%;
+    --surface-overlay: 157 22% 15%;
+    --surface-inverse: 42 36% 95%;
 
-    --background: 222 47% 8%;
-    --foreground: 210 40% 98%;
-    --card: 222 42% 12%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 42% 12%;
-    --popover-foreground: 210 40% 98%;
+    --background: 158 31% 8%;
+    --foreground: 42 36% 95%;
+    --card: 158 27% 11%;
+    --card-foreground: 42 36% 95%;
+    --popover: 158 27% 11%;
+    --popover-foreground: 42 36% 95%;
 
-    --secondary: 222 35% 16%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 222 35% 16%;
-    --muted-foreground: 215 18% 72%;
-    --accent: 222 35% 18%;
-    --accent-foreground: 210 40% 98%;
-    --border: 217 25% 22%;
-    --input: 217 25% 22%;
+    --secondary: 157 21% 16%;
+    --secondary-foreground: 42 36% 95%;
+    --muted: 157 21% 16%;
+    --muted-foreground: 42 15% 74%;
+    --accent: 202 35% 17%;
+    --accent-foreground: 42 36% 95%;
+    --border: 155 17% 23%;
+    --input: 155 17% 23%;
+    --commerce: 151 38% 58%;
+    --commerce-soft: 155 27% 16%;
+    --commerce-border: 153 25% 31%;
+    --trust: 151 38% 58%;
+    --trust-soft: 155 27% 16%;
+    --trust-border: 153 25% 31%;
+    --ai: 199 65% 62%;
+    --ai-soft: 202 35% 17%;
+    --ai-border: 201 34% 34%;
+    --safety: 142 62% 52%;
+    --safety-soft: 142 34% 16%;
+    --safety-border: 142 32% 30%;
+    --safety-warning: 40 92% 60%;
+    --safety-warning-soft: 38 38% 17%;
+    --safety-warning-border: 38 38% 34%;
+    --safety-risk: 0 82% 68%;
+    --safety-risk-soft: 0 38% 17%;
+    --safety-risk-border: 0 38% 34%;
+    --premium-soft: 204 22% 18%;
+    --premium-border: 204 18% 35%;
   }
 
   * {
@@ -150,7 +173,7 @@
   }
 
   body {
-    @apply min-h-screen bg-brand-radial text-body text-foreground antialiased;
+    @apply min-h-screen bg-background text-body text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
     text-rendering: optimizeLegibility;
   }
@@ -160,10 +183,15 @@
   h3,
   h4 {
     @apply font-display text-foreground;
+    text-wrap: balance;
   }
 
   ::selection {
     @apply bg-trust-soft text-foreground;
+  }
+
+  main > :first-child {
+    animation: page-arrive 480ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 }
 
@@ -176,16 +204,21 @@
     @apply fixed left-4 top-3 z-[100] -translate-y-20 rounded-control bg-premium-dark px-4 py-3 text-sm font-bold text-white shadow-admin transition-transform focus:translate-y-0;
   }
 
-  .brand-gradient-text {
-    background: linear-gradient(105deg, hsl(var(--commerce)) 5%, hsl(var(--ai)) 90%);
-    background-clip: text;
-    color: transparent;
-    -webkit-background-clip: text;
+  .brand-accent-text {
+    color: hsl(var(--ai));
+  }
+
+  .bg-premium-dark {
+    background-color: hsl(var(--premium-graphite)) !important;
+    color: white;
+  }
+
+  .bg-premium-dark :is(h1, h2, h3, h4) {
+    color: white;
   }
 
   .hero-orb {
-    @apply pointer-events-none absolute rounded-full blur-3xl;
-    animation: hero-float 10s ease-in-out infinite alternate;
+    @apply hidden;
   }
 
   .hero-orb-primary {
@@ -209,12 +242,32 @@
     animation: result-enter var(--motion-slow) cubic-bezier(0.16, 1, 0.3, 1);
   }
 
+  .ai-launcher {
+    @apply brand-focus relative inline-flex min-h-touch shrink-0 items-center gap-2 overflow-hidden rounded-xl border border-ai-border bg-ai-soft px-3 text-sm font-black text-ai shadow-sm transition hover:border-ai/50 hover:bg-ai-soft/80;
+  }
+
+  .ai-launcher-glow {
+    @apply hidden;
+  }
+
+  .ai-assistant-layer {
+    @apply fixed inset-0 z-[90] flex items-end justify-end sm:p-4;
+  }
+
+  .ai-assistant-backdrop {
+    @apply absolute inset-0 bg-slate-950/45 backdrop-blur-sm;
+  }
+
+  .ai-assistant-panel {
+    @apply relative flex h-[min(46rem,calc(100dvh-1rem))] w-full flex-col overflow-hidden rounded-t-[2rem] border border-border bg-background shadow-admin sm:h-[min(46rem,calc(100dvh-2rem))] sm:max-w-md sm:rounded-[2rem];
+  }
+
   .brand-surface {
-    @apply border border-border/80 bg-surface-elevated/95 shadow-card backdrop-blur;
+    @apply border border-border bg-surface-elevated shadow-card;
   }
 
   .brand-panel {
-    @apply rounded-panel border border-border/80 bg-surface-elevated/95 shadow-panel backdrop-blur;
+    @apply rounded-panel border border-border bg-surface-elevated shadow-panel;
   }
 
   .brand-admin-panel {
@@ -262,67 +315,102 @@
   }
 
   .ui-button {
-    @apply brand-focus inline-flex min-h-touch items-center justify-center gap-2 whitespace-nowrap rounded-control px-5 py-2 text-sm font-extrabold tracking-[-0.01em] transition-all duration-200 active:translate-y-0 disabled:pointer-events-none disabled:opacity-50 data-[loading=true]:cursor-wait;
+    @apply brand-focus relative isolate inline-flex min-h-touch min-w-0 max-w-full items-center justify-center gap-2 overflow-hidden whitespace-normal rounded-control border border-transparent px-5 py-2 text-center text-sm font-extrabold leading-tight tracking-[-0.015em] disabled:pointer-events-none disabled:opacity-45 data-[loading=true]:cursor-wait;
+    box-shadow: var(--shadow-xs);
+    transition:
+      transform var(--motion-base) cubic-bezier(0.2, 0.8, 0.2, 1),
+      background-color var(--motion-base) ease,
+      border-color var(--motion-base) ease,
+      color var(--motion-base) ease,
+      box-shadow var(--motion-base) ease;
+  }
+
+  .ui-button:not(:disabled):hover {
+    transform: translateY(-2px);
+  }
+
+  .ui-button:not(:disabled):active {
+    transform: translateY(1px) scale(0.985);
+    box-shadow: var(--shadow-xs);
+    transition-duration: var(--motion-fast);
+  }
+
+  .ui-button svg:not(.animate-spin) {
+    @apply shrink-0;
+    transition: transform var(--motion-base) cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .ui-button:not(:disabled):hover svg:not(.animate-spin) {
+    transform: translateX(2px);
   }
 
   .ui-button-primary {
-    @apply bg-commerce-gradient text-commerce-foreground shadow-commerce hover:-translate-y-0.5 hover:shadow-card-hover;
+    @apply border-commerce bg-commerce text-commerce-foreground shadow-commerce hover:bg-commerce-dark hover:shadow-card-hover;
   }
 
   .ui-button-secondary {
-    @apply border border-border bg-surface-elevated text-foreground shadow-control hover:-translate-y-0.5 hover:border-commerce-border hover:bg-commerce-soft/60;
+    @apply border-border bg-secondary text-secondary-foreground shadow-control hover:border-commerce-border hover:bg-commerce-soft;
   }
 
   .ui-button-outline {
-    @apply border border-border bg-surface-elevated/80 text-foreground shadow-input backdrop-blur hover:-translate-y-0.5 hover:border-primary/40 hover:bg-trust-soft;
+    @apply border-border bg-card text-foreground shadow-input hover:border-primary hover:bg-commerce-soft hover:shadow-control;
   }
 
   .ui-button-ghost {
-    @apply text-muted-foreground hover:bg-secondary hover:text-foreground;
+    @apply border-transparent bg-transparent text-muted-foreground shadow-none hover:bg-secondary hover:text-foreground;
   }
 
   .ui-button-destructive {
-    @apply bg-destructive text-destructive-foreground shadow-danger hover:-translate-y-0.5 hover:bg-destructive/90;
+    @apply border-destructive bg-destructive text-destructive-foreground shadow-danger hover:bg-destructive/90 hover:shadow-card-hover;
   }
 
   .ui-button-premium {
-    @apply bg-premium text-premium-foreground shadow-md hover:-translate-y-0.5 hover:bg-premium/90;
+    @apply border-premium bg-premium text-premium-foreground shadow-md hover:bg-premium/85 hover:shadow-card-hover;
   }
 
   .ui-button-ai {
-    @apply bg-ai-gradient text-ai-foreground shadow-ai hover:-translate-y-0.5;
+    @apply border-ai bg-ai text-ai-foreground shadow-ai hover:bg-ai/90 hover:shadow-card-hover;
   }
 
   .ui-button-trust {
-    @apply bg-trust text-trust-foreground shadow-trust hover:-translate-y-0.5 hover:bg-trust/90;
+    @apply border-trust bg-trust text-trust-foreground shadow-trust hover:bg-commerce-dark hover:shadow-card-hover;
   }
 
   .ui-button-surface {
-    @apply border border-border bg-white/80 text-foreground shadow-control backdrop-blur hover:-translate-y-0.5 hover:shadow-md;
+    @apply border-border bg-card text-foreground shadow-control hover:border-brand-steel hover:bg-secondary hover:shadow-md;
   }
 
   .ui-button-sm {
-    @apply min-h-9 rounded-lg px-3 text-xs;
+    @apply min-h-9 rounded-lg px-3.5 text-xs;
   }
 
   .ui-button-lg {
-    @apply min-h-12 rounded-2xl px-8 text-base;
+    @apply min-h-12 rounded-xl px-7 text-base;
   }
 
   .ui-button-xl {
-    @apply min-h-14 rounded-2xl px-10 text-base;
+    @apply min-h-14 rounded-xl px-9 text-base;
   }
 
   .ui-button-icon {
-    @apply h-10 min-h-10 w-10 px-0;
+    @apply h-11 min-h-11 w-11 rounded-xl px-0;
+  }
+
+  .ui-button-icon:not(:disabled):hover svg {
+    transform: scale(1.08);
   }
 
   .card-base {
-    @apply rounded-card border border-border/80 bg-card/95 text-card-foreground shadow-card backdrop-blur transition-all duration-200;
+    @apply min-w-0 max-w-full rounded-card border border-border/80 bg-card text-card-foreground shadow-card transition-all duration-200;
+    box-shadow: var(--shadow-card), inset 0 1px 0 hsl(0 0% 100% / 0.72);
   }
 
   .card-interactive {
-    @apply hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-card-hover focus-within:border-primary/40 focus-within:shadow-card-hover;
+    @apply hover:-translate-y-1 hover:border-primary hover:shadow-card-hover focus-within:border-primary focus-within:shadow-card-hover;
+    transition:
+      transform var(--motion-slow) cubic-bezier(0.2, 0.8, 0.2, 1),
+      border-color var(--motion-base) ease,
+      box-shadow var(--motion-slow) ease;
   }
 
   .card-muted {
@@ -346,7 +434,7 @@
   }
 
   .card-header {
-    @apply space-y-2 p-5 sm:p-6;
+    @apply min-w-0 space-y-2 p-5 sm:p-6;
   }
 
   .card-title {
@@ -358,7 +446,7 @@
   }
 
   .card-content {
-    @apply p-5 pt-0 sm:p-6 sm:pt-0;
+    @apply min-w-0 p-5 pt-0 sm:p-6 sm:pt-0;
   }
 
   .table-shell {
@@ -411,7 +499,7 @@
   }
 
   .form-control {
-    @apply brand-focus flex min-h-touch w-full rounded-control border border-input bg-card/90 px-3.5 py-2 text-sm shadow-input outline-none transition placeholder:text-muted-foreground hover:border-primary/40 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50;
+    @apply brand-focus flex min-h-touch w-full rounded-control border border-input bg-card px-3.5 py-2 text-sm shadow-input outline-none transition placeholder:text-muted-foreground hover:border-primary focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .form-control-lg {
@@ -427,7 +515,7 @@
   }
 
   .form-section {
-    @apply rounded-panel border border-border/80 bg-card/85 p-4 shadow-card sm:p-6;
+    @apply rounded-panel border border-border bg-card p-4 shadow-card sm:p-6;
   }
 
   .search-control {
@@ -440,6 +528,7 @@
 
   .dashboard-hero {
     @apply overflow-hidden rounded-shell border border-white/10 bg-premium-dark p-4 text-white shadow-admin sm:p-6;
+    position: relative;
   }
 
   .dashboard-grid {
@@ -455,7 +544,7 @@
   }
 
   .dashboard-list-item {
-    @apply flex flex-col gap-3 rounded-card border border-border/80 bg-card/70 p-4 shadow-xs transition hover:border-primary/30 hover:bg-white sm:flex-row sm:items-center sm:justify-between;
+    @apply flex flex-col gap-3 rounded-card border border-border bg-card p-4 shadow-xs transition hover:border-primary hover:bg-commerce-soft sm:flex-row sm:items-center sm:justify-between;
   }
 
   .status-badge {
@@ -479,11 +568,11 @@
   }
 
   .status-warning {
-    @apply border-amber-200 bg-safety-warning-soft text-amber-800;
+    @apply border-safety-warning-border bg-safety-warning-soft text-safety-warning;
   }
 
   .status-risk {
-    @apply border-red-200 bg-red-50 text-red-700;
+    @apply border-safety-risk-border bg-safety-risk-soft text-safety-risk;
   }
 
   .status-premium {
@@ -496,6 +585,24 @@
 
   .app-container-wide {
     @apply mx-auto box-border w-full max-w-[90rem] px-4 sm:px-6 lg:px-8;
+  }
+
+  :where(.app-container, .app-container-wide, .card-base, .brand-panel, main) :where(.grid, .flex) > * {
+    min-width: 0;
+  }
+
+  :where(.app-container, .app-container-wide, .card-base, .brand-panel) :where(form, fieldset, label, input, select, textarea) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  :where(.app-container, .app-container-wide, .card-base, .brand-panel) :where(img, video, canvas) {
+    max-width: 100%;
+    height: auto;
+  }
+
+  :where(.app-container, .app-container-wide, .card-base, .brand-panel) :where(h1, h2, h3, h4, p, a, button) {
+    overflow-wrap: anywhere;
   }
 
   .section-y {
@@ -522,6 +629,10 @@
 
   .action-stack {
     @apply grid gap-2 sm:flex sm:flex-wrap sm:items-center;
+  }
+
+  .action-stack > * {
+    @apply w-full sm:w-auto;
   }
 
   .action-grid {
@@ -668,5 +779,10 @@
 
 @keyframes result-enter {
   from { opacity: 0; transform: translateY(0.5rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes page-arrive {
+  from { opacity: 0; transform: translateY(0.75rem); }
   to { opacity: 1; transform: translateY(0); }
 }

@@ -31,7 +31,7 @@ export default async function AiListingCreatorPage() {
   const categories = await getCategoryOptions();
 
   return (
-    <div className="bg-gradient-to-b from-primary/5 via-background to-background">
+    <div className="bg-background">
       <section className="mx-auto max-w-7xl px-4 pt-10">
         <div className="rounded-3xl border border-primary/20 bg-card p-6 shadow-soft">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">

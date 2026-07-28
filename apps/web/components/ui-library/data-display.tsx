@@ -170,7 +170,7 @@ export type EmptyStateProps = React.HTMLAttributes<HTMLDivElement> & {
 
 export function EmptyState({ title, description, icon, action, tone = "default", className, ...props }: EmptyStateProps) {
   return (
-    <div className={cn("flex flex-col items-center justify-center rounded-panel border border-dashed border-border bg-card/70 px-6 py-12 text-center", className)} {...props}>
+    <div className={cn("flex flex-col items-center justify-center rounded-panel border border-dashed border-border bg-card px-6 py-12 text-center", className)} {...props}>
       <div className={cn("mb-4 brand-icon brand-icon-lg", tone === "commerce" && "brand-icon-commerce", tone === "ai" && "brand-icon-ai", tone === "trust" && "brand-icon-trust", tone === "warning" && "border-amber-200 bg-safety-warning-soft text-amber-800")}>
         {icon ?? <PackageOpen className="h-7 w-7" aria-hidden="true" />}
       </div>
@@ -200,7 +200,7 @@ export function LoadingState({ label = "Loading", variant = "spinner", rows = 3,
 
   if (variant === "page") {
     return (
-      <div className={cn("flex min-h-[22rem] flex-col items-center justify-center gap-4 rounded-panel border border-border bg-card/70 p-8 text-center", className)} role="status" aria-live="polite" {...props}>
+    <div className={cn("flex min-h-[22rem] flex-col items-center justify-center gap-4 rounded-panel border border-border bg-card p-8 text-center", className)} role="status" aria-live="polite" {...props}>
         <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden="true" />
         <div>
           <p className="font-black">{label}</p>

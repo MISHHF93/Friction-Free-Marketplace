@@ -40,7 +40,7 @@ function scoreSeverity(score: number) {
 function statusClass(score: number) {
   if (score >= 90) return "border-red-200 bg-red-50 text-red-700";
   if (score >= 70) return "border-amber-200 bg-amber-50 text-amber-800";
-  return "border-blue-200 bg-blue-50 text-blue-700";
+  return "border-ai-border bg-ai-soft text-ai";
 }
 
 export default async function Page() {

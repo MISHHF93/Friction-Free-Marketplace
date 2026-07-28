@@ -5,7 +5,7 @@ import { DashboardMobileNavigation, DashboardSidebar } from "@/components/dashbo
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getAdminLinksForRole } from "@/lib/admin/navigation";
-import { permissionLabels, requireAdminPagePermission, rolePermissions } from "@/lib/admin/permissions";
+import { can, permissionLabels, requireAdminPagePermission, rolePermissions } from "@/lib/admin/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +14,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const navigationLinks = getAdminLinksForRole(auth.role);
   const roleLabel = auth.role.replace("_", " ");
   const visiblePermissionLabels = rolePermissions[auth.role].slice(0, 4).map((permission) => permissionLabels[permission]);
+  const quickLinks = [
+    { href: "/admin/review-queue", label: "Review queue", icon: AlertTriangle, permission: "fraud.review" as const, variant: "trust" as const },
+    { href: "/admin/reports", label: "Reports", icon: FileSearch, permission: "reports.review" as const, variant: "surface" as const },
+    { href: "/admin/audit-logs", label: "Audit", icon: Activity, permission: "audit.read" as const, variant: "surface" as const }
+  ].filter((link) => can(auth.role, link.permission));
 
   return (
     <section className="app-container-wide grid gap-5 py-6 sm:gap-6 sm:py-8 lg:grid-cols-[minmax(16rem,18rem)_minmax(0,1fr)]" aria-label="Admin dashboard">
@@ -49,9 +54,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             </div>
             <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center xl:flex xl:justify-end">
               <div className="grid gap-2 sm:flex sm:flex-wrap xl:justify-end">
-                <Button asChild variant="trust" size="sm"><Link href="/admin/review-queue"><AlertTriangle className="h-4 w-4" /> Review queue</Link></Button>
-                <Button asChild variant="surface" size="sm"><Link href="/admin/reports"><FileSearch className="h-4 w-4" /> Reports</Link></Button>
-                <Button asChild variant="surface" size="sm"><Link href="/admin/audit-logs"><Activity className="h-4 w-4" /> Audit</Link></Button>
+                {quickLinks.map((link) => {
+                  const Icon = link.icon;
+                  return <Button asChild variant={link.variant} size="sm" key={link.href}><Link href={link.href}><Icon className="h-4 w-4" /> {link.label}</Link></Button>;
+                })}
               </div>
               <div className="flex min-w-0 items-center gap-3 rounded-2xl bg-white/10 p-3">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-emerald-300">

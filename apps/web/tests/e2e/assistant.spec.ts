@@ -1,6 +1,18 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("marketplace assistant experience", () => {
+  test("opens from the header, traps interaction, and restores focus", async ({ page }) => {
+    await page.goto("/");
+    const launcher = page.getByRole("button", { name: "Open marketplace AI assistant" });
+    await launcher.click();
+
+    await expect(page.getByRole("dialog", { name: "Marketplace copilot" })).toBeVisible();
+    await expect(page.getByLabel("Ask the marketplace assistant")).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog", { name: "Marketplace copilot" })).toBeHidden();
+    await expect(launcher).toBeFocused();
+  });
+
   test("renders every scoped assistant and an accessible request composer", async ({ page }) => {
     await page.goto("/assistant");
 

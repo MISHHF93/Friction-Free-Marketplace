@@ -225,8 +225,8 @@ export function ListingCard({ listing, ctaLabel = "View details", className, ...
 
   return (
     <article className={className} {...props}>
-      <Card className="group h-full overflow-hidden rounded-3xl border-border/80 bg-white/95 shadow-md transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-soft">
-        <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-trust-soft via-ai-soft to-premium-soft sm:aspect-[5/4] lg:aspect-[4/3]">
+    <Card className="group h-full overflow-hidden rounded-card border-border bg-card shadow-md transition hover:-translate-y-1 hover:border-primary hover:shadow-soft">
+      <div className="relative aspect-[4/3] overflow-hidden bg-secondary sm:aspect-[5/4] lg:aspect-[4/3]">
           <Link href={href} className="block h-full" aria-label={`${ctaLabel} for ${listing.title}`}>
             {listing.imageUrl ? (
               <RemoteImage
@@ -241,10 +241,10 @@ export function ListingCard({ listing, ctaLabel = "View details", className, ...
             )}
           </Link>
           <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-3">
-            {listing.category ? <Badge variant="premium" className="bg-card/90 shadow-sm backdrop-blur">{listing.category}</Badge> : <span />}
+          {listing.category ? <Badge variant="premium" className="bg-card shadow-sm">{listing.category}</Badge> : <span />}
             <button
               type="button"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/90 text-slate-700 shadow-md backdrop-blur transition hover:-translate-y-0.5 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-md transition hover:-translate-y-0.5 hover:text-safety-risk focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label={`Save ${listing.title} to favorites`}
             >
               <Heart className="h-4 w-4" aria-hidden="true" />
@@ -252,12 +252,12 @@ export function ListingCard({ listing, ctaLabel = "View details", className, ...
           </div>
           <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-2">
             {listing.isVerified ? (
-              <span className="inline-flex items-center gap-1 rounded-full border border-trust-border bg-white/95 px-2.5 py-1 text-xs font-bold text-trust shadow-sm backdrop-blur">
+          <span className="inline-flex items-center gap-1 rounded-full border border-trust-border bg-card px-2.5 py-1 text-xs font-bold text-trust shadow-sm">
                 <CreditCard className="h-3.5 w-3.5" aria-hidden="true" />
                 Verified payment
               </span>
             ) : null}
-            <span className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm backdrop-blur">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-bold text-foreground shadow-sm">
               <Eye className="h-3.5 w-3.5" aria-hidden="true" />
               Quick view
             </span>
@@ -515,7 +515,7 @@ export type EmptyStateProps = React.HTMLAttributes<HTMLDivElement> & {
 
 export function EmptyState({ title, description, icon, action, className, ...props }: EmptyStateProps) {
   return (
-    <div className={cn("flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/70 px-6 py-12 text-center", className)} {...props}>
+    <div className={cn("flex flex-col items-center justify-center rounded-panel border border-dashed border-border bg-card px-6 py-12 text-center", className)} {...props}>
       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-muted-foreground">
         {icon ?? <PackageOpen className="h-7 w-7" aria-hidden="true" />}
       </div>
@@ -553,7 +553,7 @@ export function ErrorMessage({ title = "We could not load this section", message
         <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
         <div className="min-w-0 space-y-1">
           <h2 className="font-semibold">{title}</h2>
-          <p className="text-sm leading-6 text-destructive/90">{message}</p>
+      <p className="text-sm leading-6 text-destructive">{message}</p>
           {action ? <div className="pt-2">{action}</div> : null}
         </div>
       </div>
@@ -708,7 +708,7 @@ export function MessageBubble({ body, senderName, timestamp, isOwn = false, avat
       {!isOwn ? <UserAvatar name={senderName} imageUrl={avatarUrl} size="sm" /> : null}
       <div className={cn("max-w-[85%] rounded-3xl px-4 py-3 sm:max-w-[70%]", isOwn ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-card text-card-foreground shadow-sm")}>
         <p className="text-sm leading-6">{body}</p>
-        <div className={cn("mt-2 flex items-center gap-1 text-xs", isOwn ? "text-primary-foreground/75" : "text-muted-foreground")}>
+      <div className={cn("mt-2 flex items-center gap-1 text-xs", isOwn ? "text-primary-foreground" : "text-muted-foreground")}>
           <MessageCircle className="h-3 w-3" aria-hidden="true" />
           <span>{senderName}</span>
           {timestamp ? <span>· {timestamp}</span> : null}

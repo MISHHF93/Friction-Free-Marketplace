@@ -105,6 +105,13 @@ export default function ContactPage() {
                   For buyer or seller issues, the best support context usually lives inside the related message, offer, listing, or payment record.
                 </CardDescription>
               </CardHeader>
+              <CardContent>
+                <Button asChild variant="outline">
+                  <Link href="/dashboard/messages">
+                    Open your messages <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                </Button>
+              </CardContent>
             </Card>
           </div>
         </div>

@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 
 const iconByHref: Record<string, LucideIcon> = {
   "/dashboard": Home,
+  "/dashboard/buyer": ShoppingBag,
+  "/dashboard/seller": Store,
   "/dashboard/listings": Tags,
   "/dashboard/ai-listing-creator": Sparkles,
   "/dashboard/favorites": Heart,
@@ -63,7 +65,7 @@ export function DashboardSidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="hidden rounded-3xl border border-border/80 bg-card/95 p-4 shadow-md backdrop-blur lg:sticky lg:top-24 lg:block lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+    <aside className="hidden rounded-panel border border-border bg-card p-4 shadow-md lg:sticky lg:top-24 lg:block lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
       <div className="mb-4 rounded-2xl bg-premium-dark p-4 text-white shadow-admin">
         <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-300">{eyebrow}</p>
         <h2 className="mt-2 text-xl font-black tracking-tight">{title}</h2>
@@ -87,13 +89,13 @@ export function DashboardSidebar({
               aria-current={active ? "page" : undefined}
               className={cn(
                 "group flex items-start gap-3 rounded-2xl px-3 py-2.5 text-sm transition-all hover:-translate-y-0.5 hover:bg-secondary hover:text-foreground",
-                active ? "bg-gradient-to-r from-trust to-ai text-white shadow-trust hover:text-white" : "text-muted-foreground"
+                active ? "bg-trust text-trust-foreground shadow-trust hover:text-trust-foreground" : "text-muted-foreground"
               )}
             >
               <Icon className="mt-0.5 h-4 w-4 shrink-0" />
               <span>
                 <span className="block font-semibold">{link.label}</span>
-                {link.description ? <span className={cn("block text-xs leading-5", active ? "text-primary-foreground/75" : "text-muted-foreground")}>{link.description}</span> : null}
+                {link.description ? <span className={cn("block text-xs leading-5", active ? "text-trust-foreground" : "text-muted-foreground")}>{link.description}</span> : null}
               </span>
             </Link>
           );
@@ -109,7 +111,7 @@ export function DashboardMobileNavigation({ links, showQuickLinks = true }: { li
   const activeHref = links.find((link) => isActivePath(pathname, link.href))?.href ?? links[0]?.href ?? "/dashboard";
 
   return (
-    <div className="rounded-3xl border border-border/80 bg-card/95 p-3 shadow-md backdrop-blur lg:hidden">
+      <div className="rounded-panel border border-border bg-card p-3 shadow-md lg:hidden">
       <label className="text-xs font-black uppercase tracking-[0.2em] text-primary" htmlFor="dashboard-mobile-nav">
         Dashboard section
       </label>
@@ -136,7 +138,7 @@ export function DashboardMobileNavigation({ links, showQuickLinks = true }: { li
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold transition-colors",
-                active ? "bg-gradient-to-r from-trust to-ai text-white shadow-trust" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                active ? "bg-trust text-trust-foreground shadow-trust" : "bg-secondary text-secondary-foreground hover:bg-secondary"
               )}
             >
               <Icon className="h-3.5 w-3.5 shrink-0" />
@@ -158,7 +160,7 @@ export function DashboardMobileBottomNav({ links }: { links: DashboardLink[] }) 
     .filter((link): link is DashboardLink => Boolean(link));
 
   return (
-    <nav className="fixed inset-x-2 bottom-2 z-40 rounded-3xl border border-border/80 bg-card/95 p-2 shadow-soft backdrop-blur sm:inset-x-3 sm:bottom-3 lg:hidden" aria-label="Dashboard bottom navigation">
+    <nav className="fixed inset-x-2 bottom-2 z-40 rounded-panel border border-border bg-card p-2 shadow-soft sm:inset-x-3 sm:bottom-3 lg:hidden" aria-label="Dashboard bottom navigation">
       <div className="grid grid-cols-5 gap-1">
         {primaryLinks.map((link) => {
           const Icon = iconByHref[link.href] ?? ChevronRight;
@@ -170,7 +172,7 @@ export function DashboardMobileBottomNav({ links }: { links: DashboardLink[] }) 
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-bold transition",
-                active ? "bg-gradient-to-r from-trust to-ai text-white shadow-trust" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                active ? "bg-trust text-trust-foreground shadow-trust" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
               )}
             >
               <Icon className="h-4 w-4" aria-hidden="true" />

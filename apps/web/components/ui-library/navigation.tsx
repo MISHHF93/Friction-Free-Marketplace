@@ -149,14 +149,14 @@ export function Sidebar({ title, description, eyebrow = "Workspace", items, foot
               aria-disabled={item.disabled || undefined}
               className={cn(
                 "group flex items-start gap-3 rounded-2xl px-3 py-2.5 text-sm transition-all hover:-translate-y-0.5 hover:bg-secondary hover:text-foreground",
-                current ? "bg-commerce-gradient text-white shadow-commerce hover:text-white" : "text-muted-foreground",
+            current ? "bg-commerce text-commerce-foreground shadow-commerce hover:text-commerce-foreground" : "text-muted-foreground",
                 item.disabled && "pointer-events-none opacity-50",
               )}
             >
               {Icon ? <Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" /> : null}
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">{item.label}</span>
-                {item.description ? <span className={cn("block text-xs leading-5", current ? "text-white/75" : "text-muted-foreground")}>{item.description}</span> : null}
+              {item.description ? <span className={cn("block text-xs leading-5", current ? "text-commerce-foreground" : "text-muted-foreground")}>{item.description}</span> : null}
               </span>
               {item.badge ? <span className="shrink-0">{item.badge}</span> : null}
             </Link>
@@ -291,7 +291,7 @@ export function SearchBar({
   return (
     <form
       role="search"
-      className={cn("grid w-full gap-2", className)}
+      className={cn("grid w-full min-w-0 gap-3 overflow-hidden rounded-card border border-border/80 bg-card p-2 shadow-input sm:p-3", className)}
       onSubmit={(event) => {
         if (!onSubmit) return;
         event.preventDefault();
@@ -303,7 +303,7 @@ export function SearchBar({
       <label htmlFor={inputId} className="sr-only">
         {label}
       </label>
-      <div className="relative flex min-w-0 items-center rounded-2xl border border-input bg-card/95 p-1.5 shadow-input transition focus-within:border-primary focus-within:ring-3 focus-within:ring-ring/30">
+      <div className="relative flex min-w-0 items-center rounded-2xl border border-input bg-secondary/40 p-1.5 transition focus-within:border-primary focus-within:bg-card focus-within:ring-3 focus-within:ring-ring/30">
         <Search className="pointer-events-none absolute left-4 h-4 w-4 text-muted-foreground" aria-hidden="true" />
         <Input
           id={inputId}
@@ -317,22 +317,23 @@ export function SearchBar({
           }}
         />
         {aiAssisted ? <Badge variant="ai" className="pointer-events-none hidden shrink-0 sm:inline-flex">AI</Badge> : null}
-        <Button type="submit" size="sm" className="ml-2 hidden shrink-0 sm:inline-flex">
-          {submitLabel}
+        <Button type="submit" size="sm" className="ml-1 shrink-0 px-3 sm:ml-2 sm:px-4">
+          <Search className="h-4 w-4 sm:hidden" aria-hidden="true" />
+          <span className="sr-only sm:not-sr-only">{submitLabel}</span>
         </Button>
       </div>
       {suggestions?.length ? (
-        <div className="scroll-rail" aria-label="Suggested searches">
+        <div className="grid min-w-0 grid-cols-1 gap-2 px-1 pb-1 sm:grid-cols-3" aria-label="Suggested searches">
           {suggestions.map((suggestion) =>
             suggestion.href ? (
-              <Link key={suggestion.label} href={suggestion.href} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "shrink-0 rounded-full")}>
+              <Link key={suggestion.label} href={suggestion.href} className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full min-w-0 max-w-full rounded-full")}>
                 {suggestion.label}
               </Link>
             ) : (
               <button
                 key={suggestion.label}
                 type="button"
-                className={cn(buttonVariants({ variant: "outline", size: "sm" }), "shrink-0 rounded-full")}
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }), "w-full min-w-0 max-w-full rounded-full")}
                 onClick={() => {
                   setInternalValue(suggestion.label);
                   onValueChange?.(suggestion.label);

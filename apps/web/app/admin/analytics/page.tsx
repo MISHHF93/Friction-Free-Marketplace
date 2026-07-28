@@ -1,9 +1,7 @@
-import { ExperiencePage } from "@/components/experience-page";
+import { redirect } from "next/navigation";
 import { requireAdminPagePermission } from "@/lib/admin/permissions";
-import { pageByKey } from "@/lib/page-data";
 
-export default async function Page() {
+export default async function LegacyAnalyticsRedirect() {
   await requireAdminPagePermission("analytics.search", { loginNext: "/admin/analytics", deniedPath: "/admin" });
-
-  return <ExperiencePage page={pageByKey["admin-analytics"]} related={[pageByKey["admin-overview"], pageByKey["admin-transactions"], pageByKey["admin-fraud-alerts"]]} />;
+  redirect("/admin/search-analytics");
 }

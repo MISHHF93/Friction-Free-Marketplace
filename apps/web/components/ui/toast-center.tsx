@@ -54,11 +54,11 @@ function ToastCenterInner() {
           tone === "success" && "border-trust-border",
           tone === "error" && "border-destructive/30",
           tone === "info" && "border-ai-border",
-          tone === "warning" && "border-amber-200"
+          tone === "warning" && "border-safety-warning-border"
         )}
       >
         <div className="flex gap-3">
-          <Icon className={cn("mt-0.5 h-5 w-5 shrink-0", tone === "success" && "text-trust", tone === "error" && "text-destructive", tone === "info" && "text-ai", tone === "warning" && "text-amber-700")} aria-hidden="true" />
+          <Icon className={cn("mt-0.5 h-5 w-5 shrink-0", tone === "success" && "text-trust", tone === "error" && "text-safety-risk", tone === "info" && "text-ai", tone === "warning" && "text-safety-warning")} aria-hidden="true" />
           <div className="min-w-0 flex-1">
             {toast.title ? <p className="font-black">{toast.title}</p> : null}
             <p className="text-sm leading-6 text-muted-foreground">{toast.message}</p>

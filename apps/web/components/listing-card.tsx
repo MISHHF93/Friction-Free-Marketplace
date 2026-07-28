@@ -9,7 +9,7 @@ import { listings } from "@/lib/marketplace-data";
 export function ListingCard({ listing }: { listing: (typeof listings)[number] }) {
   return (
     <Card className="overflow-hidden">
-      <div className={`h-44 bg-gradient-to-br ${listing.image}`} />
+      <div className="h-44 bg-secondary" />
       <CardContent className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">
           <div>

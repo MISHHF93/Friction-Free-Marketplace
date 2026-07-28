@@ -130,7 +130,7 @@ export function ListingCard({ listing, ctaLabel = "View details", favoriteAction
   return (
     <article className={cn("h-full", className)} {...props}>
       <Card className="card-interactive group h-full overflow-hidden">
-        <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-trust-soft via-ai-soft to-premium-soft sm:aspect-[5/4] lg:aspect-[4/3]">
+      <div className="relative aspect-[4/3] overflow-hidden bg-secondary sm:aspect-[5/4] lg:aspect-[4/3]">
           <Link href={href} className="block h-full" aria-label={`${ctaLabel} for ${listing.title}`}>
             {listing.imageUrl ? (
               <RemoteImage src={listing.imageUrl} alt={listing.imageAlt ?? listing.title} className="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
@@ -142,11 +142,11 @@ export function ListingCard({ listing, ctaLabel = "View details", favoriteAction
           </Link>
 
           <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-3">
-            {listing.category ? <Badge variant="premium" className="bg-card/90 shadow-sm backdrop-blur">{listing.category}</Badge> : <span />}
+        {listing.category ? <Badge variant="premium" className="bg-card shadow-sm">{listing.category}</Badge> : <span />}
             {favoriteAction ?? (
               <button
                 type="button"
-                className="brand-focus inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/90 text-slate-700 shadow-md backdrop-blur transition hover:-translate-y-0.5 hover:text-rose-600"
+          className="brand-focus inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-md transition hover:-translate-y-0.5 hover:text-safety-risk"
                 aria-label={`${listing.isFavorite ? "Remove" : "Save"} ${listing.title}`}
                 aria-pressed={listing.isFavorite}
               >
@@ -156,8 +156,8 @@ export function ListingCard({ listing, ctaLabel = "View details", favoriteAction
           </div>
 
           <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-2">
-            {listing.isVerified ? <TrustBadge label="Verified payment" icon={<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />} className="bg-white/95 backdrop-blur" /> : null}
-            <span className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/90 px-2.5 py-1 text-xs font-bold text-slate-700 shadow-sm backdrop-blur">
+        {listing.isVerified ? <TrustBadge label="Verified payment" icon={<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />} className="bg-card" /> : null}
+        <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-bold text-foreground shadow-sm">
               <Eye className="h-3.5 w-3.5" aria-hidden="true" />
               Quick view
             </span>
@@ -388,7 +388,7 @@ function MessageBubble({ message }: { message: MessageThreadMessage }) {
       {!message.isOwn ? <SellerAvatar name={message.senderName} imageUrl={message.avatarUrl} /> : null}
       <div className={cn("max-w-[85%] rounded-3xl px-4 py-3 sm:max-w-[70%]", message.isOwn ? "rounded-br-md bg-primary text-primary-foreground" : "rounded-bl-md bg-card text-card-foreground shadow-sm")}>
         <p className="text-sm leading-6">{message.body}</p>
-        <div className={cn("mt-2 flex flex-wrap items-center gap-1 text-xs", message.isOwn ? "text-primary-foreground/75" : "text-muted-foreground")}>
+        <div className={cn("mt-2 flex flex-wrap items-center gap-1 text-xs", message.isOwn ? "text-primary-foreground" : "text-muted-foreground")}>
           <MessageCircle className="h-3 w-3" aria-hidden="true" />
           <span>{message.senderName}</span>
           {message.timestamp ? <span>· {message.timestamp}</span> : null}

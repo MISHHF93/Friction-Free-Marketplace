@@ -60,6 +60,9 @@ export async function POST(request: Request) {
       executedTools: result.executedTools.map((tool) => ({ tool: tool.tool, ok: tool.ok })),
       fallback: result.fallback,
       model: result.model
+      ,
+      contractVersion: result.contractVersion,
+      promptVersion: result.promptVersion,
     };
 
     await completeAgentTask({ taskId, output: outputSummary });

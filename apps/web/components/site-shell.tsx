@@ -7,6 +7,7 @@ import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ToastCenter } from "@/components/ui/toast-center";
+import { GlobalAssistant } from "@/components/ai/global-assistant";
 import { DEV_AUTH_BYPASS_COOKIE, isDevAuthBypassCookieValue } from "@/lib/auth/dev-bypass";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -100,7 +101,7 @@ async function AuthNav() {
       </Link>
       <NotificationBell />
       <details className="group relative">
-        <summary className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card/90 px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label="Open user menu">
+        <summary className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label="Open user menu">
           <UserRound className="h-4 w-4" />
           <span className="hidden max-w-28 truncate sm:inline">{user?.email ?? "Dev bypass"}</span>
           <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
@@ -129,7 +130,7 @@ function HeaderSearch() {
         id="global-marketplace-search"
         name="q"
         placeholder="Search listings, budget, condition, or pickup area..."
-        className="h-11 w-full rounded-2xl border border-input bg-card/95 px-10 text-sm font-medium shadow-sm outline-none transition placeholder:text-muted-foreground hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-ring/30"
+        className="h-11 w-full rounded-xl border border-input bg-card px-10 text-sm font-medium shadow-sm outline-none transition placeholder:text-muted-foreground hover:border-primary focus:border-primary focus:ring-2 focus:ring-ring/30"
       />
       <Badge variant="ai" className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 sm:inline-flex">AI</Badge>
     </form>
@@ -139,7 +140,7 @@ function HeaderSearch() {
 function LocationSelector() {
   return (
     <details className="group relative">
-      <summary className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card/90 px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label="Choose marketplace location">
+      <summary className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label="Choose marketplace location">
         <MapPin className="h-4 w-4 text-primary" />
         <span className="hidden sm:inline">Nearby</span>
         <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
@@ -204,16 +205,16 @@ export function SiteShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen">
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <ToastCenter />
-      <header className="sticky top-0 z-50 border-b border-border/70 bg-background/90 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 border-b border-border bg-background shadow-xs">
         <div className="app-container flex flex-col gap-3 py-3">
           <div className="flex items-center justify-between gap-3">
             <Link href="/" className="flex min-w-0 items-center gap-2 font-black tracking-tight" aria-label="Friction-Free home">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-premium-dark text-emerald-300 shadow-soft sm:h-11 sm:w-11">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-premium-dark text-white shadow-soft sm:h-11 sm:w-11">
                 <Store className="h-5 w-5" />
               </span>
               <span className="hidden leading-tight sm:block">
-                <span className="block text-base">Friction-Free</span>
-                <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-primary">Trusted local deals</span>
+                <span className="block font-display text-lg leading-none">Friction-Free</span>
+                <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-primary">The trusted marketplace</span>
               </span>
             </Link>
             <div className="hidden items-center gap-2 xl:flex">
@@ -223,7 +224,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <div className="hidden min-w-0 flex-1 md:block xl:max-w-xl">
               <HeaderSearch />
             </div>
-            <nav className="hidden items-center gap-5 text-sm font-semibold text-muted-foreground xl:flex" aria-label="Primary navigation">
+            <nav className="hidden items-center gap-5 text-sm font-semibold text-muted-foreground 2xl:flex" aria-label="Primary navigation">
               {navLinks.map((link) => (
                 <Link key={link.href} className="whitespace-nowrap hover:text-foreground" href={link.href}>
                   {link.label}
@@ -231,6 +232,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
               ))}
             </nav>
             <div className="flex items-center gap-1.5 sm:gap-2">
+              <GlobalAssistant />
               <Button asChild className="hidden shadow-trust sm:inline-flex" variant="trust">
                 <Link href="/login?next=/dashboard/listings/create">Sell</Link>
               </Button>

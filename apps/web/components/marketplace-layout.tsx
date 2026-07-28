@@ -56,8 +56,8 @@ const trustBadgeTones = {
 
 export function TrustBadge({ icon: Icon, label, description, tone = "emerald", className }: TrustBadgeProps) {
   return (
-    <div className={cn("inline-flex min-w-0 items-center gap-3 rounded-2xl border px-3 py-2.5 shadow-sm backdrop-blur sm:px-4 sm:py-3", trustBadgeTones[tone], className)}>
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/70 sm:h-9 sm:w-9">
+    <div className={cn("inline-flex min-w-0 items-center gap-3 rounded-card border px-3 py-2.5 shadow-sm sm:px-4 sm:py-3", trustBadgeTones[tone], className)}>
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-card sm:h-9 sm:w-9">
         <Icon className="h-4 w-4" aria-hidden="true" />
       </span>
       <span className="min-w-0">
@@ -77,15 +77,15 @@ export type CategoryCardProps = {
   accent?: string;
 };
 
-export function CategoryCard({ title, description, href, icon: Icon, count, accent = "from-emerald-50 to-white" }: CategoryCardProps) {
+export function CategoryCard({ title, description, href, icon: Icon, count }: CategoryCardProps) {
   return (
     <Link href={href} className="group block h-full rounded-3xl border border-border/80 bg-card p-1 shadow-sm transition hover:-translate-y-1 hover:border-primary/40 hover:shadow-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-      <div className={cn("flex h-full flex-col rounded-[1.35rem] bg-gradient-to-br p-4 sm:p-5", accent)}>
+      <div className="flex h-full flex-col rounded-[1.35rem] bg-commerce-soft p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-primary shadow-md">
             <Icon className="h-5 w-5" aria-hidden="true" />
           </span>
-          {typeof count === "number" ? <Badge variant="trust" className="bg-white/90">{count.toLocaleString()} live</Badge> : null}
+          {typeof count === "number" ? <Badge variant="trust" className="bg-card">{count.toLocaleString()} live</Badge> : null}
         </div>
         <h3 className="mt-5 text-lg font-black tracking-tight">{title}</h3>
         <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">{description}</p>

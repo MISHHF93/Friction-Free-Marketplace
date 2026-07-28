@@ -172,6 +172,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
 
 function SearchHeader({ mode, params, resultsTotal, source, priceStats }: { mode: "browse" | "search"; params: DiscoverySearchParams; resultsTotal: number; source: string; priceStats?: { min: number; max: number } }) {
   const modeHref = mode === "search" ? "/search" : "/browse";
+  const sourceLabel = source === "meilisearch" ? "Live marketplace index" : source === "database" ? "Marketplace inventory" : "Curated local preview";
 
   return (
     <div className="overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-soft sm:rounded-[2rem]">
@@ -179,11 +180,11 @@ function SearchHeader({ mode, params, resultsTotal, source, priceStats }: { mode
         <Badge variant="dark">{mode === "search" ? "AI search" : "Marketplace discovery"}</Badge>
         <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,23rem)] lg:items-end">
           <div>
-            <h1 className="text-3xl font-black tracking-tight sm:text-4xl lg:text-5xl">Find trusted listings faster</h1>
+            <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">Find trusted listings faster</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">Search, browse, filter, save, and compare listings with AI ranking, trust signals, protected payment cues, and fast marketplace controls.</p>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm text-slate-300">
-            <p className="font-bold text-white">Source: {source}</p>
+          <div className="rounded-2xl border border-brand-steel bg-brand-slate p-4 text-sm text-slate-200">
+            <p className="font-bold text-white">{sourceLabel}</p>
             <p>{resultsTotal.toLocaleString()} matching listings across verified seller, payment, fulfillment, and category filters.</p>
             {priceStats ? <p className="mt-2">Indexed price range: ${Math.round(priceStats.min).toLocaleString()}-{Math.round(priceStats.max).toLocaleString()}</p> : null}
           </div>
@@ -362,7 +363,7 @@ function DiscoveryListingCard({ listing, isFavorited, featured = false }: { list
   return (
     <Card className={cn("group overflow-hidden shadow-md transition hover:-translate-y-1 hover:shadow-soft", featured && "border-premium bg-premium-soft/60")}>
       <div className="relative">
-        {listing.image_url ? <RemoteImage src={listing.image_url} alt={listing.title} className="h-40 w-full object-cover transition duration-300 group-hover:scale-105 sm:h-44" /> : <div className="flex h-40 items-center justify-center bg-gradient-to-br from-trust-soft via-ai-soft to-premium-soft sm:h-44"><PackageOpen className="h-10 w-10 text-primary/60" aria-hidden="true" /></div>}
+            {listing.image_url ? <RemoteImage src={listing.image_url} alt={listing.title} className="h-40 w-full object-cover transition duration-300 group-hover:scale-105 sm:h-44" /> : <div className="flex h-40 items-center justify-center bg-secondary sm:h-44"><PackageOpen className="h-10 w-10 text-primary" aria-hidden="true" /></div>}
         {featured ? <Badge variant="premium" className="absolute left-3 top-3 shadow-md">Top match</Badge> : null}
       </div>
       <CardContent className="space-y-4 p-4 sm:p-5">

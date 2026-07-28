@@ -280,7 +280,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             <CardContent className="space-y-5">
               <p className="text-base leading-8 text-muted-foreground">{listing.description}</p>
               <div className="flex flex-wrap gap-2">
-                {[listing.condition, ...listing.seo_tags, ...listing.attributes].filter(Boolean).slice(0, 12).map((tag, index) => <Badge key={`${tag}-${index}`}>{tag}</Badge>)}
+                {[...new Set([listing.condition, ...listing.seo_tags, ...listing.attributes].filter(Boolean))].slice(0, 12).map((tag) => <Badge key={tag}>{tag}</Badge>)}
               </div>
             </CardContent>
           </Card>
@@ -417,12 +417,12 @@ function ListingGallery({ title, images }: { title: string; images: Array<{ src:
   return (
     <section className="min-w-0 max-w-full overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-soft sm:rounded-[2rem]" aria-label="Listing image gallery">
       <div className="grid min-w-0 grid-cols-1 gap-3 p-2 sm:p-3 lg:grid-cols-[minmax(0,1fr)_12rem] xl:grid-cols-[minmax(0,1fr)_14rem]">
-        <div className="min-w-0 overflow-hidden rounded-[1.5rem] bg-gradient-to-br from-trust-soft via-ai-soft to-premium-soft">
+        <div className="min-w-0 overflow-hidden rounded-[1.5rem] bg-secondary">
           {primary ? (
             <MediaViewer items={mediaItems} initialIndex={0} mode="gallery" surface="listingGallery" triggerLabel={`Open ${title} media gallery`} thumbnailClassName="h-72 w-full object-cover sm:h-96 lg:h-[30rem] xl:h-[32.5rem]" />
           ) : (
             <div className="flex h-72 w-full flex-col items-center justify-center gap-3 p-4 text-muted-foreground sm:h-96 lg:h-[30rem] xl:h-[32.5rem]">
-              <ImagePlus className="h-16 w-16 text-primary/60" aria-hidden="true" />
+            <ImagePlus className="h-16 w-16 text-primary" aria-hidden="true" />
               <p className="font-bold">Photos are not available yet</p>
               <p className="max-w-sm text-center text-sm">Ask the seller for recent photos, serial numbers, receipts, or close-ups before making an offer.</p>
             </div>

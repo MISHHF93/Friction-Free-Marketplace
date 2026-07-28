@@ -63,7 +63,9 @@ export default async function SafetyPage() {
             <Card className="bg-premium-dark text-white">
               <CardHeader>
                 <CardTitle className="text-white">Safety snapshot</CardTitle>
-                <CardDescription className="text-slate-300">Aggregated from {stats.source} marketplace data.</CardDescription>
+                <CardDescription className="text-slate-300">
+                  A current marketplace-wide view of activity and trust signals.
+                </CardDescription>
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-3">
                 <Snapshot label="Listings" value={stats.activeListings.toLocaleString()} />
@@ -118,7 +120,7 @@ export default async function SafetyPage() {
             <div>
               <p className="text-eyebrow text-amber-800">Report a concern</p>
               <h2 className="mt-3 text-section">If something feels wrong, keep the record in the marketplace.</h2>
-              <p className="mt-4 max-w-3xl text-base leading-7 text-amber-950/80">
+              <p className="mt-4 max-w-3xl text-base leading-7 text-amber-950">
                 Suspicious listings, counterfeit claims, off-platform payment pressure, unsafe messages, and transaction issues should be reported from the related listing, message, or order when possible.
               </p>
             </div>

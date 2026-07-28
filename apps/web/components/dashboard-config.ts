@@ -24,6 +24,8 @@ export type DashboardLink = {
 
 export const dashboardLinks: DashboardLink[] = [
   { href: "/dashboard", label: "Overview", description: "Snapshot and next actions", icon: Home },
+  { href: "/dashboard/buyer", label: "Buying workspace", description: "Discover, negotiate, and track purchases", icon: ShoppingBag },
+  { href: "/dashboard/seller", label: "Selling workspace", description: "List, fulfill, and grow sales", icon: Store },
   { href: "/dashboard/listings", label: "My listings", description: "Draft, publish, and manage inventory", icon: Tags },
   { href: "/dashboard/messages", label: "Messages", description: "Conversations and safety tools", icon: MessageSquare },
   { href: "/dashboard/offers", label: "Offers", description: "Buyer and seller negotiations", icon: ReceiptText },

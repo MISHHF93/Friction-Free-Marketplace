@@ -24,7 +24,11 @@ export const agentRunInputSchema = z.object({
       locale: z.string().max(40).optional(),
       metadata: z.record(z.unknown()).optional()
     })
-    .optional()
+    .optional(),
+  history: z.array(z.object({
+    role: z.enum(["user", "assistant"]),
+    content: z.string().min(1).max(2000),
+  })).max(8).optional(),
 });
 
 export type AgentRunInput = z.infer<typeof agentRunInputSchema>;
@@ -198,7 +202,7 @@ export const marketplaceAgentTools: Record<string, AgentToolDefinition> = {
 };
 
 function promptFor(definition: Omit<MarketplaceAgentDefinition, "systemPrompt">) {
-  return `You are ${definition.name}, an AI agent in Friction-Free Marketplace.\n\nPurpose: ${definition.purpose}\n\nInputs you may use:\n${definition.inputs.map((item) => `- ${item}`).join("\n")}\n\nOutputs you must produce:\n${definition.outputs.map((item) => `- ${item}`).join("\n")}\n\nPermissions:\n${definition.permissions.map((item) => `- ${item}`).join("\n")}\n\nMemory rules:\n${definition.memoryRules.map((item) => `- ${item}`).join("\n")}\n\nSafety rules:\n${definition.safetyRules.map((item) => `- ${item}`).join("\n")}\n\nDatabase access rules:\n${definition.databaseAccessRules.map((item) => `- ${item}`).join("\n")}\n\nAudit requirements:\n${definition.auditRequirements.map((item) => `- ${item}`).join("\n")}\n\nHuman escalation triggers:\n${definition.humanEscalationTriggers.map((item) => `- ${item}`).join("\n")}\n\nRespond as JSON with keys: answer, recommendedActions, toolPlan, safetyFlags, memoryUpdates, auditSummary. Keep toolPlan to proposed tool calls only; do not claim a tool has executed unless the API supplied tool results. Always include auditSummary and identify any permission or audit gate before proposing write actions.`;
+  return `You are ${definition.name}, an AI agent in Friction-Free Marketplace.\n\nPurpose: ${definition.purpose}\n\nInputs you may use:\n${definition.inputs.map((item) => `- ${item}`).join("\n")}\n\nOutputs you must produce:\n${definition.outputs.map((item) => `- ${item}`).join("\n")}\n\nPermissions:\n${definition.permissions.map((item) => `- ${item}`).join("\n")}\n\nMemory rules:\n${definition.memoryRules.map((item) => `- ${item}`).join("\n")}\n\nSafety rules:\n${definition.safetyRules.map((item) => `- ${item}`).join("\n")}\n\nDatabase access rules:\n${definition.databaseAccessRules.map((item) => `- ${item}`).join("\n")}\n\nAudit requirements:\n${definition.auditRequirements.map((item) => `- ${item}`).join("\n")}\n\nHuman escalation triggers:\n${definition.humanEscalationTriggers.map((item) => `- ${item}`).join("\n")}\n\nRespond as JSON with keys: answer, recommendedActions, toolPlan, safetyFlags, memoryUpdates, auditSummary, and optional blocks. Blocks may be text, listing_collection, listing_comparison, price_estimate, safety_notice, navigation_action, draft_action, or human_escalation. Keep toolPlan to proposed tool calls only; do not claim a tool has executed unless the API supplied tool results. Always include auditSummary and identify any permission or audit gate before proposing write actions.`;
 }
 
 const definitionsWithoutPrompts: Omit<MarketplaceAgentDefinition, "systemPrompt">[] = [

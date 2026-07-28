@@ -54,13 +54,13 @@ export default async function HomePage() {
         <div className="relative z-10">
           <Badge variant="ai" className="w-fit gap-1">
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            AI-powered trusted commerce
+            Thoughtful tools. Safer exchanges.
           </Badge>
           <h1 className="mt-5 max-w-5xl text-hero text-balance">
-            A premium marketplace for safer buying, professional selling, and <span className="brand-gradient-text">intelligent discovery.</span>
+            Good things find <span className="brand-accent-text">their next person.</span>
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-            Friction-Free combines marketplace search, seller trust signals, protected checkout, AI listing tools, and financial workflows into one commerce-first platform.
+            Discover well-described items, meet trusted sellers, and move from “is this available?” to a protected handoff without the usual marketplace friction.
           </p>
           <div className="mt-7">
             <SearchBar
@@ -90,12 +90,11 @@ export default async function HomePage() {
         </div>
 
         <div className="relative z-10">
-          <div className="absolute -inset-4 rounded-4xl bg-trust-soft/70 blur-3xl" aria-hidden="true" />
           <Card className="relative overflow-hidden bg-premium-dark text-white shadow-admin">
             <CardHeader>
-              <Badge variant="dark" className="w-fit">Platform snapshot</Badge>
-              <CardTitle className="text-3xl text-white">Trust and commerce signals in one view.</CardTitle>
-              <CardDescription className="text-slate-300">Live marketplace metrics when configured, demo data during local development.</CardDescription>
+              <Badge variant="dark" className="w-fit">Marketplace today</Badge>
+              <CardTitle className="text-3xl text-white">A community measured in good exchanges.</CardTitle>
+              <CardDescription className="text-slate-300">Clear listings, responsive people, and safer transactions—visible at a glance.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
               <HeroMetric label="Active listings" value={stats.activeListings.toLocaleString()} />
@@ -110,10 +109,10 @@ export default async function HomePage() {
       <section className="app-container section-y">
         <div className="mb-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
           <div>
-            <p className="brand-kicker">Category discovery</p>
-            <h2 className="mt-3 text-section">Browse by the way people actually shop.</h2>
+            <p className="brand-kicker">Find your way in</p>
+            <h2 className="mt-3 text-section">Browse like a person, not a database.</h2>
             <p className="mt-4 max-w-3xl text-lg leading-8 text-muted-foreground">
-              Category pages are built for discovery, SEO, and conversion with clear buyer intent, live counts, and trust-forward positioning.
+              Start with what you need—or what you did not know you wanted. Every category keeps condition, location, and trust close at hand.
             </p>
           </div>
           <Button asChild variant="outline">
@@ -142,10 +141,10 @@ export default async function HomePage() {
       <section className="app-container section-y">
         <div className="mb-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
           <div>
-            <p className="brand-kicker">Featured inventory</p>
-            <h2 className="mt-3 text-section">Premium listing cards, built for buyer confidence.</h2>
+            <p className="brand-kicker">Worth a closer look</p>
+            <h2 className="mt-3 text-section">Fresh finds, clearly presented.</h2>
             <p className="mt-4 max-w-3xl text-lg leading-8 text-muted-foreground">
-              Each card prioritizes price, condition, location, seller identity, trust score, and payment readiness before pushing users into a detail page.
+              Price, condition, location, and seller confidence are visible before you open a listing—because clarity should come first.
             </p>
           </div>
           <Button asChild variant="trust">
@@ -158,10 +157,10 @@ export default async function HomePage() {
       <section className="app-container section-y">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
           <div>
-            <p className="brand-kicker">Platform capabilities</p>
-            <h2 className="mt-3 text-section">Commerce infrastructure that feels simple to buyers.</h2>
+            <p className="brand-kicker">Made for real exchanges</p>
+            <h2 className="mt-3 text-section">Simple on the surface. Thoughtful underneath.</h2>
             <p className="mt-4 text-lg leading-8 text-muted-foreground">
-              The public website introduces a marketplace, but the platform underneath is ready for seller onboarding, offers, payments, risk review, reporting, and AI-assisted operations.
+              Buyers get clarity. Sellers get useful tools. Both sides get safer conversations, protected payments, and help exactly when it matters.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -177,7 +176,7 @@ export default async function HomePage() {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.8fr)]">
           <ChartCard
             title="Category demand snapshot"
-            description="Live category counts when Supabase is configured, with graceful demo data locally."
+            description="A current view of marketplace availability across the most active categories."
             data={categoryChart}
             caption={`Source: ${categoryResult.source} marketplace category data.`}
           />
@@ -202,20 +201,20 @@ export default async function HomePage() {
       </section>
 
       <section className="app-container py-section">
-        <div className="overflow-hidden rounded-shell border border-white/10 bg-premium-dark p-6 text-white shadow-admin sm:p-8 lg:p-10">
+        <div className="overflow-hidden rounded-shell border border-white/15 bg-premium-dark p-6 text-white shadow-admin sm:p-8 lg:p-10">
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div>
-              <p className="text-eyebrow text-emerald-300">Ready to explore</p>
-              <h2 className="mt-4 max-w-3xl text-4xl font-black tracking-tight sm:text-5xl">Build trust into every listing, offer, and transaction.</h2>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
+              <p className="text-eyebrow text-white/90">Ready to explore</p>
+              <h2 className="mt-4 max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl">Build trust into every listing, offer, and transaction.</h2>
+              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-200">
                 Start with marketplace discovery, then move into professional buyer, seller, and platform workflows as the product scales.
               </p>
             </div>
             <div className="grid gap-3 sm:flex lg:grid">
-              <Button asChild size="lg" variant="trust">
+              <Button asChild size="lg" className="border border-white/20 bg-white text-premium-graphite shadow-md hover:bg-white/95 hover:text-premium-graphite">
                 <Link href="/browse">Browse marketplace</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-white/20 bg-white/10 text-white hover:bg-white/15">
+              <Button asChild size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white">
                 <Link href="/contact">Talk to us</Link>
               </Button>
             </div>

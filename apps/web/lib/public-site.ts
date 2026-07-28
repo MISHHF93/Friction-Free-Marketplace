@@ -179,20 +179,20 @@ export const pricingPlans = [
     highlighted: true,
   },
   {
-    name: "Platform",
-    price: "Custom",
-    description: "Operational tooling for trust, safety, compliance, financial reporting, and AI-assisted review.",
-    features: ["Admin console", "Moderation queues", "Financial reporting", "Audit logs and risk controls"],
-    cta: "Contact us",
+    name: "Business seller",
+    price: "Let’s talk",
+    description: "Flexible support for teams managing larger catalogs, frequent sales, or specialized fulfillment.",
+    features: ["Team selling workflows", "Catalog planning", "Operational reporting", "Onboarding support"],
+    cta: "Talk to our team",
     href: "/contact",
   },
 ];
 
 export const companyStats = [
   { label: "Marketplace model", value: "Trust-first", detail: "Commerce flows designed around proof, not pressure.", icon: ShieldCheck },
-  { label: "Core platform", value: "AI-assisted", detail: "Automation supports decisions while humans stay accountable.", icon: Sparkles },
-  { label: "Payments", value: "Connect-ready", detail: "Built for seller onboarding, payouts, reporting, and disputes.", icon: WalletCards },
-  { label: "Operations", value: "Audit-aware", detail: "Admin actions and trust changes should be traceable.", icon: BarChart3 },
+  { label: "Helpful by design", value: "AI-assisted", detail: "Automation supports decisions while people stay in control.", icon: Sparkles },
+  { label: "Seller payments", value: "Stripe-ready", detail: "Designed for onboarding, payouts, reporting, and disputes.", icon: WalletCards },
+  { label: "Accountability", value: "Traceable", detail: "Important marketplace and trust actions retain clear context.", icon: BarChart3 },
 ];
 
 export const contactReasons = [

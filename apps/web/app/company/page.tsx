@@ -9,7 +9,7 @@ import { companyStats, marketplaceJsonLd } from "@/lib/public-site";
 
 export const metadata: Metadata = {
   title: "Company | Friction-Free Marketplace",
-  description: "Friction-Free Marketplace is building premium AI-powered commerce infrastructure for trusted buying, professional selling, and safer marketplace operations.",
+  description: "Friction-Free Marketplace is building a calmer, more trustworthy way to buy and sell with useful AI and safer transaction workflows.",
   alternates: { canonical: "/company" },
   openGraph: {
     title: "Company | Friction-Free Marketplace",
@@ -52,9 +52,9 @@ export default function CompanyPage() {
       <section className="app-container py-section-sm">
         <div className="rounded-shell border border-border bg-card p-6 shadow-panel sm:p-8 lg:p-10">
           <Badge variant="premium" className="w-fit">Company</Badge>
-          <h1 className="mt-5 max-w-4xl text-hero">We are building marketplace infrastructure where trust is part of the product.</h1>
+          <h1 className="mt-5 max-w-4xl text-hero">We are building a marketplace where trust is part of every interaction.</h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-muted-foreground">
-            Friction-Free is designed for AI-powered commerce, professional sellers, protected transactions, operational visibility, and safer buying decisions.
+            Friction-Free brings discovery, conversation, seller signals, and transaction context into one calm experience—helped by AI, with people still in control.
           </p>
           <div className="mt-7 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg" variant="trust"><Link href="/browse">Explore marketplace</Link></Button>
@@ -95,10 +95,10 @@ export default function CompanyPage() {
         <Card className="bg-premium-dark text-white">
           <CardContent className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:p-10">
             <div>
-              <p className="text-eyebrow text-emerald-300">Platform direction</p>
-              <h2 className="mt-4 max-w-3xl text-4xl font-black tracking-tight sm:text-5xl">Marketplace website, buyer workspace, seller workspace, and admin operations should feel like one system.</h2>
+              <p className="text-eyebrow text-emerald-300">One connected experience</p>
+              <h2 className="mt-4 max-w-3xl text-4xl font-black tracking-tight sm:text-5xl">Browsing, buying, selling, and getting help should feel like one marketplace.</h2>
               <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
-                The architecture is intentionally modular so public discovery, AI commerce, financial reporting, trust workflows, and administration can scale without fracturing the product experience.
+                Customers should not have to learn a different interface at every step. The product keeps navigation, language, trust signals, and support context consistent from discovery through completion.
               </p>
             </div>
             <Button asChild size="lg" variant="trust">

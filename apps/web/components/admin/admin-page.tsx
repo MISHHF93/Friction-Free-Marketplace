@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { adminLinks } from "@/lib/admin/navigation";
-import { permissionLabels, requireAdminPagePermission, rolePermissions, type AdminRole } from "@/lib/admin/permissions";
+import { can, permissionLabels, requireAdminPagePermission, rolePermissions, type AdminRole } from "@/lib/admin/permissions";
 import { getAdminPageConfig, type AdminPageConfig } from "@/lib/admin/platform";
 import { cn } from "@/lib/utils";
 
@@ -41,7 +41,7 @@ export function AdminFeaturePage({ config, adminRole }: { config: AdminPageConfi
         </div>
         <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
           <Button variant="trust">{config.primaryAction}</Button>
-          <Button asChild variant="surface"><Link href="/admin/review-queue">Open review queue <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+          {can(adminRole ?? null, "fraud.review") ? <Button asChild variant="surface"><Link href="/admin/review-queue">Open review queue <ArrowRight className="ml-2 h-4 w-4" /></Link></Button> : null}
         </div>
       </section>
 
@@ -186,7 +186,7 @@ export function AdminFeaturePage({ config, adminRole }: { config: AdminPageConfi
 function SeverityBadge({ severity, value }: { severity?: string; value: string }) {
   return (
     <span className="flex items-center gap-2 font-semibold">
-      <span className={cn("h-2.5 w-2.5 rounded-full bg-slate-300", severity === "critical" && "bg-red-500", severity === "high" && "bg-amber-500", severity === "medium" && "bg-blue-500", severity === "positive" && "bg-emerald-500")} />
+      <span className={cn("h-2.5 w-2.5 rounded-full bg-muted-foreground", severity === "critical" && "bg-safety-risk", severity === "high" && "bg-safety-warning", severity === "medium" && "bg-ai", severity === "positive" && "bg-trust")} />
       {value}
     </span>
   );
@@ -199,7 +199,7 @@ function StatusBadge({ value, severity }: { value: string; severity?: string }) 
 
 function RiskScoreIndicator({ severity, seed }: { severity?: string; seed: number }) {
   const value = severity === "critical" ? 96 : severity === "high" ? 82 : severity === "medium" ? 58 : severity === "positive" ? 16 : 34 + seed * 8;
-  const color = value >= 85 ? "bg-red-500" : value >= 70 ? "bg-amber-500" : value >= 45 ? "bg-blue-500" : "bg-emerald-500";
+  const color = value >= 85 ? "bg-safety-risk" : value >= 70 ? "bg-safety-warning" : value >= 45 ? "bg-ai" : "bg-trust";
   return (
     <div className="min-w-28">
       <div className="flex justify-between text-xs font-bold"><span>{value}</span><span className="text-muted-foreground">score</span></div>

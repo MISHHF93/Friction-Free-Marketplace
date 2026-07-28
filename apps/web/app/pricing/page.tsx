@@ -9,11 +9,11 @@ import { marketplaceJsonLd, pricingPlans } from "@/lib/public-site";
 
 export const metadata: Metadata = {
   title: "Pricing | Friction-Free Marketplace",
-  description: "Transparent pricing for buyers, sellers, and platform operations, with success-based seller economics and professional commerce workflows.",
+  description: "Transparent marketplace pricing for buyers, individual sellers, and growing seller teams.",
   alternates: { canonical: "/pricing" },
   openGraph: {
     title: "Pricing | Friction-Free Marketplace",
-    description: "Buyer, seller, and platform pricing for premium AI-powered marketplace commerce.",
+    description: "Clear buyer and seller pricing for trusted marketplace commerce.",
     url: "/pricing",
   },
 };
@@ -31,7 +31,7 @@ export default function PricingPage() {
           <Badge variant="premium" className="w-fit">Pricing</Badge>
           <h1 className="mt-5 max-w-4xl text-hero">Marketplace pricing designed around successful transactions.</h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-muted-foreground">
-            Buyers can discover and compare for free. Sellers pay when commerce happens. Platform operations get the reporting, controls, and risk context needed to scale responsibly.
+            Buyers can discover and compare for free. Sellers pay when an eligible transaction succeeds, so the marketplace earns alongside them—not before they make a sale.
           </p>
         </div>
       </section>
@@ -68,9 +68,9 @@ export default function PricingPage() {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <div>
             <p className="brand-kicker">Financial model</p>
-            <h2 className="mt-3 text-section">Premium commerce needs more than a listing fee.</h2>
+            <h2 className="mt-3 text-section">Simple fees, tied to successful commerce.</h2>
             <p className="mt-4 text-lg leading-8 text-muted-foreground">
-              Pricing is designed to support payment processing, trust and safety workflows, dispute handling, seller payouts, reporting, and AI-assisted commerce tools.
+              Seller fees help support payment processing, trust and safety, dispute handling, payouts, and the tools used to complete a transaction.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -94,9 +94,9 @@ export default function PricingPage() {
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div>
               <p className="brand-kicker">Questions</p>
-              <h2 className="mt-3 text-section">Need custom platform economics?</h2>
+              <h2 className="mt-3 text-section">Selling at a larger scale?</h2>
               <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground">
-                We can support custom platform fees, seller programs, category-specific economics, payout schedules, and operational reporting requirements.
+                Talk with us about larger catalogs, team workflows, category-specific needs, fulfillment, and seller onboarding.
               </p>
             </div>
             <Button asChild size="lg" variant="trust">

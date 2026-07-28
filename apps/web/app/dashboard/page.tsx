@@ -84,7 +84,7 @@ export default function DashboardPage() {
               title={item.title}
               detail={item.detail}
               status={item.status}
-              leading={<span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-gradient-to-r from-trust to-ai text-xs font-black text-white">{index + 1}</span>}
+              leading={<span className="flex h-8 w-8 items-center justify-center rounded-xl bg-trust text-xs font-black text-trust-foreground">{index + 1}</span>}
             >
               <Button asChild size="sm" variant="outline"><Link href={item.href}>Open</Link></Button>
             </DashboardListItem>

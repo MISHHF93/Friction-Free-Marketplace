@@ -50,7 +50,7 @@ export default async function SellerProfilePage({ params }: { params: Promise<{ 
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-soft">
-        <div className="h-44 bg-gradient-to-r from-emerald-200 via-sky-100 to-white sm:h-56">
+      <div className="h-44 bg-trust-soft sm:h-56">
           {seller.bannerUrl ? <RemoteImage src={seller.bannerUrl} alt="" className="h-full w-full object-cover" /> : null}
         </div>
         <div className="grid gap-6 p-6 sm:p-8 lg:grid-cols-[1fr_340px]">
