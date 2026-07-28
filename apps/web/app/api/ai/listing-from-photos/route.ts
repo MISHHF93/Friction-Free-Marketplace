@@ -1,19 +1,31 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { generateAiListing } from "@/lib/ai/listing-generation";
-import { consumeRateLimit, rateLimitHeaders } from "@/lib/security/rate-limit";
+import { consumeRateLimit, rateLimitHeaders, RateLimitUnavailableError } from "@/lib/security/rate-limit";
 import { createClient } from "@/lib/supabase/server";
+import { isTrustedMutationOrigin } from "@/lib/security/request-origin";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    if (!isTrustedMutationOrigin(request)) {
+      return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+    }
     const supabase = createClient();
     const { data } = await supabase.auth.getUser();
     if (!data.user) {
       return NextResponse.json({ error: "Sign in to generate an AI listing draft." }, { status: 401 });
     }
-    const rateLimit = consumeRateLimit(`ai-listing-photos:${data.user.id}`, { limit: 6, windowMs: 60_000 });
+    let rateLimit;
+    try {
+      rateLimit = await consumeRateLimit(`ai-listing-photos:${data.user.id}`, { policy: "ai-listing-photos", limit: 6, windowMs: 60_000 });
+    } catch (rateLimitError) {
+      if (rateLimitError instanceof RateLimitUnavailableError) {
+        return NextResponse.json({ error: "AI photo analysis is temporarily unavailable." }, { status: 503 });
+      }
+      throw rateLimitError;
+    }
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { error: "AI photo analysis is temporarily rate limited. Try again shortly." },

@@ -21,11 +21,12 @@ export async function captureServerEvent({ distinctId, event, properties = {} }:
         app: "friction-free-marketplace"
       }
     }),
-    cache: "no-store"
+    cache: "no-store",
+    signal: AbortSignal.timeout(2_000)
   });
 
   if (!response.ok) {
-    throw new Error(`PostHog capture failed (${response.status}): ${await response.text()}`);
+    throw new Error(`PostHog capture failed (${response.status}).`);
   }
 
   return { captured: true as const };

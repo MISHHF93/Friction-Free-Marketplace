@@ -9,6 +9,7 @@ import { calculatePlatformFeeCents, centsToDollars, dollarsToCents, normalizeCur
 import { checkoutStripeIdempotencyKey, parseIdempotencyKey } from "@/lib/payments/idempotency";
 import { enqueueTemplateNotification } from "@/lib/notifications/service";
 import { getStripe } from "@/lib/stripe/server";
+import { isTrustedMutationOrigin } from "@/lib/security/request-origin";
 
 const paymentIntentRequestSchema = z.object({
   listingId: z.string().uuid(),
@@ -17,6 +18,7 @@ const paymentIntentRequestSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   const auth = await requireUser();
   if ("error" in auth) return auth.error;
   const idempotencyKey = parseIdempotencyKey(request.headers.get("idempotency-key"));

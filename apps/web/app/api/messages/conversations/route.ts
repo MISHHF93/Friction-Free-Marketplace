@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { createConversationAction } from "@/app/dashboard/messages/actions";
 import { getConversationSummaries } from "@/lib/messaging/queries";
 import { createClient } from "@/lib/supabase/server";
+import { isTrustedMutationOrigin } from "@/lib/security/request-origin";
 
 function errorResponse(error: unknown) {
   const message = error instanceof Error ? error.message : "Messaging request failed.";
@@ -25,6 +26,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    if (!isTrustedMutationOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
     const conversation = await createConversationAction(await request.json());
     return NextResponse.json({ conversation }, { status: 201 });
   } catch (error) {

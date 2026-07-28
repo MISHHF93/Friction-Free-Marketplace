@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RemoteImage } from "@/components/ui/remote-image";
 import { cn } from "@/lib/utils";
+import { formatMoney } from "@/lib/i18n/format";
 import type { ComponentSize, ComponentTone } from "./types";
 
 export type PriceDisplayProps = React.HTMLAttributes<HTMLSpanElement> & {
@@ -36,7 +37,7 @@ export type PriceDisplayProps = React.HTMLAttributes<HTMLSpanElement> & {
 export function PriceDisplay({
   amount,
   currency = "USD",
-  locale = "en-US",
+  locale,
   suffix,
   size = "md",
   align = "left",
@@ -44,17 +45,13 @@ export function PriceDisplay({
   className,
   ...props
 }: PriceDisplayProps) {
-  const formatted = new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency,
-    maximumFractionDigits: Math.abs(amount) % 1 === 0 ? 0 : 2,
-    signDisplay: signed ? "exceptZero" : "auto",
-  }).format(amount);
+  const unsigned = formatMoney(Math.abs(amount), currency, locale);
+  const formatted = signed && amount !== 0 ? `${amount > 0 ? "+" : "−"}${unsigned}` : formatMoney(amount, currency, locale);
 
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-baseline gap-1 font-black tracking-tight text-foreground",
+        "inline-flex shrink-0 items-baseline gap-1 font-black tracking-tight text-foreground [unicode-bidi:isolate]",
         size === "sm" && "text-lg",
         size === "md" && "text-2xl",
         size === "lg" && "text-3xl sm:text-4xl",

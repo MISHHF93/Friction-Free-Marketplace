@@ -14,7 +14,6 @@ import { cn } from "@/lib/utils";
 
 const navLinks = [
   { href: "/browse", label: "Browse" },
-  { href: "/categories", label: "Categories" },
   { href: "/how-it-works", label: "How it works" },
   { href: "/safety", label: "Safety" },
   { href: "/pricing", label: "Pricing" }
@@ -130,9 +129,8 @@ function HeaderSearch() {
         id="global-marketplace-search"
         name="q"
         placeholder="Search listings, budget, condition, or pickup area..."
-        className="h-11 w-full rounded-xl border border-input bg-card px-10 text-sm font-medium shadow-sm outline-none transition placeholder:text-muted-foreground hover:border-primary focus:border-primary focus:ring-2 focus:ring-ring/30"
+        className="h-11 w-full rounded-xl border border-input bg-card pl-10 pr-4 text-sm font-medium shadow-sm outline-none transition placeholder:text-muted-foreground hover:border-primary focus:border-primary focus:ring-2 focus:ring-ring/30"
       />
-      <Badge variant="ai" className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 sm:inline-flex">AI</Badge>
     </form>
   );
 }
@@ -140,7 +138,7 @@ function HeaderSearch() {
 function LocationSelector() {
   return (
     <details className="group relative">
-      <summary className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label="Choose marketplace location">
+      <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label="Choose marketplace location">
         <MapPin className="h-4 w-4 text-primary" />
         <span className="hidden sm:inline">Nearby</span>
         <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
@@ -163,7 +161,7 @@ function LocationSelector() {
 function CategoriesMenu() {
   return (
     <details className="group relative">
-      <summary className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl px-2 text-sm font-bold text-muted-foreground transition hover:text-foreground [&::-webkit-details-marker]:hidden" aria-label="Open categories menu">
+      <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl px-2 text-sm font-bold text-muted-foreground transition hover:text-foreground [&::-webkit-details-marker]:hidden" aria-label="Open categories menu">
         <Menu className="h-4 w-4" />
         Categories
         <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
@@ -182,7 +180,7 @@ function CategoriesMenu() {
 function MobilePrimaryNav() {
   return (
     <details className="group relative shrink-0 md:hidden">
-      <summary className="inline-flex h-9 cursor-pointer list-none items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-bold shadow-xs transition hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label="Open mobile navigation">
+      <summary className="inline-flex h-11 cursor-pointer list-none items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-bold shadow-xs transition hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label="Open mobile navigation">
         <Menu className="h-4 w-4" aria-hidden="true" />
         Menu
         <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" aria-hidden="true" />
@@ -217,20 +215,13 @@ export function SiteShell({ children }: { children: ReactNode }) {
                 <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-primary">The trusted marketplace</span>
               </span>
             </Link>
-            <div className="hidden items-center gap-2 xl:flex">
+            <div className="hidden items-center gap-1 md:flex">
               <LocationSelector />
               <CategoriesMenu />
             </div>
-            <div className="hidden min-w-0 flex-1 md:block xl:max-w-xl">
+            <div className="hidden min-w-[12rem] flex-1 md:block xl:max-w-2xl">
               <HeaderSearch />
             </div>
-            <nav className="hidden items-center gap-5 text-sm font-semibold text-muted-foreground 2xl:flex" aria-label="Primary navigation">
-              {navLinks.map((link) => (
-                <Link key={link.href} className="whitespace-nowrap hover:text-foreground" href={link.href}>
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
             <div className="flex items-center gap-1.5 sm:gap-2">
               <GlobalAssistant />
               <Button asChild className="hidden shadow-trust sm:inline-flex" variant="trust">

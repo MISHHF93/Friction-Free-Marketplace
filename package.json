@@ -25,8 +25,14 @@
     "mobile:android": "npm --workspace @ffm/mobile run open:android",
     "mobile:ios": "npm --workspace @ffm/mobile run open:ios",
     "mobile:doctor": "npm --workspace @ffm/mobile run doctor",
+    "platform:verify": "node scripts/verify-platforms.mjs",
+    "platform:build": "npm run platform:verify && npm run shared:build && npm run web:build && npm --workspace @ffm/mobile run build",
+    "platform:sync": "npm run platform:verify && npm run mobile:sync",
     "text:check": "node scripts/check-text-encoding.mjs",
-    "release:check": "npm run text:check && npm run shared:typecheck && npm run web:lint && npm run web:typecheck && npm run web:test && npm run web:build && npm --workspace @ffm/mobile run build",
+    "security:audit": "node scripts/check-production-audit.mjs",
+    "database:verify": "node scripts/verify-migrations.mjs",
+    "security:api": "node scripts/verify-api-security.mjs",
+    "release:check": "npm run platform:verify && npm run text:check && npm run security:audit && npm run security:api && npm run database:verify && npm run shared:typecheck && npm run web:lint && npm run web:typecheck && npm run web:test && npm run web:build && node scripts/scan-artifact-secrets.mjs apps/web/.next/static && npm --workspace @ffm/mobile run build",
     "production:smoke": "node scripts/production-smoke.mjs"
   },
   "overrides": {

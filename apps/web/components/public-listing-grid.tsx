@@ -3,6 +3,7 @@ import { MapPin, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, ListingCard as DesignListingCard } from "@/components/ui-library";
 import type { DiscoveryDocument } from "@/lib/search/schema";
+import { formatMoney } from "@/lib/i18n/format";
 
 export function toDesignListing(listing: DiscoveryDocument) {
   return {
@@ -45,7 +46,7 @@ export function CompactListingLink({ listing }: { listing: DiscoveryDocument }) 
     <Link href={`/listings/${listing.id}`} className="grid gap-2 rounded-2xl border border-border bg-card p-3 transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-soft sm:p-4">
       <div className="grid gap-1 sm:flex sm:items-start sm:justify-between sm:gap-3">
         <p className="font-semibold leading-6">{listing.title}</p>
-        <p className="font-bold sm:text-right">${Number(listing.price_amount).toLocaleString()}</p>
+        <p className="font-bold [unicode-bidi:isolate] sm:text-end">{formatMoney(Number(listing.price_amount), listing.currency)}</p>
       </div>
       <p className="flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="h-4 w-4" /> {listing.location_label || "Location after contact"}</p>
       <p className="flex items-center gap-1 text-sm text-muted-foreground"><ShieldCheck className="h-4 w-4 text-primary" /> {listing.seller_display_name} · {Math.round(listing.seller_trust_score)}% trust</p>

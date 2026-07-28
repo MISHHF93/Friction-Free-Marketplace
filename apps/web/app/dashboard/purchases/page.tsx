@@ -4,6 +4,7 @@ import { DashboardActionCard, DashboardListItem, DashboardShell, DashboardStatCa
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
+import { formatDate, formatMoney } from "@/lib/i18n/format";
 
 type TransactionRow = {
   id: string;
@@ -19,17 +20,17 @@ type TransactionRow = {
 };
 
 function money(amount: number, currency: string) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(Number(amount));
+  return formatMoney(Number(amount), currency);
 }
 
 function purchaseMilestone(transaction: TransactionRow) {
   if (transaction.status === "pending_payment") return "Payment authorization is still pending.";
   if (transaction.status === "paid") return "Payment is authorized. Waiting for seller capture or fulfillment.";
   if (transaction.status === "escrowed") return "Funds are held while seller fulfills the item.";
-  if (transaction.status === "completed") return `Completed ${new Date(transaction.completed_at ?? transaction.updated_at).toLocaleDateString()}.`;
+  if (transaction.status === "completed") return `Completed ${formatDate(transaction.completed_at ?? transaction.updated_at)}.`;
   if (transaction.status === "disputed") return "Dispute is open. Keep all evidence in the marketplace.";
   if (transaction.status === "refunded") return "Refund has been recorded on this purchase.";
-  return `Last updated ${new Date(transaction.updated_at).toLocaleDateString()}.`;
+  return `Last updated ${formatDate(transaction.updated_at)}.`;
 }
 
 async function getBuyerPurchases(userId: string) {

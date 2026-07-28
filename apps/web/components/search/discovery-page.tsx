@@ -157,7 +157,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
               <PaginationControls currentPage={currentPage} totalPages={totalPages} total={results.total} params={params} modeHref={modeHref} />
             </>
           ) : (
-            <EmptyResultsRecommendations modeHref={modeHref} recommendations={emptyRecommendations} />
+            <EmptyResultsRecommendations modeHref={modeHref} recommendations={emptyRecommendations} unavailable={results.source === "unavailable"} />
           )}
 
           <AiAssistantPanel params={params} modeHref={modeHref} />
@@ -172,7 +172,13 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
 
 function SearchHeader({ mode, params, resultsTotal, source, priceStats }: { mode: "browse" | "search"; params: DiscoverySearchParams; resultsTotal: number; source: string; priceStats?: { min: number; max: number } }) {
   const modeHref = mode === "search" ? "/search" : "/browse";
-  const sourceLabel = source === "meilisearch" ? "Live marketplace index" : source === "database" ? "Marketplace inventory" : "Curated local preview";
+  const sourceLabel = source === "meilisearch"
+    ? "Live marketplace index"
+    : source === "database"
+      ? "Marketplace inventory"
+      : source === "unavailable"
+        ? "Marketplace temporarily unavailable"
+        : "Curated local preview";
 
   return (
     <div className="overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-soft sm:rounded-[2rem]">
@@ -428,7 +434,7 @@ function AiAssistantPanel({ params, modeHref }: { params: DiscoverySearchParams;
   );
 }
 
-function EmptyResultsRecommendations({ modeHref, recommendations }: { modeHref: string; recommendations: DiscoveryDocument[] }) {
+function EmptyResultsRecommendations({ modeHref, recommendations, unavailable = false }: { modeHref: string; recommendations: DiscoveryDocument[]; unavailable?: boolean }) {
   return (
     <Card className="border-dashed">
       <CardContent className="space-y-6 p-4 text-center sm:p-6 lg:p-8">
@@ -436,12 +442,14 @@ function EmptyResultsRecommendations({ modeHref, recommendations }: { modeHref: 
           <Search className="h-7 w-7" aria-hidden="true" />
         </div>
         <div>
-          <h2 className="text-2xl font-black tracking-tight">No listings matched these filters.</h2>
-          <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Try widening your radius, lowering the trust threshold, clearing price limits, or switching to AI recommended sort.</p>
+          <h2 className="text-2xl font-black tracking-tight">{unavailable ? "Marketplace listings are temporarily unavailable." : "No listings matched these filters."}</h2>
+          <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            {unavailable ? "Please retry shortly while we reconnect to marketplace inventory." : "Try widening your radius, lowering the trust threshold, clearing price limits, or switching to AI recommended sort."}
+          </p>
         </div>
         <div className="flex flex-col justify-center gap-3 sm:flex-row">
-          <Button asChild variant="trust"><Link href={modeHref}>Clear filters</Link></Button>
-          <Button asChild variant="outline"><Link href={`${modeHref}?sort=recommended`}>Use recommended sort</Link></Button>
+          <Button asChild variant="trust"><Link href={unavailable ? `${modeHref}?retry=1` : modeHref}>{unavailable ? "Retry inventory" : "Clear filters"}</Link></Button>
+          {!unavailable ? <Button asChild variant="outline"><Link href={`${modeHref}?sort=recommended`}>Use recommended sort</Link></Button> : null}
         </div>
         {recommendations.length ? (
           <div className="grid gap-3 pt-2 text-left md:grid-cols-3">

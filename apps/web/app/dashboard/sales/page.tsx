@@ -4,6 +4,7 @@ import { DashboardActionCard, DashboardListItem, DashboardShell, DashboardStatCa
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
+import { formatMoney } from "@/lib/i18n/format";
 
 type SaleTransaction = {
   id: string;
@@ -23,7 +24,7 @@ type PayoutRow = {
 };
 
 function money(amount: number, currency: string) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(Number(amount));
+  return formatMoney(Number(amount), currency);
 }
 
 function sellerNextStep(status: string) {

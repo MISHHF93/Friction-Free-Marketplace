@@ -9,7 +9,10 @@ if (!originInput) {
 }
 
 const origin = new URL(originInput);
-if (origin.protocol !== "https:" || origin.hostname === "marketplace.example.com") {
+const localHttpAllowed = process.env.SMOKE_ALLOW_LOCAL_HTTP === "1"
+  && origin.protocol === "http:"
+  && ["127.0.0.1", "localhost"].includes(origin.hostname);
+if ((!localHttpAllowed && origin.protocol !== "https:") || origin.hostname === "marketplace.example.com") {
   throw new Error("Production smoke tests require a real HTTPS origin.");
 }
 origin.pathname = "/";
@@ -89,7 +92,7 @@ await fetchCheck("/.well-known/assetlinks.json", (response, body) => {
 });
 
 for (const [path, marker] of [
-  ["/", "A premium marketplace"],
+  ["/", "Good things find"],
   ["/browse", "marketplace"],
   ["/assistant", "AI help with clear limits"],
   ["/privacy", "Privacy policy"],

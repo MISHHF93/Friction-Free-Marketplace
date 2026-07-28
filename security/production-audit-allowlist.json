@@ -1,0 +1,32 @@
+{
+  "acceptedAdvisories": [
+    {
+      "id": "GHSA-qx2v-qp2m-jg93",
+      "package": "postcss",
+      "owner": "platform",
+      "expires": "2026-09-30",
+      "reason": "Next.js 16.2.12 is the latest stable release and pins its private PostCSS copy. Marketplace CSS is repository-controlled and does not stringify attacker-provided source maps."
+    },
+    {
+      "id": "GHSA-6g55-p6wh-862q",
+      "package": "postcss",
+      "owner": "platform",
+      "expires": "2026-09-30",
+      "reason": "Next.js 16.2.12 is the latest stable release and pins its private PostCSS copy. Production builds never compile attacker-controlled CSS or source maps."
+    },
+    {
+      "id": "GHSA-r28c-9q8g-f849",
+      "package": "postcss",
+      "owner": "platform",
+      "expires": "2026-09-30",
+      "reason": "Next.js 16.2.12 is the latest stable release and pins its private PostCSS copy. Production builds only process trusted repository sources."
+    },
+    {
+      "id": "GHSA-f88m-g3jw-g9cj",
+      "package": "sharp",
+      "owner": "platform",
+      "expires": "2026-09-30",
+      "reason": "Next.js 16.2.12 pins Sharp 0.34.5. Remote marketplace images are served through constrained Next.js image handling; upgrade immediately when a compatible Next.js release is available."
+    }
+  ]
+}

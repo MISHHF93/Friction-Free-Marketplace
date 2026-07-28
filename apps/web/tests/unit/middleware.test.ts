@@ -6,9 +6,13 @@ import { config, getSafeRedirectPath, isAuthRoute, isProtectedRoute, proxy } fro
 const supabaseUrl = "https://example-project.supabase.co";
 const anonKey = "test-anon-key";
 
-function createRequest(pathname: string, cookie?: string) {
+function createRequest(pathname: string, cookie?: string, init?: { method?: string; origin?: string }) {
   return new NextRequest(new URL(pathname, "https://marketplace.example"), {
-    headers: cookie ? { cookie } : undefined
+    method: init?.method,
+    headers: {
+      ...(cookie ? { cookie } : {}),
+      ...(init?.origin ? { origin: init.origin } : {}),
+    }
   });
 }
 
@@ -34,11 +38,11 @@ describe("middleware route helpers", () => {
     expect(getSafeRedirectPath(null, "/fallback")).toBe("/fallback");
   });
 
-  it("does not invoke middleware for API routes", () => {
+  it("invokes middleware for API security policy", () => {
     const matcher = new RegExp(`^${config.matcher[0]}$`);
 
     expect(matcher.test("/dashboard")).toBe(true);
-    expect(matcher.test("/api/admin/users")).toBe(false);
+    expect(matcher.test("/api/admin/users")).toBe(true);
   });
 });
 
@@ -58,6 +62,25 @@ describe("middleware", () => {
 
     expect(response.headers.get("location")).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects cross-site browser mutations before route execution", async () => {
+    const response = await proxy(createRequest("/api/offers", undefined, {
+      method: "POST",
+      origin: "https://attacker.example",
+    }));
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ error: "Invalid request origin." });
+  });
+
+  it("allows same-origin browser mutations and signed server routes", async () => {
+    const browserResponse = await proxy(createRequest("/api/offers", undefined, {
+      method: "POST",
+      origin: "https://marketplace.example",
+    }));
+    const webhookResponse = await proxy(createRequest("/api/stripe/webhooks", undefined, { method: "POST" }));
+    expect(browserResponse.status).toBe(200);
+    expect(webhookResponse.status).toBe(200);
   });
 
   it("redirects protected routes instead of crashing when the Supabase cookie is a null session", async () => {

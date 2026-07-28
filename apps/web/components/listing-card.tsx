@@ -5,6 +5,7 @@ import { TrustScoreBadge } from "@/components/trust-safety/trust-badges";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { listings } from "@/lib/marketplace-data";
+import { formatMoney } from "@/lib/i18n/format";
 
 export function ListingCard({ listing }: { listing: (typeof listings)[number] }) {
   return (
@@ -19,7 +20,7 @@ export function ListingCard({ listing }: { listing: (typeof listings)[number] })
               <MapPin className="h-4 w-4" /> {listing.location}
             </p>
           </div>
-          <p className="text-xl font-bold">${listing.price.toLocaleString()}</p>
+          <p className="text-xl font-bold [unicode-bidi:isolate]">{formatMoney(listing.price, "USD")}</p>
         </div>
         <div className="flex items-center justify-between rounded-xl bg-secondary px-3 py-2 text-sm">
           <span className="flex items-center gap-1 font-medium">

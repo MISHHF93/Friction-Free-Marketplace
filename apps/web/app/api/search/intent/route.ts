@@ -1,26 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getOpenAI } from "@/lib/openai/client";
+import { getOpenAI, isOpenAIConfigured } from "@/lib/openai/client";
+import { classifyMarketplaceItem, itemClassificationSchema } from "@/lib/search/item-classifier";
 import { searchMarketplace } from "@/lib/search/discovery";
 import { createClient } from "@/lib/supabase/server";
 
-const intentSchema = z.object({ query: z.string().min(2), location: z.string().optional(), budget: z.number().optional() });
-
-function fallbackIntent(query: string) {
-  const lower = query.toLowerCase();
-  const maxPriceMatch = lower.match(/(?:under|below|less than|<=?)\s*\$?(\d+)/);
-  const category = ["electronics", "home", "outdoors", "collectibles", "vehicles", "services", "fashion"].find((item) => lower.includes(item));
-  return {
-    rewrittenQuery: query.replace(/\b(under|below|less than)\s*\$?\d+\b/gi, "").trim() || query,
-    filters: {
-      category,
-      maxPrice: maxPriceMatch ? Number(maxPriceMatch[1]) : undefined,
-      minSellerTrust: lower.includes("safe") || lower.includes("trusted") ? 90 : undefined,
-      condition: lower.includes("new") ? ["New", "Like new"] : undefined
-    },
-    explanation: "Parsed locally. Add OPENAI_API_KEY for richer buyer-intent extraction."
-  };
-}
+const intentSchema = z.object({ query: z.string().trim().min(2).max(300), location: z.string().trim().max(120).optional(), budget: z.number().nonnegative().optional() });
+const enrichmentSchema = z.object({
+  rewrittenQuery: z.string().trim().min(1).max(300).optional(),
+  explanation: z.string().trim().max(500).optional(),
+});
 
 export async function POST(request: Request) {
   const supabase = createClient();
@@ -30,19 +19,42 @@ export async function POST(request: Request) {
   const payload = intentSchema.safeParse(await request.json().catch(() => null));
   if (!payload.success) return NextResponse.json({ error: payload.error.flatten() }, { status: 400 });
   const input = payload.data;
-  let intent = fallbackIntent(input.query);
+  const classification = classifyMarketplaceItem(input.query);
+  let explanation = `Classified locally with ${Math.round(classification.categoryConfidence * 100)}% category confidence.`;
+  let rewrittenQuery = classification.rewrittenQuery;
+  let source: "deterministic" | "hybrid" = "deterministic";
 
-  const completion = await getOpenAI().chat.completions.create({
-    model: "gpt-4o-mini",
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: "Extract marketplace buyer intent as JSON with rewrittenQuery, filters(category,maxPrice,minPrice,minSellerTrust,condition array), and explanation. Keep filters conservative." },
-      { role: "user", content: JSON.stringify(input) }
-    ]
+  if (isOpenAIConfigured()) {
+    try {
+      const completion = await getOpenAI().chat.completions.create({
+        model: "gpt-4o-mini",
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: "Rewrite the marketplace query for search without inventing filters or product facts. Return JSON with rewrittenQuery and explanation only." },
+          { role: "user", content: JSON.stringify({ input, deterministicClassification: classification }) }
+        ]
+      });
+      const content = completion.choices[0]?.message.content;
+      const enriched = content ? enrichmentSchema.safeParse(JSON.parse(content)) : null;
+      if (enriched?.success) {
+        rewrittenQuery = enriched.data.rewrittenQuery ?? rewrittenQuery;
+        explanation = enriched.data.explanation ?? explanation;
+        source = "hybrid";
+      }
+    } catch {
+      // Deterministic classification remains fully operational.
+    }
+  }
+
+  const intent = itemClassificationSchema.parse({
+    ...classification,
+    rewrittenQuery,
+    filters: {
+      ...classification.filters,
+      maxPrice: classification.filters.maxPrice ?? input.budget,
+    },
+    source,
   });
-  const content = completion.choices[0]?.message.content;
-  if (content) intent = { ...intent, ...JSON.parse(content) };
-
-  const results = await searchMarketplace({ q: intent.rewrittenQuery, ...(intent.filters ?? {}), sort: "recommended", limit: 12 });
-  return NextResponse.json({ intent, results });
+  const results = await searchMarketplace({ q: intent.rewrittenQuery, ...intent.filters, location: input.location, sort: "recommended", limit: 12 });
+  return NextResponse.json({ intent: { ...intent, explanation }, results });
 }

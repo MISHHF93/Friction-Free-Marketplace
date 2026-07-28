@@ -33,16 +33,17 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npm run platform:verify
+      - run: npm run security:api
       - run: npm run shared:typecheck
       - run: npm run web:lint
       - run: npm run web:typecheck
       - run: npm run web:test
       - run: npm run web:build
+      - run: npm run security:audit
       - run: npx --yes @lhci/cli autorun
       - name: Check client artifacts for server secrets
-        shell: bash
-        run: |
-          ! grep -R -E "SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|OPENAI_API_KEY|RESEND_API_KEY|MEILISEARCH_API_KEY" apps/web/.next/static
+        run: node scripts/scan-artifact-secrets.mjs apps/web/.next/static
 
   browser:
     runs-on: ubuntu-latest
@@ -84,7 +85,7 @@ jobs:
             -e POSTHOG_KEY=phc_ci_placeholder \
             friction-free-marketplace:ci
           for attempt in {1..30}; do
-            curl --fail http://127.0.0.1:3000/api/health/ready && exit 0
+            curl --fail http://127.0.0.1:3000/api/health && exit 0
             sleep 2
           done
           docker logs marketplace
@@ -113,6 +114,8 @@ jobs:
         with:
           name: android-debug-bundle
           path: apps/mobile/android/app/build/outputs/bundle/debug/*.aab
+      - name: Scan Android package for server secret markers
+        run: node scripts/scan-artifact-secrets.mjs apps/mobile/android/app/build/outputs/bundle/debug
 
   ios:
     runs-on: macos-latest

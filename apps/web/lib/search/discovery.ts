@@ -1,6 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { listings as demoListings } from "@/lib/marketplace-data";
 import { configureDiscoveryIndex, deleteDiscoveryDocuments, isSearchConfigured, searchDiscoveryIndex, upsertDiscoveryDocuments, waitForMeiliTask } from "@/lib/search/meilisearch";
+import { enrichSearchParamsWithClassification } from "@/lib/search/item-classifier";
+import { recordReliabilityEvent } from "@/lib/observability/reliability";
+import { isDemoMarketplaceDataEnabled } from "@/lib/marketplace/demo-mode";
 import type { DiscoveryDocument, DiscoverySearchParams } from "@/lib/search/schema";
 
 export type DiscoveryResult = {
@@ -8,7 +11,7 @@ export type DiscoveryResult = {
   total: number;
   facets: Record<string, Record<string, number>>;
   facetStats: Record<string, { min: number; max: number }>;
-  source: "meilisearch" | "database" | "demo";
+  source: "meilisearch" | "database" | "demo" | "unavailable";
 };
 
 type Row = Record<string, unknown>;
@@ -184,14 +187,12 @@ function sortFallback(documents: DiscoveryDocument[], params: DiscoverySearchPar
   });
 }
 
-function shouldUseDemoMarketplaceData() {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY === "local-dev-placeholder" || process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("local-dev-placeholder");
-}
-
 export async function searchMarketplace(params: DiscoverySearchParams): Promise<DiscoveryResult> {
+  const resolvedParams = enrichSearchParamsWithClassification(params);
+
   if (isSearchConfigured()) {
     try {
-      const response = await searchDiscoveryIndex(params);
+      const response = await searchDiscoveryIndex(resolvedParams);
       return {
         listings: response.hits,
         total: response.estimatedTotalHits ?? response.hits.length,
@@ -200,27 +201,39 @@ export async function searchMarketplace(params: DiscoverySearchParams): Promise<
         source: "meilisearch"
       };
     } catch {
+      recordReliabilityEvent({
+        event: "search.provider_fallback",
+        route: "searchMarketplace",
+        status: "degraded",
+        provider: "meilisearch",
+        errorCode: "SEARCH_PROVIDER_UNAVAILABLE",
+      });
       // Fall back to the database or demo data when the configured search service is unavailable.
     }
   }
 
-  if (shouldUseDemoMarketplaceData()) {
-    const filtered = sortFallback(demoDocuments().filter((doc) => matchesFallback(doc, params)), params);
+  if (isDemoMarketplaceDataEnabled()) {
+    const filtered = sortFallback(demoDocuments().filter((doc) => matchesFallback(doc, resolvedParams)), resolvedParams);
     const fallbackFacets = buildFallbackFacets(filtered);
-    return { listings: filtered.slice(0, params.limit ?? 24), total: filtered.length, ...fallbackFacets, source: "demo" };
+    return { listings: filtered.slice(0, resolvedParams.limit ?? 24), total: filtered.length, ...fallbackFacets, source: "demo" };
   }
 
   try {
     const supabase = createAdminClient();
     const { data, error } = await (supabase as any).from("listing_search_documents").select("*").eq("status", "active").limit(200);
     if (error) throw error;
-    const filtered = sortFallback((data ?? []).map((row: Row) => rowToDiscoveryDocument(row)).filter((doc: DiscoveryDocument) => matchesFallback(doc, params)), params);
+    const filtered = sortFallback((data ?? []).map((row: Row) => rowToDiscoveryDocument(row)).filter((doc: DiscoveryDocument) => matchesFallback(doc, resolvedParams)), resolvedParams);
     const fallbackFacets = buildFallbackFacets(filtered);
-    return { listings: filtered.slice(0, params.limit ?? 24), total: filtered.length, ...fallbackFacets, source: "database" };
+    return { listings: filtered.slice(0, resolvedParams.limit ?? 24), total: filtered.length, ...fallbackFacets, source: "database" };
   } catch {
-    const filtered = sortFallback(demoDocuments().filter((doc) => matchesFallback(doc, params)), params);
-    const fallbackFacets = buildFallbackFacets(filtered);
-    return { listings: filtered.slice(0, params.limit ?? 24), total: filtered.length, ...fallbackFacets, source: "demo" };
+    recordReliabilityEvent({
+      event: "search.database_unavailable",
+      route: "searchMarketplace",
+      status: "error",
+      provider: "supabase",
+      errorCode: "SEARCH_DATABASE_UNAVAILABLE",
+    });
+    return { listings: [], total: 0, facets: {}, facetStats: {}, source: "unavailable" };
   }
 }
 

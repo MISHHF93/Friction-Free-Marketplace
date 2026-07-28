@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getOpenAI } from "@/lib/openai/client";
-import { consumeRateLimit, rateLimitHeaders } from "@/lib/security/rate-limit";
+import { consumeRateLimit, rateLimitHeaders, RateLimitUnavailableError } from "@/lib/security/rate-limit";
 import { createClient } from "@/lib/supabase/server";
+import { isTrustedMutationOrigin } from "@/lib/security/request-origin";
 
 const listingCopyRequestSchema = z.object({
   title: z.string().min(3),
@@ -11,10 +12,21 @@ const listingCopyRequestSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationOrigin(request)) {
+    return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+  }
   const supabase = createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return NextResponse.json({ error: "Sign in to generate AI listing copy." }, { status: 401 });
-  const rateLimit = consumeRateLimit(`ai-listing-copy:${user.id}`, { limit: 12, windowMs: 60_000 });
+  let rateLimit;
+  try {
+    rateLimit = await consumeRateLimit(`ai-listing-copy:${user.id}`, { policy: "ai-listing-copy", limit: 12, windowMs: 60_000 });
+  } catch (rateLimitError) {
+    if (rateLimitError instanceof RateLimitUnavailableError) {
+      return NextResponse.json({ error: "AI copy generation is temporarily unavailable." }, { status: 503 });
+    }
+    throw rateLimitError;
+  }
   if (!rateLimit.allowed) {
     return NextResponse.json(
       { error: "AI copy generation is temporarily rate limited. Try again shortly." },

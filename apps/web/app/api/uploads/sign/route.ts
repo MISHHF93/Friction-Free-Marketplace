@@ -5,6 +5,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { assertCanUseConversation, MessagingPermissionError } from "@/lib/messaging/permissions";
+import { isTrustedMutationOrigin } from "@/lib/security/request-origin";
 
 const LISTING_BUCKET = "listing-images";
 const MESSAGE_BUCKET = "message-attachments";
@@ -27,6 +28,7 @@ function extensionFor(name: string, fallback: string) {
 }
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Authentication required." }, { status: 401 });

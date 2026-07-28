@@ -605,6 +605,18 @@
     overflow-wrap: anywhere;
   }
 
+  [dir="rtl"] :where(input, textarea, select) {
+    text-align: start;
+  }
+
+  [dir="rtl"] .rtl-mirror {
+    transform: scaleX(-1);
+  }
+
+  [dir="rtl"] .table-base {
+    unicode-bidi: isolate;
+  }
+
   .section-y {
     @apply py-10 sm:py-14 lg:py-18;
   }

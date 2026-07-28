@@ -39,6 +39,7 @@ jobs:
         with:
           context: .
           push: true
+          load: true
           build-args: |
             NEXT_PUBLIC_APP_URL=${{ vars.PRODUCTION_APP_URL }}
             NEXT_PUBLIC_APP_NAME=Friction-Free Marketplace
@@ -49,7 +50,43 @@ jobs:
             NEXT_PUBLIC_POSTHOG_HOST=${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.sha }}
-            ghcr.io/${{ github.repository }}:latest
+      - name: Smoke test immutable container
+        env:
+          APP_URL: ${{ vars.PRODUCTION_APP_URL }}
+          SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ANDROID_FINGERPRINTS: ${{ secrets.ANDROID_SHA256_CERT_FINGERPRINTS }}
+        run: |
+          docker run -d --name marketplace-release -p 3000:3000 \
+            -e NEXT_PUBLIC_APP_URL="$APP_URL" \
+            -e NEXT_PUBLIC_SUPABASE_URL="$SUPABASE_URL" \
+            -e NEXT_PUBLIC_SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            -e SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" \
+            -e STRIPE_SECRET_KEY="$STRIPE_SECRET_KEY" \
+            -e STRIPE_WEBHOOK_SECRET="$STRIPE_WEBHOOK_SECRET" \
+            -e NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="$STRIPE_PUBLISHABLE_KEY" \
+            -e SUPPORT_EMAIL="$SUPPORT_EMAIL" \
+            -e APPLE_TEAM_ID="$APPLE_TEAM_ID" \
+            -e ANDROID_SHA256_CERT_FINGERPRINTS="$ANDROID_FINGERPRINTS" \
+            -e RELEASE_SHA="${{ github.sha }}" \
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
+          for attempt in {1..30}; do
+            curl --fail http://127.0.0.1:3000/api/health && break
+            sleep 2
+          done
+          PRODUCTION_URL=http://127.0.0.1:3000 SMOKE_ALLOW_LOCAL_HTTP=1 SMOKE_OUTPUT=container-smoke-evidence.json node scripts/production-smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: container-release-proof-${{ github.sha }}
+          path: container-smoke-evidence.json
+          if-no-files-found: warn
 
   vercel:
     if: inputs.deploy_vercel

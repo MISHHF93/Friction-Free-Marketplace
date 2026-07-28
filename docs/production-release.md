@@ -1,5 +1,7 @@
 # Production release guide
 
+Rollback and immutable-artifact recovery procedures are defined in `docs/rollback-runbook.md`. Every release must identify the Git commit, migration level, web deployment, container SHA tag, native version, and native build number in `docs/release-evidence-template.md`.
+
 ## Architecture
 
 The Next.js application is the canonical UI and server. Vercel or the included container runs its API routes and integrations. Capacitor packages that HTTPS origin as Android and iOS applications and exposes native deep linking, back navigation, network recovery, camera/photo input, and sharing. No server secret belongs in a browser or native build.

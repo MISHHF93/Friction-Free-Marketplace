@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+const browserOrigin = new URL(process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000").origin;
+
 test("exposes deployment health and install metadata", async ({ request }) => {
   const health = await request.get("/api/health");
   expect(health.ok()).toBeTruthy();
@@ -25,6 +27,7 @@ test("publishes store-required privacy and offline pages", async ({ page }) => {
 
 test("does not issue anonymous storage upload tokens", async ({ request }) => {
   const response = await request.post("/api/uploads/sign", {
+    headers: { Origin: browserOrigin },
     data: {
       purpose: "listing",
       files: [{ name: "photo.jpg", type: "image/jpeg", size: 1024 }]

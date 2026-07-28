@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+const browserOrigin = new URL(process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000").origin;
+
 test.describe("marketplace discovery and listing surfaces", () => {
   test("listing search renders filters and active query chips", async ({ page }) => {
     await page.goto("/search?q=camera&category=electronics&minSellerTrust=80");
@@ -20,7 +22,9 @@ test.describe("marketplace discovery and listing surfaces", () => {
   });
 
   test("unauthenticated favorites API is blocked", async ({ request }) => {
-    const response = await request.put("/api/favorites/11111111-1111-4111-8111-111111111111");
+    const response = await request.put("/api/favorites/11111111-1111-4111-8111-111111111111", {
+      headers: { Origin: browserOrigin },
+    });
 
     expect(response.status()).toBe(401);
     await expect(response.json()).resolves.toEqual({ error: "Sign in to manage favorites." });
@@ -28,6 +32,7 @@ test.describe("marketplace discovery and listing surfaces", () => {
 
   test("unauthenticated checkout API is blocked", async ({ request }) => {
     const response = await request.post("/api/stripe/payment-intents", {
+      headers: { Origin: browserOrigin },
       data: { listingId: "11111111-1111-4111-8111-111111111111" }
     });
 

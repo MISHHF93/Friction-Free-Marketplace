@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { DEV_AUTH_BYPASS_COOKIE, isDevAuthBypassCookieValue } from "@/lib/auth/dev-bypass";
+import { isTrustedMutationOrigin } from "@/lib/security/request-origin";
 
 type SupabaseUser = { id: string };
 type AppUserAccess = { role: string | null; status: string | null };
@@ -11,6 +12,14 @@ type PublicMiddlewareEnv = {
 const BASE64_PREFIX = "base64-";
 const protectedRoutePrefixes = ["/dashboard", "/admin", "/account"] as const;
 const authRoutePaths = ["/login", "/signup"] as const;
+const serverMutationPrefixes = [
+  "/api/stripe/webhooks",
+  "/api/search/sync",
+  "/api/admin/trust-safety/workers",
+  "/api/notifications/dispatch",
+  "/api/offers/expire",
+] as const;
+const mutationMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 function getPublicMiddlewareEnv(): PublicMiddlewareEnv | null {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
@@ -171,6 +180,13 @@ async function getAppUserAccess(userId: string, accessToken: string, env: Public
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  if (pathname.startsWith("/api/")) {
+    const serverMutation = serverMutationPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+    if (mutationMethods.has(request.method) && !serverMutation && !isTrustedMutationOrigin(request)) {
+      return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
+    }
+    return NextResponse.next();
+  }
   const needsAuthState = isProtectedRoute(pathname) || isAuthRoute(pathname);
 
   if (!needsAuthState) {
@@ -218,5 +234,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"]
 };

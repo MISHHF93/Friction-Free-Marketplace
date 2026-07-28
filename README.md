@@ -4,7 +4,7 @@ Friction-Free Marketplace is an AI-powered consumer commerce platform built arou
 
 ## What is included
 
-This repository contains a Next.js App Router web application in `apps/web` and the canonical deployable Supabase schema in `supabase/migrations`.
+This is the single source repository for the complete product: the hosted Next.js web application and backend, the Android application, the iOS application, shared packages, database schema, infrastructure, CI, and store-release automation. Android and iOS are Capacitor packages of the same hosted product; they are not separate products or repositories.
 
 - **App Router + TypeScript:** public marketplace pages, authenticated dashboards, admin surfaces, API routes, and middleware.
 - **Tailwind CSS + shadcn/ui-style components:** reusable buttons, cards, forms, labels, inputs, badges, listing cards, dashboards, and shells.
@@ -16,6 +16,28 @@ This repository contains a Next.js App Router web application in `apps/web` and 
 - **PostHog:** server-side analytics capture helper for product events.
 - **Zod + React Hook Form:** listing and auth validation powering usable forms.
 - **Vitest + Playwright:** starter unit and E2E tests with project config.
+- **Capacitor Android + iOS:** native packages, deep links, camera, sharing, connectivity recovery, safe areas, and store metadata in `apps/mobile`.
+
+## One repository, three application targets
+
+```text
+GitHub repository
+├── apps/web        Next.js UI, API routes, authentication, commerce, and AI
+├── apps/mobile
+│   ├── android     Google Play application project
+│   └── ios         Apple App Store application project
+├── packages        Code shared by repository workspaces
+├── supabase        Canonical database migrations
+└── .github         Web, Android, and iOS CI/release workflows
+```
+
+The web deployment is authoritative for marketplace data and server APIs. Both native applications securely load that HTTPS origin and add native behavior through Capacitor. Server secrets remain only in the hosted web/backend environment.
+
+The canonical native identity is:
+
+- Application ID: `com.frictionfreemarketplace.app`
+- Display name: `Friction-Free Marketplace`
+- Mobile origin input: `CAPACITOR_SERVER_URL`
 
 ## Repository structure
 
@@ -28,6 +50,12 @@ apps/web/
   tests/                Vitest unit tests and Playwright E2E specs
   middleware.ts         Supabase session refresh and protected-route guards
   .env.example          Local configuration template
+
+apps/mobile/
+  src/                  Native fallback/bridge source
+  android/              Google Play Android project
+  ios/                  Apple App Store iOS project
+  capacitor.config.ts   Shared native-shell configuration
 
 supabase/
   migrations/           Canonical ordered production schema
@@ -109,6 +137,9 @@ npm run web:test       # Run Vitest unit tests
 npm run web:test:e2e   # Run Playwright E2E tests
 npm run mobile:sync    # Sync web bridge and plugins into Android/iOS
 npm run mobile:doctor  # Verify local Capacitor toolchains
+npm run platform:verify # Prove web, Android, and iOS remain one repository/product
+npm run platform:build  # Build shared code, hosted web, and portable mobile bridge
+npm run platform:sync   # Verify and sync Capacitor Android/iOS projects
 ```
 
 ## Production deployment

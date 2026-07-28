@@ -19,6 +19,8 @@ Use one copy of this document for each staged release. Record evidence links or 
 - [ ] Fresh `supabase db reset` artifact:
 - [ ] Production proof workflow artifact:
 - [ ] Dependency audit reviewed:
+- [ ] Distributed rate-limit migration applied and concurrency tested:
+- [ ] Vercel and immutable container smoke artifacts reference the same commit:
 - [ ] Browser/client secret scan:
 - [ ] Android AAB artifact:
 - [ ] iOS IPA/TestFlight build:
@@ -69,6 +71,7 @@ Record listing, conversation, offer, transaction, PaymentIntent, webhook event, 
 - [ ] Every required row above passed or has an approved, linked risk acceptance.
 - [ ] Legal/privacy/store declarations match the deployed providers and behavior.
 - [ ] Monitoring and rollback owner confirmed.
+- [ ] Rollback target and runbook drill confirmed:
 - Decision: approve / reject
 - Approver:
 - Evidence or risk-acceptance links:

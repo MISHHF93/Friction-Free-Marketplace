@@ -11,11 +11,14 @@ const dispatchSchema = z.object({
 });
 
 function isAuthorized(request: Request) {
-  if (!env.SEARCH_SYNC_SECRET) return process.env.NODE_ENV !== "production";
-  return hasValidBearerSecret(request, env.SEARCH_SYNC_SECRET, "x-notification-dispatch-secret");
+  if (!env.SCHEDULED_JOB_SECRET) return process.env.NODE_ENV !== "production";
+  return hasValidBearerSecret(request, env.SCHEDULED_JOB_SECRET);
 }
 
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === "production" && !env.SCHEDULED_JOB_SECRET) {
+    return NextResponse.json({ error: "Scheduled job secret is not configured." }, { status: 503 });
+  }
   if (!isAuthorized(request)) return NextResponse.json({ error: "Unauthorized notification dispatcher." }, { status: 401 });
 
   const parsed = dispatchSchema.safeParse(await request.json().catch(() => ({})));

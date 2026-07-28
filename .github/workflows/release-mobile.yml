@@ -17,7 +17,23 @@ permissions:
   contents: read
 
 jobs:
+  web-proof:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Verify hosted backend before packaging
+        env:
+          PRODUCTION_URL: ${{ inputs.production_url }}
+          SMOKE_OUTPUT: mobile-web-proof.json
+        run: node scripts/production-smoke.mjs
+
   android:
+    needs: web-proof
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -66,6 +82,8 @@ jobs:
         with:
           name: android-release
           path: apps/mobile/android/app/build/outputs/bundle/release/*.aab
+      - name: Scan Android release package
+        run: node scripts/scan-artifact-secrets.mjs apps/mobile/android/app/build/outputs/bundle/release
       - name: Upload to Google Play internal testing
         uses: r0adkll/upload-google-play@v1
         with:
@@ -76,6 +94,7 @@ jobs:
           status: completed
 
   ios:
+    needs: web-proof
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -119,6 +138,8 @@ jobs:
         with:
           name: ios-release
           path: apps/mobile/build/export/*.ipa
+      - name: Scan iOS release package
+        run: node scripts/scan-artifact-secrets.mjs apps/mobile/build/export
       - name: Upload to TestFlight
         env:
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}

@@ -2,9 +2,9 @@ import { expect, test } from "@playwright/test";
 
 test("home page exposes marketplace navigation", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /a premium marketplace/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /browse by the way people actually shop/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /premium listing cards/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /good things find their next person/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /browse like a person, not a database/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /fresh finds, clearly presented/i })).toBeVisible();
   await expect(page.getByRole("main").getByRole("link", { name: /browse marketplace/i }).first()).toBeVisible();
   await expect(page.getByRole("banner").getByRole("link", { name: /sell/i })).toBeVisible();
 });

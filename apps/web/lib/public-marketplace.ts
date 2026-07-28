@@ -2,6 +2,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { listings as demoListings } from "@/lib/marketplace-data";
 import { rowToDiscoveryDocument, searchMarketplace, type DiscoveryResult } from "@/lib/search/discovery";
 import type { DiscoveryDocument } from "@/lib/search/schema";
+import { recordReliabilityEvent } from "@/lib/observability/reliability";
+import { isDemoMarketplaceDataEnabled } from "@/lib/marketplace/demo-mode";
 
 type Row = Record<string, unknown>;
 
@@ -28,11 +30,11 @@ export type SellerProfile = {
   completedTransactions: number;
   reviewCount: number;
   fraudRiskLevel: string;
-  source: "database" | "demo";
+  source: "database" | "demo" | "unavailable";
 };
 
 export type TrustSafetyStats = {
-  source: "database" | "demo";
+  source: "database" | "demo" | "unavailable";
   activeListings: number;
   trustedSellers: number;
   completedTransactions: number;
@@ -48,8 +50,14 @@ function numberValue(value: unknown, fallback = 0) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-function shouldUseDemoMarketplaceData() {
-  return process.env.SUPABASE_SERVICE_ROLE_KEY === "local-dev-placeholder" || process.env.NEXT_PUBLIC_SUPABASE_URL?.includes("local-dev-placeholder");
+function recordPublicDataFailure(operation: string) {
+  recordReliabilityEvent({
+    event: "public_data.unavailable",
+    route: operation,
+    status: "error",
+    provider: "supabase",
+    errorCode: "PUBLIC_DATA_UNAVAILABLE",
+  });
 }
 
 function demoCategoryRows(): PublicCategory[] {
@@ -73,7 +81,7 @@ export async function getFeaturedListings(limit = 6): Promise<DiscoveryResult> {
 }
 
 export async function getPublicListingParams(limit = 50): Promise<Array<{ id: string }>> {
-  if (shouldUseDemoMarketplaceData()) {
+  if (isDemoMarketplaceDataEnabled()) {
     return demoListings.slice(0, limit).map((listing) => ({ id: listing.id }));
   }
 
@@ -96,11 +104,12 @@ export async function getPublicListingParams(limit = 50): Promise<Array<{ id: st
     // Fall back below.
   }
 
-  return demoListings.slice(0, limit).map((listing) => ({ id: listing.id }));
+  recordPublicDataFailure("getPublicListingParams");
+  return [];
 }
 
 export async function getPublicSellerParams(limit = 50): Promise<Array<{ id: string }>> {
-  if (shouldUseDemoMarketplaceData()) {
+  if (isDemoMarketplaceDataEnabled()) {
     const seen = new Set<string>();
     return demoListings.flatMap((listing, index) => {
       const id = `demo-seller-${index}`;
@@ -136,17 +145,12 @@ export async function getPublicSellerParams(limit = 50): Promise<Array<{ id: str
     // Fall back below.
   }
 
-  const seen = new Set<string>();
-  return demoListings.flatMap((listing, index) => {
-    const id = `demo-seller-${index}`;
-    if (seen.has(id)) return [];
-    seen.add(id);
-    return [{ id }];
-  }).slice(0, limit);
+  recordPublicDataFailure("getPublicSellerParams");
+  return [];
 }
 
-export async function getPublicCategories(limit = 8): Promise<{ categories: PublicCategory[]; source: "database" | "demo" }> {
-  if (shouldUseDemoMarketplaceData()) {
+export async function getPublicCategories(limit = 8): Promise<{ categories: PublicCategory[]; source: "database" | "demo" | "unavailable" }> {
+  if (isDemoMarketplaceDataEnabled()) {
     return { categories: demoCategoryRows().slice(0, limit), source: "demo" };
   }
 
@@ -169,9 +173,10 @@ export async function getPublicCategories(limit = 8): Promise<{ categories: Publ
       listingCount: Array.isArray(row.listings) ? numberValue((row.listings[0] as Row | undefined)?.count) : 0
     }));
 
-    return { categories: categories.length ? categories : demoCategoryRows().slice(0, limit), source: categories.length ? "database" : "demo" };
+    return { categories, source: "database" };
   } catch {
-    return { categories: demoCategoryRows().slice(0, limit), source: "demo" };
+    recordPublicDataFailure("getPublicCategories");
+    return { categories: [], source: "unavailable" };
   }
 }
 
@@ -192,7 +197,7 @@ export async function getCategoryPage(slug: string) {
 }
 
 export async function getListingById(id: string): Promise<DiscoveryDocument | null> {
-  if (shouldUseDemoMarketplaceData()) {
+  if (isDemoMarketplaceDataEnabled()) {
     const result = await searchMarketplace({ limit: 200 });
     return result.listings.find((listing) => listing.id === id) ?? null;
   }
@@ -206,12 +211,12 @@ export async function getListingById(id: string): Promise<DiscoveryDocument | nu
     // Fall back below.
   }
 
-  const result = await searchMarketplace({ limit: 200 });
-  return result.listings.find((listing) => listing.id === id) ?? null;
+  recordPublicDataFailure("getListingById");
+  return null;
 }
 
 export async function getSellerProfile(id: string): Promise<{ seller: SellerProfile | null; listings: DiscoveryDocument[] }> {
-  if (shouldUseDemoMarketplaceData()) {
+  if (isDemoMarketplaceDataEnabled()) {
     const all = await searchMarketplace({ limit: 200 });
     const sellerListings = all.listings.filter((listing) => listing.seller_id === id || listing.seller_display_name.toLowerCase().replace(/\s+/g, "-") === id);
     const first = sellerListings[0] ?? all.listings[0];
@@ -275,35 +280,12 @@ export async function getSellerProfile(id: string): Promise<{ seller: SellerProf
     // Fall back below.
   }
 
-  const all = await searchMarketplace({ limit: 200 });
-  const sellerListings = all.listings.filter((listing) => listing.seller_id === id || listing.seller_display_name.toLowerCase().replace(/\s+/g, "-") === id);
-  const first = sellerListings[0] ?? all.listings[0];
-  if (!first) return { seller: null, listings: [] };
-
-  return {
-    seller: {
-      id: first.seller_id,
-      displayName: first.seller_display_name,
-      username: first.seller_display_name.toLowerCase().replace(/\s+/g, "-"),
-      bio: "Trusted marketplace seller with escrow-ready checkout, verified listing practices, and responsive buyer communication.",
-      avatarUrl: null,
-      bannerUrl: null,
-      locationLabel: first.location_label,
-      headline: "Verified seller focused on transparent, low-friction deals.",
-      responseTimeMinutes: 45,
-      trustScore: first.seller_trust_score,
-      sellerScore: first.safety_score,
-      completedTransactions: first.seller_completed_transactions,
-      reviewCount: Math.max(6, Math.round(first.seller_completed_transactions / 2)),
-      fraudRiskLevel: first.seller_fraud_risk_level,
-      source: "demo"
-    },
-    listings: sellerListings.length ? sellerListings : all.listings.slice(0, 3)
-  };
+  recordPublicDataFailure("getSellerProfile");
+  return { seller: null, listings: [] };
 }
 
 export async function getTrustSafetyStats(): Promise<TrustSafetyStats> {
-  if (shouldUseDemoMarketplaceData()) {
+  if (isDemoMarketplaceDataEnabled()) {
     return { source: "demo", activeListings: demoListings.length, trustedSellers: 3, completedTransactions: 86, lowRiskRate: 98 };
   }
 
@@ -328,6 +310,7 @@ export async function getTrustSafetyStats(): Promise<TrustSafetyStats> {
       lowRiskRate: scoreRows.length ? Math.round((lowRisk / scoreRows.length) * 100) : 100
     };
   } catch {
-    return { source: "demo", activeListings: demoListings.length, trustedSellers: 3, completedTransactions: 86, lowRiskRate: 98 };
+    recordPublicDataFailure("getTrustSafetyStats");
+    return { source: "unavailable", activeListings: 0, trustedSellers: 0, completedTransactions: 0, lowRiskRate: 0 };
   }
 }
