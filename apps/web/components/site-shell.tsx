@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
-import { ChevronDown, Download, Facebook, Instagram, Linkedin, Mail, MapPin, Menu, MessageSquare, Search, ShieldCheck, Store, Twitter, UserRound } from "lucide-react";
+import { ChevronDown, MapPin, Menu, MessageSquare, Search, ShieldCheck, Store, UserRound } from "lucide-react";
 import { logoutAction } from "@/app/auth/actions";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Badge } from "@/components/ui/badge";
@@ -66,8 +66,8 @@ const footerSections = [
     links: [
       { href: "/safety", label: "Community standards" },
       { href: "/pricing", label: "Fees" },
-      { href: "/account/settings", label: "Privacy settings" },
-      { href: "/dashboard/settings", label: "Notification preferences" }
+      { href: "/privacy", label: "Privacy policy" },
+      { href: "/terms", label: "Terms of service" }
     ]
   }
 ];
@@ -202,6 +202,7 @@ function MobilePrimaryNav() {
 export function SiteShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen">
+      <a href="#main-content" className="skip-link">Skip to main content</a>
       <ToastCenter />
       <header className="sticky top-0 z-50 border-b border-border/70 bg-background/90 backdrop-blur-xl">
         <div className="app-container flex flex-col gap-3 py-3">
@@ -247,7 +248,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main>{children}</main>
+      <main id="main-content" tabIndex={-1}>{children}</main>
       <footer className="border-t border-border bg-premium-dark text-white">
         <div className="app-container grid gap-10 py-10 sm:py-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)]">
           <div className="space-y-5">
@@ -260,20 +261,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <p className="max-w-md text-sm leading-6 text-slate-300">
               A local marketplace for clearer listings, safer payments, verified seller signals, and better handoffs.
             </p>
-            <form className="grid max-w-md gap-2 sm:grid-cols-[1fr_auto]">
-              <label htmlFor="newsletter-email" className="sr-only">Newsletter address</label>
-              <input id="newsletter-email" type="email" placeholder="Get marketplace updates" className="h-11 rounded-xl border border-white/10 bg-white/10 px-3 text-sm text-white outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-300" />
-              <Button type="submit" variant="trust">Sign up</Button>
-            </form>
             <div className="flex flex-wrap gap-3">
-              <Button variant="outline" className="border-white/15 bg-white/10 text-white hover:bg-white/15">
-                <Download className="h-4 w-4" /> App coming soon
+              <Badge className="border-white/15 bg-white/10 text-white">Web · Android · iOS</Badge>
+              <Button asChild variant="outline" className="border-white/15 bg-white/10 text-white hover:bg-white/15">
+                <Link href="/contact">Contact support</Link>
               </Button>
-              {[Facebook, Instagram, Twitter, Linkedin, Mail].map((Icon, index) => (
-                <Link href="/" className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:text-white" key={index} aria-label="Social link placeholder">
-                  <Icon className="h-4 w-4" />
-                </Link>
-              ))}
             </div>
           </div>
           <nav className="grid gap-7 sm:grid-cols-2 xl:grid-cols-4" aria-label="Footer navigation">

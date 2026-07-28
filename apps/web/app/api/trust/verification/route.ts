@@ -7,8 +7,7 @@ export const dynamic = "force-dynamic";
 
 const verificationSchema = z.object({
   checkType: z.enum(["identity", "email", "phone", "id_document", "payment", "payout", "category_proof"]),
-  evidence: z.record(z.unknown()).default({}),
-  provider: z.string().max(100).optional(),
+  note: z.string().trim().max(500).optional(),
 });
 
 export async function POST(request: Request) {
@@ -20,7 +19,10 @@ export async function POST(request: Request) {
   if (!payload.success) return NextResponse.json({ error: payload.error.flatten() }, { status: 400 });
 
   try {
-    const check = await submitVerificationCheck(supabase as any, user.id, payload.data);
+    const check = await submitVerificationCheck(supabase as any, user.id, {
+      checkType: payload.data.checkType,
+      note: payload.data.note,
+    });
     return NextResponse.json({ ok: true, check });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Verification could not be submitted." }, { status: 400 });

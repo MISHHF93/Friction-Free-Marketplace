@@ -25,8 +25,7 @@ import {
   respondToOfferAction,
   schedulePickupAction,
   sendMessageAction,
-  setTypingAction,
-  uploadMessageAttachmentsAction
+  setTypingAction
 } from "@/app/dashboard/messages/actions";
 
 type PendingAttachment = {
@@ -194,12 +193,31 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
     const files = Array.from(event.target.files ?? []);
     if (!files.length) return;
     setError(null);
-    const formData = new FormData();
-    formData.append("conversationId", activeConversation.id);
-    files.forEach((file) => formData.append("files", file));
-
     try {
-      const uploaded = await uploadMessageAttachmentsAction(formData);
+      const authorization = await fetch("/api/uploads/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          purpose: "message",
+          conversationId: activeConversation.id,
+          files: files.map((file) => ({ name: file.name, type: file.type, size: file.size }))
+        })
+      });
+      const payload = await authorization.json();
+      if (!authorization.ok) throw new Error(typeof payload.error === "string" ? payload.error : "Unable to authorize attachments.");
+      const storage = createClient().storage.from(payload.bucket);
+      const uploaded: PendingAttachment[] = [];
+      for (const [index, upload] of payload.uploads.entries()) {
+        const { error: uploadError } = await storage.uploadToSignedUrl(upload.path, upload.token, files[index], { contentType: files[index].type });
+        if (uploadError) throw uploadError;
+        uploaded.push({
+          storagePath: upload.path,
+          publicUrl: upload.publicUrl,
+          fileName: upload.fileName,
+          contentType: upload.contentType,
+          byteSize: upload.byteSize
+        });
+      }
       setAttachments((current) => [...current, ...uploaded].slice(0, 5));
       if (attachmentInputRef.current) attachmentInputRef.current.value = "";
     } catch (uploadError) {

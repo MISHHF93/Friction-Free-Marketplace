@@ -18,6 +18,12 @@ type AssistantResult = {
   auditSummary: string;
   model: string;
   fallback: boolean;
+  executedTools?: Array<{ tool: string; ok: boolean }>;
+};
+
+type AssistantResponse = {
+  result: AssistantResult;
+  latencyMs?: number;
 };
 
 const examples: Record<AgentId, string> = {
@@ -37,6 +43,7 @@ export function AssistantConsole() {
   const [result, setResult] = useState<AssistantResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [latencyMs, setLatencyMs] = useState<number | null>(null);
 
   const agent = useMemo(() => marketplaceAgents.find((item) => item.id === selectedAgent) ?? marketplaceAgents[0], [selectedAgent]);
 
@@ -44,22 +51,26 @@ export function AssistantConsole() {
     setIsLoading(true);
     setError(null);
     setResult(null);
+    setLatencyMs(null);
 
-    const response = await fetch("/api/ai/agents/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agent: selectedAgent, message, context: { userRole: "guest", locale: "en-US" } })
-    });
-
-    const data = await response.json();
-    setIsLoading(false);
-
-    if (!response.ok) {
-      setError(data.error ?? "The assistant could not run.");
-      return;
+    try {
+      const response = await fetch("/api/ai/agents/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent: selectedAgent, message, context: { userRole: "guest", locale: "en-US" } })
+      });
+      const data = await response.json() as AssistantResponse & { error?: string };
+      if (!response.ok) {
+        setError(data.error ?? "The assistant could not run.");
+        return;
+      }
+      setResult(data.result);
+      setLatencyMs(data.latencyMs ?? null);
+    } catch {
+      setError("The assistant is temporarily unreachable. Check your connection and try again.");
+    } finally {
+      setIsLoading(false);
     }
-
-    setResult(data.result);
   }
 
   return (
@@ -118,8 +129,13 @@ export function AssistantConsole() {
             <label className="text-sm font-semibold" htmlFor="assistant-message">Request</label>
             <Textarea id="assistant-message" value={message} onChange={(event) => setMessage(event.target.value)} className="min-h-36" />
           </div>
-          <Button onClick={runAgent} disabled={isLoading || message.length < 2}>
-            {isLoading ? "Running agent..." : <>Run assistant <Sparkles className="h-4 w-4" /></>}
+          <Button
+            onClick={runAgent}
+            disabled={message.trim().length < 2}
+            isLoading={isLoading}
+            loadingText="Thinking securely..."
+          >
+            Run assistant <Sparkles className="h-4 w-4" aria-hidden="true" />
           </Button>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -129,12 +145,16 @@ export function AssistantConsole() {
             <InfoList title="Database rules" items={agent.databaseAccessRules} />
           </div>
 
-          {error ? <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div> : null}
+          <div aria-live="polite" aria-atomic="true">
+            {isLoading ? <p className="sr-only">The marketplace assistant is preparing a response.</p> : null}
+            {error ? <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">{error}</div> : null}
+          </div>
 
           {result ? (
-            <div className="space-y-4 rounded-2xl border border-border bg-muted/30 p-4">
+            <div className="space-y-4 rounded-2xl border border-border bg-muted/30 p-4 motion-result-enter" aria-live="polite">
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 <CheckCircle2 className="h-4 w-4 text-primary" /> Model: {result.model} {result.fallback ? "(local fallback)" : ""}
+                {latencyMs !== null ? <span>Response: {latencyMs} ms</span> : null}
               </div>
               <div>
                 <h3 className="font-semibold">Answer</h3>
@@ -142,6 +162,12 @@ export function AssistantConsole() {
               </div>
               <InfoList title="Recommended actions" items={result.recommendedActions} />
               <InfoList title="Tool plan" items={result.toolPlan.map((tool) => `${tool.tool}: ${tool.reason}`)} />
+              {result.executedTools?.length ? (
+                <InfoList
+                  title="Live marketplace data used"
+                  items={result.executedTools.map((tool) => `${tool.tool}: ${tool.ok ? "completed" : "not executed"}`)}
+                />
+              ) : null}
               <InfoList title="Safety flags" items={result.safetyFlags.length ? result.safetyFlags : ["None returned"]} />
               <div className="rounded-xl bg-background p-3 text-xs text-muted-foreground">Audit: {result.auditSummary}</div>
             </div>

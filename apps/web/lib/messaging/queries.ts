@@ -28,8 +28,7 @@ function normalizeProfile(user: EmbeddedUser): MessagingUser | null {
   };
 }
 
-async function signedAttachmentUrl(storagePath: string, fallback: string | null) {
-  if (fallback) return fallback;
+async function signedAttachmentUrl(storagePath: string, _fallback: string | null) {
   try {
     const admin = createAdminClient();
     const { data } = await admin.storage.from("message-attachments").createSignedUrl(storagePath, 60 * 60);

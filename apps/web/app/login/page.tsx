@@ -10,7 +10,7 @@ function getSafeNext(next?: string | string[]) {
   return value && value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
 }
 
-export default async function LoginPage({ searchParams }: { searchParams?: Promise<{ next?: string | string[]; loggedOut?: string; authError?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams?: Promise<{ next?: string | string[]; loggedOut?: string; authError?: string; accountDeletionPending?: string }> }) {
   const resolvedSearchParams = await searchParams;
   const supabase = createClient();
   const {
@@ -38,6 +38,11 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
           {resolvedSearchParams?.authError ? (
             <p className="mb-5 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive" role="alert">
               {resolvedSearchParams.authError}
+            </p>
+          ) : null}
+          {resolvedSearchParams?.accountDeletionPending ? (
+            <p className="mb-5 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950" role="status">
+              Your marketplace data was anonymized and this session was closed. Contact support to finish removing the authentication record.
             </p>
           ) : null}
           <AuthForm mode="login" next={next} showDevBypass={isDevAuthBypassEnabled()} />

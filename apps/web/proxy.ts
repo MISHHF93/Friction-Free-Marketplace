@@ -9,7 +9,7 @@ type PublicMiddlewareEnv = {
 };
 
 const BASE64_PREFIX = "base64-";
-const protectedRoutePrefixes = ["/dashboard", "/seller", "/admin", "/account"] as const;
+const protectedRoutePrefixes = ["/dashboard", "/admin", "/account"] as const;
 const authRoutePaths = ["/login", "/signup"] as const;
 
 function getPublicMiddlewareEnv(): PublicMiddlewareEnv | null {

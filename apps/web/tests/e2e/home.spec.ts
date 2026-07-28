@@ -2,10 +2,28 @@ import { expect, test } from "@playwright/test";
 
 test("home page exposes marketplace navigation", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /buy and sell locally/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /marketplace search bar/i, includeHidden: true })).toBeAttached();
-  await expect(page.getByRole("heading", { name: /fresh inventory/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /take the marketplace with you/i })).toBeVisible();
-  await expect(page.getByRole("main").getByRole("link", { name: /browse listings/i })).toBeVisible();
-  await expect(page.getByRole("banner").getByRole("link", { name: "Sign up" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /a premium marketplace/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /browse by the way people actually shop/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /premium listing cards/i })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("link", { name: /browse marketplace/i }).first()).toBeVisible();
+  await expect(page.getByRole("banner").getByRole("link", { name: /sell/i })).toBeVisible();
+});
+
+test("keyboard users can bypass navigation", async ({ page }) => {
+  await page.goto("/");
+  await page.keyboard.press("Tab");
+
+  const skipLink = page.getByRole("link", { name: "Skip to main content" });
+  await expect(skipLink).toBeFocused();
+  await skipLink.press("Enter");
+  await expect(page.locator("#main-content")).toBeFocused();
+});
+
+test("mobile navigation keeps search and primary actions available", async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === "chromium", "Mobile-only acceptance check.");
+  await page.goto("/");
+
+  await expect(page.getByLabel("Search trusted marketplace listings")).toBeVisible();
+  await expect(page.getByRole("button", { name: /open mobile navigation/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sell", exact: true })).toBeVisible();
 });

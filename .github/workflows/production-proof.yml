@@ -1,0 +1,60 @@
+name: Production proof
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_url:
+        description: Real HTTPS origin to verify
+        required: true
+      release_version:
+        description: Release or store version represented by this evidence
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  public-origin:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Verify production origin
+        env:
+          PRODUCTION_URL: ${{ inputs.production_url }}
+          SMOKE_OUTPUT: production-smoke-evidence.json
+        run: node scripts/production-smoke.mjs
+      - name: Public browser journeys
+        env:
+          PLAYWRIGHT_BASE_URL: ${{ inputs.production_url }}
+          PLAYWRIGHT_SKIP_WEB_SERVER: "1"
+        run: |
+          npx playwright install --with-deps chromium webkit
+          npx playwright test tests/e2e/home.spec.ts tests/e2e/assistant.spec.ts tests/e2e/deployment.spec.ts
+        working-directory: apps/web
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-proof-${{ inputs.release_version }}
+          path: |
+            production-smoke-evidence.json
+            apps/web/playwright-report/
+            apps/web/test-results/
+          if-no-files-found: warn
+      - name: Publish evidence summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Production proof"
+            echo ""
+            echo "- Version: ${{ inputs.release_version }}"
+            echo "- Origin: ${{ inputs.production_url }}"
+            echo "- Commit: \`${{ github.sha }}\`"
+            echo "- Public origin and browser evidence is attached to this run."
+            echo "- Buyer/seller payment and real-device evidence must be attached using docs/release-evidence-template.md."
+          } >> "$GITHUB_STEP_SUMMARY"

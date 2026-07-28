@@ -23,7 +23,7 @@ export async function submitVerificationAction(formData: FormData) {
   const { supabase, user } = await requireUser();
   await submitVerificationCheck(supabase as any, user.id, {
     checkType: payload.checkType,
-    evidence: { note: payload.note || null },
+    note: payload.note,
   });
   revalidatePath("/dashboard/verification");
   revalidatePath("/dashboard/trust-score");

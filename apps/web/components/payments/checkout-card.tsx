@@ -78,9 +78,13 @@ export function CheckoutCard({ listingId, priceAmount, currency, disabled = fals
     setStatus("Preparing protected checkout...");
 
     try {
+      const idempotencyKey = crypto.randomUUID();
       const response = await fetch("/api/stripe/payment-intents", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey
+        },
         body: JSON.stringify({
           listingId,
           shippingCents: Math.round(shipping * 100)

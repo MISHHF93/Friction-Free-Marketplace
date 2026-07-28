@@ -1,10 +1,10 @@
 # Friction-Free Marketplace
 
-Friction-Free Marketplace is an AI-powered consumer commerce platform starter built around safe discovery, trusted transactions, governed AI agents, escrow-backed Stripe Connect payments, Meilisearch discovery, Resend transactional email, PostHog analytics, and Supabase-backed marketplace data.
+Friction-Free Marketplace is an AI-powered consumer commerce platform built around safe discovery, trusted transactions, governed AI assistance, manual-capture Stripe Connect payment protection, Meilisearch discovery, Resend transactional email, PostHog analytics, and Supabase-backed marketplace data.
 
 ## What is included
 
-This repository now contains a usable Next.js App Router web application in `apps/web` plus database starter assets in `database`.
+This repository contains a Next.js App Router web application in `apps/web` and the canonical deployable Supabase schema in `supabase/migrations`.
 
 - **App Router + TypeScript:** public marketplace pages, authenticated dashboards, admin surfaces, API routes, and middleware.
 - **Tailwind CSS + shadcn/ui-style components:** reusable buttons, cards, forms, labels, inputs, badges, listing cards, dashboards, and shells.
@@ -29,8 +29,11 @@ apps/web/
   middleware.ts         Supabase session refresh and protected-route guards
   .env.example          Local configuration template
 
+supabase/
+  migrations/           Canonical ordered production schema
+
 database/
-  migrations/           Supabase SQL migrations
+  migrations/           Legacy/reference migration extracts
   seeds/                Starter seed data
 
 docs/                   Product and technical architecture blueprints
@@ -82,8 +85,10 @@ docs/                   Product and technical architecture blueprints
 
    ```bash
    supabase db push
-   supabase db execute --file database/seeds/categories.sql
+   psql "$DATABASE_URL" -f database/seeds/categories.sql
    ```
+
+   Local `supabase db reset` applies the configured seed automatically. For hosted projects, use the PostgreSQL connection string with `psql` or run the seed in the Supabase SQL editor.
 
 5. Run the web app:
 
@@ -102,11 +107,21 @@ npm run web:lint       # Run Next.js ESLint
 npm run web:typecheck  # Run TypeScript checks
 npm run web:test       # Run Vitest unit tests
 npm run web:test:e2e   # Run Playwright E2E tests
+npm run mobile:sync    # Sync web bridge and plugins into Android/iOS
+npm run mobile:doctor  # Verify local Capacitor toolchains
 ```
+
+## Production deployment
+
+The full Next.js application can deploy from GitHub to Vercel or as the included Docker image. Android and iOS projects live in `apps/mobile`; they require a deployed HTTPS web origin and store credentials. See [docs/production-release.md](docs/production-release.md) for the complete web, Play Store, and App Store procedure.
+
+The current evidence, weighted readiness score, and release blockers are tracked in [docs/production-readiness-scorecard.md](docs/production-readiness-scorecard.md). Run `npm run release:check` for the portable application checks; GitHub Actions additionally validates Docker, Supabase, Android, iOS, browser, and artifact-specific requirements.
+
+After deploying a real HTTPS origin, run `PRODUCTION_URL=https://market.yourdomain.com npm run production:smoke` with the actual hostname. The manual “Production proof” workflow records public-origin and browser evidence. Use [docs/release-evidence-template.md](docs/release-evidence-template.md) to prove the authenticated buyer, seller, protected-payment, trust, and real-device journeys before promotion.
 
 ## Database notes
 
-The initial SQL migration creates marketplace users, profiles, categories, listings, listing images, core enums, indexes via unique constraints, and starter RLS policies. The broader application already includes typed client code for additional commerce, messaging, trust, payment, AI, and audit tables; extend `database/migrations` as those modules are hardened for production.
+The ordered files in `supabase/migrations` are the source of truth for fresh and incremental deployments. They include commerce, messaging, discovery, trust, payment, administration, AI, audit, notification, ledger, and account-retention structures. Files under `database/migrations` are retained as focused reference extracts and must not be used instead of the canonical Supabase migration history.
 
 ## Stripe Connect notes
 

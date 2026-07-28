@@ -4,11 +4,10 @@ import { ArrowRight, Mail, MessageSquare, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { ContactForm } from "@/components/contact-form";
 import { EmptyState } from "@/components/ui-library";
 import { contactReasons, marketplaceJsonLd } from "@/lib/public-site";
+import { env } from "@/lib/env.server";
 
 export const metadata: Metadata = {
   title: "Contact | Friction-Free Marketplace",
@@ -62,40 +61,11 @@ export default function ContactPage() {
               <Badge variant="premium" className="w-fit">Contact form</Badge>
               <CardTitle>Tell us what you need.</CardTitle>
               <CardDescription>
-                This production-ready form structure is ready to wire to Resend or a support workflow. Keep sensitive payment details out of free-text fields.
+                Messages are delivered to the configured marketplace support inbox. Keep sensitive payment details out of free-text fields.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form className="grid gap-4" aria-label="Contact Friction-Free Marketplace">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="form-field">
-                    <Label htmlFor="contact-name">Name</Label>
-                    <Input id="contact-name" name="name" autoComplete="name" required placeholder="Your name" />
-                  </div>
-                  <div className="form-field">
-                    <Label htmlFor="contact-email">Email</Label>
-                    <Input id="contact-email" name="email" type="email" autoComplete="email" required placeholder="you@example.com" />
-                  </div>
-                </div>
-                <div className="form-field">
-                  <Label htmlFor="contact-topic">Topic</Label>
-                  <select id="contact-topic" name="topic" className="form-control" defaultValue="buyer-support">
-                    <option value="buyer-support">Buyer support</option>
-                    <option value="seller-onboarding">Seller onboarding</option>
-                    <option value="safety-report">Safety report</option>
-                    <option value="partnership">Partnership</option>
-                    <option value="platform">Platform question</option>
-                  </select>
-                </div>
-                <div className="form-field">
-                  <Label htmlFor="contact-message">Message</Label>
-                  <Textarea id="contact-message" name="message" required placeholder="Share the listing, order, account, or partnership context we should know." />
-                  <p className="form-helper">For urgent safety concerns, include the listing or message link when available.</p>
-                </div>
-                <Button type="submit" size="lg" className="w-full sm:w-fit">
-                  Send message
-                </Button>
-              </form>
+              <ContactForm />
             </CardContent>
           </Card>
 
@@ -114,13 +84,13 @@ export default function ContactPage() {
                 </span>
                 <CardTitle>Prefer email?</CardTitle>
                 <CardDescription>
-                  Support routing will eventually connect to Resend-backed transactional and operational email workflows.
+                  Email support directly if the form is unavailable.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button asChild variant="outline">
-                  <Link href="mailto:support@friction-free.market">
-                    support@friction-free.market <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  <Link href={`mailto:${env.SUPPORT_EMAIL}`}>
+                    {env.SUPPORT_EMAIL} <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </Link>
                 </Button>
               </CardContent>

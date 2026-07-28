@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Check, Share2 } from "lucide-react";
+import { Capacitor } from "@capacitor/core";
+import { Share } from "@capacitor/share";
 import { Button } from "@/components/ui/button";
 
 export function ShareListingButton({ title, path, className }: { title: string; path: string; className?: string }) {
@@ -9,6 +11,11 @@ export function ShareListingButton({ title, path, className }: { title: string; 
 
   async function shareListing() {
     const url = new URL(path, window.location.origin).toString();
+
+    if (Capacitor.isNativePlatform()) {
+      await Share.share({ title, text: title, url, dialogTitle: "Share listing" });
+      return;
+    }
 
     if (navigator.share) {
       await navigator.share({ title, url });

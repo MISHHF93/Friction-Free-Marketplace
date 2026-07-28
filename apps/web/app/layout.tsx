@@ -1,12 +1,35 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { SiteShell } from "@/components/site-shell";
 import { publicEnv } from "@/lib/env";
+import { PwaRegistrar } from "@/components/pwa-registrar";
+import { NativeBridge } from "@/components/native-bridge";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#047857"
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicEnv.NEXT_PUBLIC_APP_URL),
   applicationName: "Friction-Free Marketplace",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "FF Marketplace"
+  },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-1024.png", type: "image/png", sizes: "1024x1024" }
+    ],
+    shortcut: "/icon-1024.png",
+    apple: [{ url: "/icon-1024.png", sizes: "1024x1024", type: "image/png" }]
+  },
   title: {
     default: "Friction-Free Marketplace | AI-powered trusted commerce",
     template: "%s | Friction-Free Marketplace"
@@ -43,6 +66,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <SiteShell>{children}</SiteShell>
+        <PwaRegistrar />
+        <NativeBridge />
       </body>
     </html>
   );

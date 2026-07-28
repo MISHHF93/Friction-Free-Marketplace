@@ -18,7 +18,6 @@ import {
   generateAiListingAction,
   deleteListingAction,
   updateListingAction,
-  uploadListingImagesAction,
 } from "@/actions/listings";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +31,7 @@ import {
   LISTING_STATUSES,
   type AiListingResponse,
 } from "@/lib/listings/validation";
+import { createClient as createBrowserClient } from "@/lib/supabase/browser";
 
 const MAX_IMAGES = 12;
 const FULFILLMENT_OPTIONS = ["shipping", "pickup", "local_delivery"] as const;
@@ -372,18 +372,35 @@ export function ListingForm({
     if (!files.length) return;
     setBusy("Uploading photos");
     setError(null);
-    const data = new FormData();
-    files.forEach((file) => data.append("files", file));
-    data.append("existingCount", String(images.length));
-
-    const result = await uploadListingImagesAction(data);
-    setBusy(null);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-    if (!result.ok) {
-      setError(result.error);
+    const authorization = await fetch("/api/uploads/sign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        purpose: "listing",
+        existingCount: images.length,
+        files: files.map((file) => ({ name: file.name, type: file.type, size: file.size }))
+      })
+    });
+    const payload = await authorization.json();
+    if (!authorization.ok) {
+      setBusy(null);
+      setError(typeof payload.error === "string" ? payload.error : "Unable to authorize photo uploads.");
       return;
     }
-    updateImages([...images, ...result.data].slice(0, MAX_IMAGES));
+    const storage = createBrowserClient().storage.from(payload.bucket);
+    const uploaded: UploadedImage[] = [];
+    for (const [index, upload] of payload.uploads.entries()) {
+      const { error: uploadError } = await storage.uploadToSignedUrl(upload.path, upload.token, files[index], { contentType: files[index].type });
+      if (uploadError) {
+        setBusy(null);
+        setError(uploadError.message);
+        return;
+      }
+      uploaded.push({ storagePath: upload.path, publicUrl: upload.publicUrl, altText: files[index].name.replace(/\.[^.]+$/, ""), sortOrder: upload.sortOrder });
+    }
+    setBusy(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    updateImages([...images, ...uploaded].slice(0, MAX_IMAGES));
     setSuccess(
       "Photos uploaded. Drag-free reorder controls are available below each image.",
     );

@@ -3,6 +3,7 @@
   "private": true,
   "workspaces": [
     "apps/web",
+    "apps/mobile",
     "packages/*"
   ],
   "scripts": {
@@ -12,18 +13,22 @@
     "shared:build": "npm --workspace @ffm/shared run build",
     "shared:typecheck": "npm --workspace @ffm/shared run typecheck",
     "web:dev": "npm --workspace apps/web run dev",
+    "web:start": "npm --workspace apps/web run start",
     "web:build": "npm --workspace apps/web run build",
     "web:lint": "npm --workspace apps/web run lint",
     "web:typecheck": "npm --workspace apps/web run typecheck",
     "web:test": "npm --workspace apps/web run test",
     "web:test:unit": "npm --workspace apps/web run test:unit",
     "web:test:e2e": "npm --workspace apps/web run test:e2e",
-    "web:search:index": "npm --workspace apps/web run search:index"
+    "web:search:index": "npm --workspace apps/web run search:index",
+    "mobile:sync": "npm --workspace @ffm/mobile run sync",
+    "mobile:android": "npm --workspace @ffm/mobile run open:android",
+    "mobile:ios": "npm --workspace @ffm/mobile run open:ios",
+    "mobile:doctor": "npm --workspace @ffm/mobile run doctor",
+    "release:check": "npm run shared:typecheck && npm run web:lint && npm run web:typecheck && npm run web:test && npm run web:build && npm --workspace @ffm/mobile run build",
+    "production:smoke": "node scripts/production-smoke.mjs"
   },
   "overrides": {
-    "next": {
-      "postcss": "8.5.15"
-    },
-    "postcss": "8.5.15"
+    "postcss": "8.5.23"
   }
 }

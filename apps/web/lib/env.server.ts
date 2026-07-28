@@ -24,6 +24,7 @@ const buildTimeServerEnv: ServerEnv = {
   ADMIN_WORKER_SECRET: "admin-worker-build-time-placeholder",
   RESEND_API_KEY: "re_build_time_placeholder",
   RESEND_FROM_EMAIL: "Friction-Free Marketplace <hello@example.com>",
+  SUPPORT_EMAIL: "support@example.com",
   POSTHOG_KEY: "phc_build_time_placeholder",
   POSTHOG_HOST: "https://app.posthog.com"
 };

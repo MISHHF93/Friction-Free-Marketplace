@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { DEV_AUTH_BYPASS_COOKIE, isDevAuthBypassEnabled } from "@/lib/auth/dev-bypass";
 import { publicEnv } from "@/lib/env";
 import { authSchema, profileSettingsSchema, signupSchema } from "@/lib/validations/auth";
@@ -205,4 +206,29 @@ export async function updateAccountAction(_previousState: AuthActionState, formD
   revalidatePath("/account/settings");
   revalidatePath("/", "layout");
   return { status: "success", message: "Account settings saved." };
+}
+
+export async function deleteAccountAction(formData: FormData) {
+  if (getFormString(formData, "confirmation") !== "DELETE") {
+    redirect("/account/settings?deleteError=Type%20DELETE%20to%20confirm");
+  }
+
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login?next=/account/settings");
+
+  const admin = createAdminClient();
+  const { error: anonymizeError } = await (admin as any).rpc("anonymize_marketplace_account", {
+    target_user_id: user.id
+  });
+  if (anonymizeError) {
+    redirect(`/account/settings?deleteError=${encodeURIComponent("Unable to anonymize the account. Please contact support.")}`);
+  }
+
+  const { error } = await admin.auth.admin.deleteUser(user.id, true);
+  const cookieStore = await cookies();
+  await supabase.auth.signOut();
+  cookieStore.delete(DEV_AUTH_BYPASS_COOKIE);
+  if (error) redirect("/login?accountDeletionPending=1");
+  redirect("/?accountDeleted=1");
 }

@@ -24,8 +24,11 @@ export const serverEnvSchema = publicEnvSchema.extend({
   ADMIN_WORKER_SECRET: z.string().trim().min(1).optional(),
   RESEND_API_KEY: requiredString("RESEND_API_KEY"),
   RESEND_FROM_EMAIL: z.string().trim().min(3).default("Friction-Free Marketplace <hello@example.com>"),
+  SUPPORT_EMAIL: requiredString("SUPPORT_EMAIL"),
   POSTHOG_KEY: requiredString("POSTHOG_KEY"),
-  POSTHOG_HOST: z.string().trim().url().default("https://app.posthog.com")
+  POSTHOG_HOST: z.string().trim().url().default("https://app.posthog.com"),
+  APPLE_TEAM_ID: z.string().trim().min(1).optional(),
+  ANDROID_SHA256_CERT_FINGERPRINTS: z.string().trim().min(1).optional()
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
@@ -47,6 +50,7 @@ export const localDevelopmentEnv: ServerEnv = {
   ADMIN_WORKER_SECRET: "admin-worker-local-dev-placeholder",
   RESEND_API_KEY: "re_local_dev_placeholder",
   RESEND_FROM_EMAIL: "Friction-Free Marketplace <hello@example.com>",
+  SUPPORT_EMAIL: "support@example.com",
   POSTHOG_KEY: "phc_local_dev_placeholder",
   POSTHOG_HOST: "https://app.posthog.com"
 };

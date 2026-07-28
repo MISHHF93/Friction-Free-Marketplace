@@ -12,7 +12,7 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=(self)" },
+  { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(self), payment=(self)" },
   {
     key: "Content-Security-Policy",
     value: [
@@ -26,7 +26,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
       "frame-src https://js.stripe.com https://hooks.stripe.com",
-      "connect-src 'self' https://*.supabase.co https://api.stripe.com https://*.posthog.com"
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.posthog.com"
     ].join("; ")
   },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }
@@ -34,6 +34,7 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: "standalone",
   allowedDevOrigins: ["127.0.0.1"],
   async headers() {
     return [
@@ -59,6 +60,7 @@ const localDevelopmentEnvironment = {
   MEILISEARCH_API_KEY: "local-dev-placeholder",
   ADMIN_WORKER_SECRET: "admin-worker-local-dev-placeholder",
   RESEND_API_KEY: "re_local_dev_placeholder",
+  SUPPORT_EMAIL: "support@example.com",
   POSTHOG_KEY: "phc_local_dev_placeholder",
   POSTHOG_HOST: "https://app.posthog.com",
   NEXT_PUBLIC_POSTHOG_HOST: "https://app.posthog.com"
@@ -75,6 +77,7 @@ const requiredEnvironmentVariables = [
   "MEILISEARCH_HOST",
   "MEILISEARCH_API_KEY",
   "RESEND_API_KEY",
+  "SUPPORT_EMAIL",
   "POSTHOG_KEY",
   "NEXT_PUBLIC_APP_URL"
 ];

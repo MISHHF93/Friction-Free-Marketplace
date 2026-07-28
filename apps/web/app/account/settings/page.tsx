@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { logoutAction } from "@/app/auth/actions";
+import { deleteAccountAction, logoutAction } from "@/app/auth/actions";
 import { AccountSettingsForm } from "@/components/forms/account-settings-form";
 import { NotificationPreferencesForm } from "@/components/notifications/notification-preferences-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { getNotificationPreferences } from "@/lib/notifications/service";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function AccountSettingsPage() {
+export default async function AccountSettingsPage({ searchParams }: { searchParams?: Promise<{ deleteError?: string }> }) {
+  const query = await searchParams;
   const supabase = createClient();
   const {
     data: { user },
@@ -58,6 +59,18 @@ export default async function AccountSettingsPage() {
                 Log out
               </Button>
             </form>
+            <div className="mt-6 border-t border-border pt-6">
+              <p className="font-semibold text-destructive">Delete account</p>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                Permanently removes your login and personal account data. Legally required transaction records may be retained.
+              </p>
+              {query?.deleteError ? <p className="mt-3 text-xs text-destructive" role="alert">{query.deleteError}</p> : null}
+              <form className="mt-4 grid gap-3" action={deleteAccountAction}>
+                <label className="text-xs font-medium" htmlFor="confirmation">Type DELETE to confirm</label>
+                <input className="h-10 rounded-xl border border-border bg-background px-3 text-sm" id="confirmation" name="confirmation" required />
+                <Button className="w-full" variant="destructive" type="submit">Delete my account</Button>
+              </form>
+            </div>
           </CardContent>
         </Card>
       </div>

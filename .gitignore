@@ -26,3 +26,5 @@ pnpm-debug.log*
 # system
 .DS_Store
 *.tsbuildinfo
+test-results/
+playwright-report/

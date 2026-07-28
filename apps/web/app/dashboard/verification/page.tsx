@@ -15,6 +15,16 @@ function statusVariant(status: string) {
   return status === "verified" ? "trust" : status === "pending" ? "warning" : status === "failed" || status === "expired" ? "risk" : "default";
 }
 
+function assuranceLabel(assurance: string) {
+  switch (assurance) {
+    case "provider_verified": return "Provider verified";
+    case "self_attested_pending": return "Self-submitted · awaiting review";
+    case "review_failed": return "Review unsuccessful";
+    case "expired": return "Verification expired";
+    default: return "Not submitted";
+  }
+}
+
 export default async function VerificationPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -35,7 +45,12 @@ export default async function VerificationPage() {
         <CardHeader><CardTitle>Verification checklist</CardTitle></CardHeader>
         <CardContent className="grid gap-3">
           {checks.map((check) => (
-            <DashboardListItem key={check.checkType} title={check.label} detail={check.description} status={statusLabel(check.status)}>
+            <DashboardListItem
+              key={check.checkType}
+              title={check.label}
+              detail={`${check.description} ${assuranceLabel(check.assurance)}.`}
+              status={statusLabel(check.status)}
+            >
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant={statusVariant(check.status) as any}>{check.requiredFor.join(", ")}</Badge>
                 <form action={submitVerificationAction} className="flex gap-2">
@@ -51,7 +66,7 @@ export default async function VerificationPage() {
           ))}
         </CardContent>
       </Card>
-      <DashboardActionCard icon={FileText} title="How verification is used" description="Verification data supports account safety, transaction eligibility, account recovery, and compliance. It is not shown as public profile content.">
+      <DashboardActionCard icon={FileText} title="How verification is used" description="A submission is not a verification. Public badges and trust points are awarded only after a provider or authorized reviewer marks a check verified. Raw verification evidence is not shown as public profile content.">
         <Button asChild><a href="/dashboard/trust-safety"><CheckCircle2 className="h-4 w-4" /> Open safety center</a></Button>
       </DashboardActionCard>
     </DashboardShell>

@@ -275,7 +275,7 @@ export type Database = {
           status: "pending_payment" | "paid" | "escrowed" | "completed" | "cancelled" | "refunded" | "disputed";
           item_amount: number; shipping_amount: number; tax_amount: number; marketplace_fee_amount: number; total_amount: number; currency: string;
           paid_at: string | null; shipped_at: string | null; delivered_at: string | null; completed_at: string | null; cancelled_at: string | null;
-          metadata: Json; created_at: string; updated_at: string;
+          idempotency_key: string | null; metadata: Json; created_at: string; updated_at: string;
         };
         Insert: Partial<Database["public"]["Tables"]["transactions"]["Row"]> & { listing_id: string; buyer_id: string; seller_id: string };
         Update: Partial<Database["public"]["Tables"]["transactions"]["Row"]>;

@@ -11,6 +11,8 @@ const staticRoutes = [
   "/pricing",
   "/company",
   "/contact",
+  "/privacy",
+  "/terms",
   "/seller",
   "/search"
 ];

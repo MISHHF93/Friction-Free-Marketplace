@@ -1,0 +1,127 @@
+name: Release mobile
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_url:
+        description: Production HTTPS application origin
+        required: true
+      version_name:
+        description: Store version, for example 1.0.0
+        required: true
+      build_number:
+        description: Monotonically increasing integer for both stores
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - name: Validate release configuration
+        shell: bash
+        env:
+          PRODUCTION_URL: ${{ inputs.production_url }}
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          PLAY_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          node -e "const u=new URL(process.env.PRODUCTION_URL); if(u.protocol!=='https:' || u.hostname==='marketplace.example.com') process.exit(1)"
+          test -n "$KEYSTORE"
+          test -n "$PLAY_SERVICE_ACCOUNT"
+      - name: Resolve verified-link hostname
+        shell: bash
+        env:
+          PRODUCTION_URL: ${{ inputs.production_url }}
+        run: echo "FFM_APP_LINK_HOST=$(node -e 'console.log(new URL(process.env.PRODUCTION_URL).hostname)')" >> "$GITHUB_ENV"
+      - run: npm run mobile:sync
+        env:
+          CAPACITOR_SERVER_URL: ${{ inputs.production_url }}
+      - name: Restore Android signing key
+        shell: bash
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > apps/mobile/android/release.jks
+      - name: Build signed Android App Bundle
+        working-directory: apps/mobile/android
+        env:
+          FFM_KEYSTORE_PATH: release.jks
+          FFM_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          FFM_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          FFM_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          FFM_VERSION_NAME: ${{ inputs.version_name }}
+          FFM_BUILD_NUMBER: ${{ inputs.build_number }}
+        run: ./gradlew bundleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: apps/mobile/android/app/build/outputs/bundle/release/*.aab
+      - name: Upload to Google Play internal testing
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.frictionfreemarketplace.app
+          releaseFiles: apps/mobile/android/app/build/outputs/bundle/release/*.aab
+          track: internal
+          status: completed
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Validate release configuration
+        shell: bash
+        env:
+          PRODUCTION_URL: ${{ inputs.production_url }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          API_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}
+        run: |
+          node -e "const u=new URL(process.env.PRODUCTION_URL); if(u.protocol!=='https:' || u.hostname==='marketplace.example.com') process.exit(1)"
+          test -n "$TEAM_ID"
+          test -n "$API_KEY"
+      - name: Resolve verified-link hostname
+        shell: bash
+        env:
+          PRODUCTION_URL: ${{ inputs.production_url }}
+        run: echo "FFM_APP_LINK_HOST=$(node -e 'console.log(new URL(process.env.PRODUCTION_URL).hostname)')" >> "$GITHUB_ENV"
+      - run: npm run mobile:sync
+        env:
+          CAPACITOR_SERVER_URL: ${{ inputs.production_url }}
+      - name: Install App Store Connect API key
+        env:
+          API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          API_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY }}
+        run: |
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          printf '%s' "$API_PRIVATE_KEY" > "$HOME/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8"
+      - name: Build archive
+        working-directory: apps/mobile
+        run: xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" FFM_APP_LINK_HOST="$FFM_APP_LINK_HOST" MARKETING_VERSION="${{ inputs.version_name }}" CURRENT_PROJECT_VERSION="${{ inputs.build_number }}" -allowProvisioningUpdates -authenticationKeyPath "$HOME/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8" -authenticationKeyID "${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}" -authenticationKeyIssuerID "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}" archive
+      - name: Export IPA
+        working-directory: apps/mobile
+        run: xcodebuild -exportArchive -archivePath build/App.xcarchive -exportPath build/export -exportOptionsPlist ios/ExportOptions.plist -allowProvisioningUpdates
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-release
+          path: apps/mobile/build/export/*.ipa
+      - name: Upload to TestFlight
+        env:
+          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          xcrun altool --upload-app --type ios --file apps/mobile/build/export/*.ipa --apiKey "$APP_STORE_CONNECT_API_KEY_ID" --apiIssuer "$APP_STORE_CONNECT_ISSUER_ID"

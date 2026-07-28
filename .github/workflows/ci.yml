@@ -1,0 +1,131 @@
+name: Continuous integration
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Validate canonical migrations from an empty database
+        run: |
+          supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor
+          supabase db reset
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --no-backup
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run shared:typecheck
+      - run: npm run web:lint
+      - run: npm run web:typecheck
+      - run: npm run web:test
+      - run: npm run web:build
+      - run: npx --yes @lhci/cli autorun
+      - name: Check client artifacts for server secrets
+        shell: bash
+        run: |
+          ! grep -R -E "SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|OPENAI_API_KEY|RESEND_API_KEY|MEILISEARCH_API_KEY" apps/web/.next/static
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run web:test:e2e
+
+  container:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: friction-free-marketplace:ci
+          load: true
+      - name: Container health smoke test
+        run: |
+          docker run -d --name marketplace -p 3000:3000 \
+            -e NEXT_PUBLIC_APP_URL=http://127.0.0.1:3000 \
+            -e NEXT_PUBLIC_SUPABASE_URL=https://ci.supabase.co \
+            -e NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-placeholder \
+            -e SUPABASE_SERVICE_ROLE_KEY=ci-placeholder \
+            -e STRIPE_SECRET_KEY=sk_test_ci_placeholder \
+            -e STRIPE_WEBHOOK_SECRET=whsec_ci_placeholder \
+            -e NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_ci_placeholder \
+            -e OPENAI_API_KEY=sk-ci-placeholder \
+            -e MEILISEARCH_HOST=http://127.0.0.1:7700 \
+            -e MEILISEARCH_API_KEY=ci-placeholder \
+            -e RESEND_API_KEY=re_ci_placeholder \
+            -e POSTHOG_KEY=phc_ci_placeholder \
+            friction-free-marketplace:ci
+          for attempt in {1..30}; do
+            curl --fail http://127.0.0.1:3000/api/health/ready && exit 0
+            sleep 2
+          done
+          docker logs marketplace
+          exit 1
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npm run mobile:sync
+        env:
+          CAPACITOR_SERVER_URL: https://marketplace.example.com
+      - working-directory: apps/mobile/android
+        run: ./gradlew testDebugUnitTest lintDebug bundleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-debug-bundle
+          path: apps/mobile/android/app/build/outputs/bundle/debug/*.aab
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run mobile:sync
+        env:
+          CAPACITOR_SERVER_URL: https://marketplace.example.com
+      - name: Compile unsigned iOS application
+        working-directory: apps/mobile
+        run: xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build

@@ -48,14 +48,16 @@ export default async function HomePage() {
         }}
       />
 
-      <section className="app-container grid gap-10 py-section-sm lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)] lg:items-center">
-        <div>
+      <section className="app-container relative isolate grid gap-10 overflow-hidden py-section-sm lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)] lg:items-center">
+        <div className="hero-orb hero-orb-primary" aria-hidden="true" />
+        <div className="hero-orb hero-orb-ai" aria-hidden="true" />
+        <div className="relative z-10">
           <Badge variant="ai" className="w-fit gap-1">
             <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
             AI-powered trusted commerce
           </Badge>
-          <h1 className="mt-5 max-w-5xl text-hero">
-            A premium marketplace for safer buying, professional selling, and intelligent discovery.
+          <h1 className="mt-5 max-w-5xl text-hero text-balance">
+            A premium marketplace for safer buying, professional selling, and <span className="brand-gradient-text">intelligent discovery.</span>
           </h1>
           <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
             Friction-Free combines marketplace search, seller trust signals, protected checkout, AI listing tools, and financial workflows into one commerce-first platform.
@@ -87,7 +89,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="relative">
+        <div className="relative z-10">
           <div className="absolute -inset-4 rounded-4xl bg-trust-soft/70 blur-3xl" aria-hidden="true" />
           <Card className="relative overflow-hidden bg-premium-dark text-white shadow-admin">
             <CardHeader>

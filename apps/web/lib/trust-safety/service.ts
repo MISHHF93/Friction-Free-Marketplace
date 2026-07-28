@@ -41,6 +41,10 @@ export type TrustSafetySummary = {
     requiredFor: string[];
     confidenceScore: number | null;
     expiresAt: string | null;
+    provider: string | null;
+    submittedAt: string | null;
+    verifiedAt: string | null;
+    assurance: "not_submitted" | "self_attested_pending" | "provider_verified" | "review_failed" | "expired";
   }>;
   badges: typeof defaultTrustBadges;
   risk: CompositeRiskResult;
@@ -96,7 +100,7 @@ export async function getUserTrustSafetySummary(supabase: Db, userId: string): P
     signalsResult,
     scamResult
   ] = await Promise.all([
-    supabase.from("user_verification_checks").select("check_type,status,confidence_score,expires_at,required_for").eq("user_id", userId),
+    supabase.from("user_verification_checks").select("check_type,status,provider,confidence_score,submitted_at,verified_at,expires_at,required_for").eq("user_id", userId),
     supabase.from("trust_scores").select("score,seller_score,buyer_score,dispute_rate,fraud_risk_level,model_version,signals").eq("user_id", userId).maybeSingle(),
     supabase.from("user_trust_badges").select("code,label,description,level,icon").eq("user_id", userId).eq("visibility", "public"),
     supabase.from("reports").select("id", { count: "exact", head: true }).eq("reported_user_id", userId).in("status", ["open", "triaged", "investigating"]),
@@ -150,6 +154,18 @@ export async function getUserTrustSafetySummary(supabase: Db, userId: string): P
         requiredFor: check?.required_for ?? item.requiredFor,
         confidenceScore: check?.confidence_score === null || check?.confidence_score === undefined ? null : Number(check.confidence_score),
         expiresAt: check?.expires_at ?? null,
+        provider: check?.provider ?? null,
+        submittedAt: check?.submitted_at ?? null,
+        verifiedAt: check?.verified_at ?? null,
+        assurance: check?.status === "verified"
+          ? "provider_verified"
+          : check?.status === "pending"
+            ? "self_attested_pending"
+            : check?.status === "failed"
+              ? "review_failed"
+              : check?.status === "expired"
+                ? "expired"
+                : "not_submitted",
       };
     }),
     badges: (badgesResult.data?.length ? badgesResult.data : defaultTrustBadges.filter((badge) => {
@@ -163,7 +179,7 @@ export async function getUserTrustSafetySummary(supabase: Db, userId: string): P
   };
 }
 
-export async function submitVerificationCheck(supabase: Db, userId: string, input: { checkType: VerificationCheckType; evidence?: Record<string, unknown>; provider?: string | null }) {
+export async function submitVerificationCheck(supabase: Db, userId: string, input: { checkType: VerificationCheckType; note?: string | null }) {
   const check = verificationChecklist.find((item) => item.checkType === input.checkType);
   if (!check) throw new Error("Unsupported verification check.");
 
@@ -173,13 +189,18 @@ export async function submitVerificationCheck(supabase: Db, userId: string, inpu
     user_id: userId,
     check_type: input.checkType,
     status,
-    provider: input.provider ?? "marketplace_self_attested",
-    confidence_score: 50,
+    provider: "marketplace_self_attested",
+    provider_check_id: null,
+    confidence_score: null,
     required_for: check.requiredFor,
     submitted_at: now,
     verified_at: null,
-    evidence: input.evidence ?? {},
-    metadata: { source: "verification_center", engine_version: TRUST_ENGINE_VERSION },
+    evidence: {},
+    metadata: {
+      source: "verification_center",
+      submission_note: input.note?.trim().slice(0, 500) || null,
+      engine_version: TRUST_ENGINE_VERSION
+    },
   }, { onConflict: "user_id,check_type" }).select("*").single();
 
   if (error) throw error;
