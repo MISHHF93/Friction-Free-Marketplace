@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEV_AUTH_BYPASS_COOKIE, isDevAuthBypassEnabled } from "@/lib/auth/dev-bypass";
+import { DEV_AUTH_BYPASS_COOKIE, isOpenLocalAuthEnabled } from "@/lib/auth/dev-bypass";
 import { publicEnv } from "@/lib/env";
 import { authSchema, profileSettingsSchema, signupSchema } from "@/lib/validations/auth";
 
@@ -35,7 +35,27 @@ function formatValidationError(error: z.ZodError) {
   return error.issues[0]?.message ?? "Check the form and try again.";
 }
 
+async function establishLocalAuthSession(next: string): Promise<never> {
+  const cookieStore = await cookies();
+  cookieStore.set(DEV_AUTH_BYPASS_COOKIE, "1", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: false,
+    path: "/",
+    maxAge: 60 * 60 * 24 * 30
+  });
+  revalidatePath("/", "layout");
+  redirect(next);
+}
+
 export async function loginAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  const next = getSafeRedirectPath(formData.get("next"));
+
+  // Temporary open local auth: accept any login attempt without Supabase.
+  if (isOpenLocalAuthEnabled()) {
+    await establishLocalAuthSession(next);
+  }
+
   const parsed = authSchema.safeParse({
     email: getFormString(formData, "email"),
     password: getFormString(formData, "password")
@@ -53,10 +73,17 @@ export async function loginAction(_previousState: AuthActionState, formData: For
   }
 
   revalidatePath("/", "layout");
-  redirect(getSafeRedirectPath(formData.get("next")));
+  redirect(next);
 }
 
 export async function signupAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  const next = getSafeRedirectPath(formData.get("next"));
+
+  // Temporary open local auth: accept any signup attempt without Supabase.
+  if (isOpenLocalAuthEnabled()) {
+    await establishLocalAuthSession(next);
+  }
+
   const parsed = signupSchema.safeParse({
     displayName: getFormString(formData, "displayName"),
     email: getFormString(formData, "email"),
@@ -68,7 +95,6 @@ export async function signupAction(_previousState: AuthActionState, formData: Fo
   }
 
   const supabase = createClient();
-  const next = getSafeRedirectPath(formData.get("next"));
   const redirectTo = new URL(`/auth/callback?next=${encodeURIComponent(next)}`, publicEnv.NEXT_PUBLIC_APP_URL).toString();
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
@@ -136,21 +162,11 @@ export async function oauthSignInAction(formData: FormData) {
 export async function devBypassAction(formData: FormData) {
   const next = getSafeRedirectPath(formData.get("next"));
 
-  if (!isDevAuthBypassEnabled()) {
+  if (!isOpenLocalAuthEnabled()) {
     redirect(`/login?next=${encodeURIComponent(next)}&authError=${encodeURIComponent("Developer bypass is not available in this environment.")}`);
   }
 
-  const cookieStore = await cookies();
-  cookieStore.set(DEV_AUTH_BYPASS_COOKIE, "1", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: false,
-    path: "/",
-    maxAge: 60 * 60 * 8
-  });
-
-  revalidatePath("/", "layout");
-  redirect(next);
+  await establishLocalAuthSession(next);
 }
 
 export async function logoutAction() {

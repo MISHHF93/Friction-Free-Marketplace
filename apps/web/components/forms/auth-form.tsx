@@ -26,6 +26,18 @@ export function AuthForm({ mode, next, showDevBypass = false }: { mode: "login" 
 
   return (
     <div className="grid gap-5">
+      {showDevBypass ? (
+        <form className="rounded-2xl border border-dashed border-amber-300 bg-amber-50 p-4" action={devBypassAction}>
+          {next ? <input type="hidden" name="next" value={next} /> : null}
+          <p className="mb-3 text-sm font-semibold text-amber-950">Open local sign-in</p>
+          <p className="mb-4 text-xs leading-5 text-amber-900">
+            Authentication is temporarily open for local development. Continue without Supabase credentials.
+          </p>
+          <Button className="w-full justify-center" type="submit" variant="trust">
+            Continue to marketplace
+          </Button>
+        </form>
+      ) : null}
       <div className="grid gap-3">
         {(["google", "apple"] as const).map((provider) => (
           <form key={provider} action={oauthSignInAction}>
@@ -75,17 +87,6 @@ export function AuthForm({ mode, next, showDevBypass = false }: { mode: "login" 
         ) : null}
         <SubmitButton mode={mode} />
       </form>
-      {showDevBypass ? (
-        <form className="rounded-2xl border border-dashed border-amber-300 bg-amber-50 p-3" action={devBypassAction}>
-          {next ? <input type="hidden" name="next" value={next} /> : null}
-          <p className="mb-3 text-xs leading-5 text-amber-900">
-            Local development only. This bypasses Supabase auth so you can inspect the marketplace dashboard while providers are being configured.
-          </p>
-          <Button className="w-full justify-center" type="submit" variant="secondary">
-            Enter dev marketplace
-          </Button>
-        </form>
-      ) : null}
     </div>
   );
 }

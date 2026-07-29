@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { redirect } from "next/navigation";
+import { DEV_AUTH_BYPASS_USER, isOpenLocalAuthEnabled } from "@/lib/auth/dev-bypass";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database";
 
@@ -88,6 +89,38 @@ export function can(role: AdminRole | null, permission: AdminPermission) {
 export async function getAdminAuthorization(permission: AdminPermission = "admin.access"): Promise<AdminAuthorizationSuccess | AdminAuthorizationFailure> {
   const supabase = createClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
+
+  // Temporary open local auth: grant super_admin so admin surfaces are inspectable without Supabase.
+  if ((authError || !authData.user) && isOpenLocalAuthEnabled()) {
+    const role: AdminRole = "super_admin";
+    if (!can(role, permission)) {
+      return { authorized: false, status: 403, message: "Admin permission denied.", permission };
+    }
+
+    const adminUser = {
+      id: DEV_AUTH_BYPASS_USER.id,
+      email: DEV_AUTH_BYPASS_USER.email,
+      role: "super_admin" as const,
+      status: "active" as const,
+      metadata: { admin_role: "super_admin", open_local_auth: true }
+    };
+
+    return {
+      authorized: true,
+      supabase,
+      authUser: {
+        id: DEV_AUTH_BYPASS_USER.id,
+        email: DEV_AUTH_BYPASS_USER.email,
+        app_metadata: {},
+        user_metadata: { open_local_auth: true },
+        aud: "authenticated",
+        created_at: new Date(0).toISOString()
+      } as AdminAuthorizationSuccess["authUser"],
+      adminUser,
+      role
+    };
+  }
+
   if (authError || !authData.user) {
     return { authorized: false, status: 401, message: "Authentication required.", permission };
   }

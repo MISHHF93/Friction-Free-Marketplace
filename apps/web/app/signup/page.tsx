@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/forms/auth-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { isDevAuthBypassEnabled } from "@/lib/auth/dev-bypass";
+import { isOpenLocalAuthEnabled } from "@/lib/auth/dev-bypass";
 import { createClient } from "@/lib/supabase/server";
 
 function getSafeNext(next?: string | string[]) {
@@ -12,12 +12,17 @@ function getSafeNext(next?: string | string[]) {
 
 export default async function SignupPage({ searchParams }: { searchParams?: Promise<{ next?: string | string[] }> }) {
   const resolvedSearchParams = await searchParams;
+  const next = getSafeNext(resolvedSearchParams?.next);
+
+  // Temporary open local auth: send people straight into the app.
+  if (isOpenLocalAuthEnabled()) {
+    redirect(next);
+  }
+
   const supabase = createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
-
-  const next = getSafeNext(resolvedSearchParams?.next);
 
   if (user) redirect(next);
 
@@ -29,7 +34,7 @@ export default async function SignupPage({ searchParams }: { searchParams?: Prom
           <CardDescription>Start buying, selling, and managing protected marketplace workflows.</CardDescription>
         </CardHeader>
         <CardContent>
-          <AuthForm mode="signup" next={next} showDevBypass={isDevAuthBypassEnabled()} />
+          <AuthForm mode="signup" next={next} showDevBypass={false} />
           <p className="mt-5 text-center text-sm text-muted-foreground">
             Already have an account? <Link className="font-semibold text-primary" href={`/login?next=${encodeURIComponent(next)}`}>Log in</Link>
           </p>

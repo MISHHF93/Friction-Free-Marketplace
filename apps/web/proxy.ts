@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { DEV_AUTH_BYPASS_COOKIE, isDevAuthBypassCookieValue } from "@/lib/auth/dev-bypass";
+import { isOpenLocalAuthEnabled } from "@/lib/auth/dev-bypass";
 import { isTrustedMutationOrigin } from "@/lib/security/request-origin";
 
 type SupabaseUser = { id: string };
@@ -193,13 +193,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const hasDevAuthBypass = isDevAuthBypassCookieValue(request.cookies.get(DEV_AUTH_BYPASS_COOKIE)?.value);
-
-  if (hasDevAuthBypass && isAuthRoute(pathname)) {
-    return NextResponse.redirect(getAuthenticatedRedirectUrl(request));
-  }
-
-  if (hasDevAuthBypass && isProtectedRoute(pathname) && !pathname.startsWith("/admin")) {
+  // Temporary open local auth: skip login gates so dashboards are reachable without Supabase.
+  if (isOpenLocalAuthEnabled()) {
+    if (isAuthRoute(pathname)) {
+      return NextResponse.redirect(getAuthenticatedRedirectUrl(request));
+    }
     return NextResponse.next();
   }
 

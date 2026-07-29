@@ -4,6 +4,7 @@ import { AccountSettingsForm } from "@/components/forms/account-settings-form";
 import { NotificationPreferencesForm } from "@/components/notifications/notification-preferences-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { getLocalAuthUser } from "@/lib/auth/dev-bypass";
 import { getNotificationPreferences } from "@/lib/notifications/service";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,17 +15,29 @@ export default async function AccountSettingsPage({ searchParams }: { searchPara
     data: { user },
     error: userError
   } = await supabase.auth.getUser();
+  const localUser = getLocalAuthUser();
 
-  if (userError || !user) {
+  if ((userError || !user) && !localUser) {
     redirect("/login?next=/account/settings");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name,username,bio,location_label,website_url")
-    .eq("user_id", user.id)
-    .maybeSingle();
-  const notificationPreferences = await getNotificationPreferences(user.id);
+  const accountUser = user ?? localUser!;
+  const profile = user
+    ? (
+        await supabase
+          .from("profiles")
+          .select("display_name,username,bio,location_label,website_url")
+          .eq("user_id", user.id)
+          .maybeSingle()
+      ).data
+    : {
+        display_name: "Local developer",
+        username: "local-dev",
+        bio: "Temporary open local sign-in profile.",
+        location_label: "Local development",
+        website_url: null as string | null
+      };
+  const notificationPreferences = await getNotificationPreferences(accountUser.id);
 
   return (
     <section className="mx-auto grid max-w-4xl gap-6 px-4 py-10 sm:px-6 lg:px-8">
@@ -32,7 +45,9 @@ export default async function AccountSettingsPage({ searchParams }: { searchPara
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Account</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight">Account settings</h1>
         <p className="mt-3 max-w-2xl text-muted-foreground">
-          Manage your marketplace identity and public profile. Your session is verified on the server before this page loads.
+          {localUser && !user
+            ? "Open local sign-in is active. Supabase authentication is temporarily bypassed for development."
+            : "Manage your marketplace identity and public profile. Your session is verified on the server before this page loads."}
         </p>
       </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
@@ -43,7 +58,7 @@ export default async function AccountSettingsPage({ searchParams }: { searchPara
               <CardDescription>These details power your buyer, seller, and messaging experiences.</CardDescription>
             </CardHeader>
             <CardContent>
-              <AccountSettingsForm email={user.email ?? ""} profile={profile ?? null} />
+              <AccountSettingsForm email={accountUser.email ?? ""} profile={profile ?? null} />
             </CardContent>
           </Card>
           <NotificationPreferencesForm preferences={notificationPreferences} />
