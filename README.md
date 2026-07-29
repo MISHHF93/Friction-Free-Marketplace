@@ -95,7 +95,7 @@ docs/                   Product and technical architecture blueprints
 3. Fill in at least these values in `apps/web/.env.local`:
 
    ```bash
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   NEXT_PUBLIC_APP_URL=http://localhost:3001
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
@@ -124,7 +124,7 @@ docs/                   Product and technical architecture blueprints
    npm run web:dev
    ```
 
-6. Open [http://localhost:3000](http://localhost:3000).
+6. Open [http://localhost:3001](http://localhost:3001).
 
 ## Useful commands
 
@@ -166,7 +166,7 @@ The Stripe routes are designed for marketplace escrow-style flows:
 Use the Stripe CLI for local webhook development:
 
 ```bash
-stripe listen --forward-to localhost:3000/api/stripe/webhooks
+stripe listen --forward-to localhost:3001/api/stripe/webhooks
 ```
 
 ## Meilisearch notes

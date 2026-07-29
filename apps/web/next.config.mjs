@@ -29,7 +29,11 @@ const securityHeaders = [
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.posthog.com"
     ].join("; ")
   },
-  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }
+  // Never send HSTS in local development — browsers cache it and then force
+  // https://localhost, which has no TLS listener and surfaces as ERR_CONNECTION_REFUSED.
+  ...(isDevelopmentRuntime
+    ? []
+    : [{ key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }])
 ];
 
 // Standalone output is for Docker/self-host. Vercel manages its own output packaging.
@@ -50,7 +54,7 @@ const nextConfig = {
 };
 
 const localDevelopmentEnvironment = {
-  NEXT_PUBLIC_APP_URL: "http://localhost:3000",
+  NEXT_PUBLIC_APP_URL: "http://localhost:3001",
   NEXT_PUBLIC_APP_NAME: "Friction-Free Marketplace",
   NEXT_PUBLIC_SUPABASE_URL: "https://local-dev-placeholder.supabase.co",
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "local-dev-placeholder",

@@ -5,14 +5,14 @@ export default defineConfig({
   timeout: 30_000,
   retries: process.env.CI ? 2 : 0,
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3001",
     trace: "on-first-retry"
   },
   webServer: process.env.PLAYWRIGHT_SKIP_WEB_SERVER
     ? undefined
     : {
         command: "npm run dev",
-        url: "http://127.0.0.1:3000",
+        url: "http://127.0.0.1:3001",
         reuseExistingServer: !process.env.CI,
         timeout: 120_000
       },

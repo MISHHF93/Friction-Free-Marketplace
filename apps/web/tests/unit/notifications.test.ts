@@ -12,7 +12,7 @@ describe("notification templates", () => {
 
     expect(notification.topic).toBe("messages");
     expect(notification.title).toContain("Vintage Camera");
-    expect(notification.emailText).toContain("http://localhost:3000/dashboard/messages");
+    expect(notification.emailText).toContain("http://localhost:3001/dashboard/messages");
     expect(notification.emailHtml).toContain("Buyer &lt;script&gt;");
   });
 

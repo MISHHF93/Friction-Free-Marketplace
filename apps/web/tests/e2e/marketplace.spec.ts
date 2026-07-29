@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const browserOrigin = new URL(process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000").origin;
+const browserOrigin = new URL(process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3001").origin;
 
 test.describe("marketplace discovery and listing surfaces", () => {
   test("listing search renders filters and active query chips", async ({ page }) => {

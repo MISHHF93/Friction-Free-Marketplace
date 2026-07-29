@@ -3,7 +3,7 @@
     "collect": {
       "startServerCommand": "npm run web:start",
       "startServerReadyPattern": "Ready",
-      "url": ["http://127.0.0.1:3000/", "http://127.0.0.1:3000/browse", "http://127.0.0.1:3000/assistant"],
+      "url": ["http://127.0.0.1:3001/", "http://127.0.0.1:3001/browse", "http://127.0.0.1:3001/assistant"],
       "numberOfRuns": 3
     },
     "assert": {
