@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 64" fill="none">
+  <rect width="64" height="64" rx="16" fill="#10151C"/>
+  <path d="M18 18h28v7.5H27.5V29H42v7H27.5v9.5H18V18z" fill="#FFFFFF"/>
+  <circle cx="48" cy="48" r="7" fill="#2B8FF0"/>
+  <path d="M46.2 48h3.6M48 46.2v3.6" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round"/>
+  <text x="80" y="34" fill="#10151C" font-family="Segoe UI, Avenir Next, Helvetica Neue, Arial, sans-serif" font-size="26" font-weight="800" letter-spacing="-0.04em">Friction-Free</text>
+  <text x="80" y="52" fill="#2B8FF0" font-family="Segoe UI, Avenir Next, Helvetica Neue, Arial, sans-serif" font-size="10" font-weight="700" letter-spacing="0.18em">THE TRUSTED MARKETPLACE</text>
+</svg>

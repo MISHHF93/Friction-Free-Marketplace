@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import { SiteShell } from "@/components/site-shell";
 import { publicEnv } from "@/lib/env";
+import { brandChrome, brandProfile } from "@/lib/brand-profile";
 import { PwaRegistrar } from "@/components/pwa-registrar";
 import { NativeBridge } from "@/components/native-bridge";
 
@@ -10,44 +11,54 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#047857"
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: brandChrome.lumenBlue },
+    { media: "(prefers-color-scheme: dark)", color: brandChrome.ink }
+  ]
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicEnv.NEXT_PUBLIC_APP_URL),
-  applicationName: "Friction-Free Marketplace",
+  applicationName: brandProfile.legalName,
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
-    title: "FF Marketplace"
+    statusBarStyle: "default",
+    title: brandProfile.shortName
   },
   icons: {
     icon: [
+      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
       { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/icon-1024.png", type: "image/png", sizes: "1024x1024" }
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }
     ],
-    shortcut: "/icon-1024.png",
-    apple: [{ url: "/icon-1024.png", sizes: "1024x1024", type: "image/png" }]
+    shortcut: "/favicon.png",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    other: [
+      { rel: "mask-icon", url: "/brand/logo-mark.svg", color: brandChrome.lumenBlue }
+    ]
   },
   title: {
-    default: "Friction-Free Marketplace | AI-powered trusted commerce",
-    template: "%s | Friction-Free Marketplace"
+    default: `${brandProfile.legalName} | ${brandProfile.tagline}`,
+    template: `%s | ${brandProfile.legalName}`
   },
-  description: "Buy and sell with AI-assisted discovery, professional seller tools, protected checkout, trust signals, and marketplace safety workflows.",
+  description: brandProfile.promise,
   keywords: ["AI marketplace", "trusted commerce", "protected checkout", "seller tools", "local marketplace", "marketplace safety"],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Friction-Free Marketplace | AI-powered trusted commerce",
-    description: "A premium marketplace platform for clearer listings, safer payments, professional sellers, and AI-assisted commerce.",
+    title: `${brandProfile.legalName} | ${brandProfile.tagline}`,
+    description: brandProfile.promise,
     url: "/",
-    siteName: "Friction-Free Marketplace",
-    type: "website"
+    siteName: brandProfile.legalName,
+    type: "website",
+    images: [{ url: "/icon-1024.png", width: 1024, height: 1024, alt: brandProfile.legalName }]
   },
   twitter: {
-    card: "summary_large_image",
-    title: "Friction-Free Marketplace",
-    description: "AI-powered trusted commerce for buyers, sellers, and marketplace operators."
+    card: "summary",
+    title: brandProfile.legalName,
+    description: brandProfile.promise,
+    images: ["/icon-1024.png"]
   },
   robots: {
     index: true,
@@ -64,6 +75,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.png" sizes="32x32" type="image/png" />
+        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="theme-color" content={brandChrome.lumenBlue} />
+        <meta name="msapplication-TileColor" content={brandChrome.ink} />
+      </head>
       <body>
         <SiteShell>{children}</SiteShell>
         <PwaRegistrar />

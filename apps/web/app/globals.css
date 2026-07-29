@@ -4,50 +4,51 @@
 
 @layer base {
   :root {
-    --brand-ink: 158 34% 12%;
-    --brand-slate: 155 18% 29%;
-    --brand-steel: 150 10% 43%;
-    --brand-mist: 42 42% 96%;
-    --brand-cloud: 40 30% 91%;
-    --brand-pearl: 42 36% 95%;
-    --brand-surface: 40 33% 99%;
+    /* White + light lumen blue + black system */
+    --brand-ink: 220 28% 8%;
+    --brand-slate: 215 16% 32%;
+    --brand-steel: 214 12% 46%;
+    --brand-mist: 210 55% 98%;
+    --brand-cloud: 210 40% 95%;
+    --brand-pearl: 210 50% 97%;
+    --brand-surface: 0 0% 100%;
 
-    --surface-canvas: 42 42% 96%;
-    --surface-elevated: 40 33% 99%;
-    --surface-sunken: 39 25% 90%;
-    --surface-overlay: 40 40% 98%;
-    --surface-inverse: 158 34% 12%;
+    --surface-canvas: 210 55% 98%;
+    --surface-elevated: 0 0% 100%;
+    --surface-sunken: 210 35% 94%;
+    --surface-overlay: 210 60% 99%;
+    --surface-inverse: 220 28% 8%;
 
-    --background: 42 42% 96%;
-    --foreground: 158 34% 12%;
-    --card: 40 33% 99%;
-    --card-foreground: 158 34% 12%;
-    --popover: 40 33% 99%;
-    --popover-foreground: 158 34% 12%;
+    --background: 210 55% 98%;
+    --foreground: 220 28% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 28% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 28% 8%;
 
-    --commerce: 158 48% 25%;
+    --commerce: 209 86% 48%;
     --commerce-foreground: 0 0% 100%;
-    --commerce-soft: 148 28% 91%;
-    --commerce-border: 151 24% 72%;
-    --commerce-dark: 160 42% 16%;
+    --commerce-soft: 209 100% 96%;
+    --commerce-border: 209 55% 78%;
+    --commerce-dark: 215 42% 18%;
 
-    --primary: 158 48% 25%;
+    --primary: 209 86% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --trust: 158 48% 25%;
+    --trust: 209 86% 48%;
     --trust-foreground: 0 0% 100%;
-    --trust-soft: 148 28% 91%;
-    --trust-border: 151 24% 72%;
+    --trust-soft: 209 100% 96%;
+    --trust-border: 209 55% 78%;
 
-    --ai: 201 68% 36%;
+    --ai: 205 78% 44%;
     --ai-foreground: 0 0% 100%;
-    --ai-soft: 202 42% 92%;
-    --ai-border: 201 34% 70%;
+    --ai-soft: 205 90% 95%;
+    --ai-border: 205 48% 74%;
 
-    --safety: 142 72% 36%;
+    --safety: 152 62% 36%;
     --safety-foreground: 0 0% 100%;
-    --safety-soft: 140 76% 94%;
-    --safety-border: 141 54% 78%;
+    --safety-soft: 150 55% 95%;
+    --safety-border: 150 35% 74%;
     --safety-warning: 35 92% 45%;
     --safety-warning-soft: 42 96% 92%;
     --safety-warning-border: 38 78% 74%;
@@ -55,29 +56,29 @@
     --safety-risk-soft: 0 86% 97%;
     --safety-risk-border: 0 70% 84%;
 
-    --premium: 204 18% 54%;
-    --premium-foreground: 158 34% 12%;
-    --premium-soft: 204 24% 92%;
-    --premium-border: 204 16% 70%;
-    --premium-graphite: 160 38% 13%;
+    --premium: 214 14% 48%;
+    --premium-foreground: 220 28% 8%;
+    --premium-soft: 214 30% 95%;
+    --premium-border: 214 16% 72%;
+    --premium-graphite: 220 28% 8%;
 
-    --data-1: 168 84% 25%;
-    --data-2: 201 68% 36%;
-    --data-3: 204 18% 54%;
-    --data-4: 197 38% 40%;
+    --data-1: 209 86% 48%;
+    --data-2: 205 78% 44%;
+    --data-3: 214 14% 48%;
+    --data-4: 200 55% 42%;
     --data-5: 342 42% 48%;
 
-    --secondary: 39 25% 91%;
-    --secondary-foreground: 158 34% 12%;
-    --muted: 39 25% 91%;
-    --muted-foreground: 150 10% 43%;
-    --accent: 202 42% 92%;
-    --accent-foreground: 201 68% 28%;
+    --secondary: 210 35% 94%;
+    --secondary-foreground: 220 28% 8%;
+    --muted: 210 35% 94%;
+    --muted-foreground: 215 12% 42%;
+    --accent: 209 100% 96%;
+    --accent-foreground: 215 42% 22%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 38 20% 82%;
-    --input: 38 20% 78%;
-    --ring: 158 48% 25%;
+    --border: 214 22% 88%;
+    --input: 214 20% 84%;
+    --ring: 209 86% 48%;
 
     --radius: 0.75rem;
     --radius-control: 0.75rem;
@@ -86,21 +87,21 @@
     --radius-shell: 1.6rem;
     --radius-hero: 2rem;
 
-    --shadow-xs: 0 1px 2px rgba(42, 55, 45, 0.07);
-    --shadow-sm: 0 8px 24px -18px rgba(42, 55, 45, 0.28);
-    --shadow-md: 0 18px 44px -30px rgba(42, 55, 45, 0.34);
-    --shadow-input: 0 1px 2px rgba(42, 55, 45, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    --shadow-control: 0 10px 26px -20px rgba(42, 55, 45, 0.38);
-    --shadow-card: 0 18px 45px -34px rgba(42, 55, 45, 0.42);
-    --shadow-card-hover: 0 26px 58px -38px rgba(42, 55, 45, 0.5);
-    --shadow-panel: 0 30px 72px -48px rgba(42, 55, 45, 0.48);
-    --shadow-soft: 0 30px 72px -44px rgba(42, 55, 45, 0.38);
-    --shadow-glow: 0 24px 90px -48px rgba(29, 111, 147, 0.34);
-    --shadow-trust: 0 24px 90px -48px rgba(46, 105, 75, 0.42);
-    --shadow-ai: 0 24px 90px -48px rgba(29, 111, 147, 0.4);
-    --shadow-commerce: 0 22px 70px -44px rgba(46, 105, 75, 0.48);
+    --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --shadow-sm: 0 8px 24px -18px rgba(15, 23, 42, 0.22);
+    --shadow-md: 0 18px 44px -30px rgba(15, 23, 42, 0.28);
+    --shadow-input: 0 1px 2px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    --shadow-control: 0 10px 26px -20px rgba(15, 23, 42, 0.28);
+    --shadow-card: 0 18px 45px -34px rgba(15, 23, 42, 0.32);
+    --shadow-card-hover: 0 26px 58px -38px rgba(37, 99, 235, 0.22);
+    --shadow-panel: 0 30px 72px -48px rgba(15, 23, 42, 0.36);
+    --shadow-soft: 0 30px 72px -44px rgba(15, 23, 42, 0.28);
+    --shadow-glow: 0 24px 90px -48px rgba(59, 143, 240, 0.34);
+    --shadow-trust: 0 24px 90px -48px rgba(43, 143, 240, 0.32);
+    --shadow-ai: 0 24px 90px -48px rgba(37, 130, 210, 0.34);
+    --shadow-commerce: 0 22px 70px -44px rgba(43, 143, 240, 0.36);
     --shadow-danger: 0 20px 70px -44px rgba(220, 38, 38, 0.48);
-    --shadow-admin: 0 20px 70px -42px rgba(2, 6, 23, 0.62);
+    --shadow-admin: 0 20px 70px -42px rgba(2, 6, 23, 0.58);
 
     --motion-fast: 140ms;
     --motion-base: 200ms;
@@ -117,55 +118,55 @@
   }
 
   .dark {
-    --brand-ink: 42 36% 95%;
-    --brand-slate: 42 15% 74%;
-    --brand-steel: 40 10% 62%;
-    --brand-mist: 158 30% 10%;
-    --brand-cloud: 158 26% 13%;
-    --brand-pearl: 157 22% 16%;
-    --brand-surface: 158 27% 11%;
+    --brand-ink: 210 40% 96%;
+    --brand-slate: 214 18% 72%;
+    --brand-steel: 214 12% 58%;
+    --brand-mist: 220 28% 8%;
+    --brand-cloud: 220 24% 11%;
+    --brand-pearl: 218 22% 14%;
+    --brand-surface: 220 26% 10%;
 
-    --surface-canvas: 158 31% 8%;
-    --surface-elevated: 158 27% 11%;
-    --surface-sunken: 160 34% 6%;
-    --surface-overlay: 157 22% 15%;
-    --surface-inverse: 42 36% 95%;
+    --surface-canvas: 220 30% 7%;
+    --surface-elevated: 220 26% 10%;
+    --surface-sunken: 220 32% 5%;
+    --surface-overlay: 218 22% 13%;
+    --surface-inverse: 210 40% 96%;
 
-    --background: 158 31% 8%;
-    --foreground: 42 36% 95%;
-    --card: 158 27% 11%;
-    --card-foreground: 42 36% 95%;
-    --popover: 158 27% 11%;
-    --popover-foreground: 42 36% 95%;
+    --background: 220 30% 7%;
+    --foreground: 210 40% 96%;
+    --card: 220 26% 10%;
+    --card-foreground: 210 40% 96%;
+    --popover: 220 26% 10%;
+    --popover-foreground: 210 40% 96%;
 
-    --secondary: 157 21% 16%;
-    --secondary-foreground: 42 36% 95%;
-    --muted: 157 21% 16%;
-    --muted-foreground: 42 15% 74%;
-    --accent: 202 35% 17%;
-    --accent-foreground: 42 36% 95%;
-    --border: 155 17% 23%;
-    --input: 155 17% 23%;
-    --commerce: 151 38% 58%;
-    --commerce-soft: 155 27% 16%;
-    --commerce-border: 153 25% 31%;
-    --trust: 151 38% 58%;
-    --trust-soft: 155 27% 16%;
-    --trust-border: 153 25% 31%;
-    --ai: 199 65% 62%;
-    --ai-soft: 202 35% 17%;
-    --ai-border: 201 34% 34%;
-    --safety: 142 62% 52%;
-    --safety-soft: 142 34% 16%;
-    --safety-border: 142 32% 30%;
+    --secondary: 218 20% 14%;
+    --secondary-foreground: 210 40% 96%;
+    --muted: 218 20% 14%;
+    --muted-foreground: 214 16% 70%;
+    --accent: 209 40% 16%;
+    --accent-foreground: 210 40% 96%;
+    --border: 215 16% 22%;
+    --input: 215 16% 22%;
+    --commerce: 209 82% 62%;
+    --commerce-soft: 209 35% 16%;
+    --commerce-border: 209 30% 30%;
+    --trust: 209 82% 62%;
+    --trust-soft: 209 35% 16%;
+    --trust-border: 209 30% 30%;
+    --ai: 205 78% 66%;
+    --ai-soft: 205 32% 16%;
+    --ai-border: 205 28% 32%;
+    --safety: 152 55% 52%;
+    --safety-soft: 152 28% 14%;
+    --safety-border: 152 26% 28%;
     --safety-warning: 40 92% 60%;
     --safety-warning-soft: 38 38% 17%;
     --safety-warning-border: 38 38% 34%;
     --safety-risk: 0 82% 68%;
     --safety-risk-soft: 0 38% 17%;
     --safety-risk-border: 0 38% 34%;
-    --premium-soft: 204 22% 18%;
-    --premium-border: 204 18% 35%;
+    --premium-soft: 214 18% 16%;
+    --premium-border: 214 14% 30%;
   }
 
   * {

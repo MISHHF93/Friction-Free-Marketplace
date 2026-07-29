@@ -1,12 +1,14 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ChevronDown, MapPin, Menu, MessageSquare, Search, ShieldCheck, Store, UserRound } from "lucide-react";
+import { ChevronDown, MapPin, Menu, MessageSquare, Search, UserRound } from "lucide-react";
 import { logoutAction } from "@/app/auth/actions";
+import { BrandLogo } from "@/components/brand/brand-logo";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { ToastCenter } from "@/components/ui/toast-center";
 import { GlobalAssistant } from "@/components/ai/global-assistant";
+import { brandProfile } from "@/lib/brand-profile";
 import { getLocalAuthUser } from "@/lib/auth/dev-bypass";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
@@ -205,15 +207,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-50 border-b border-border bg-background shadow-xs">
         <div className="app-container flex flex-col gap-3 py-3">
           <div className="flex items-center justify-between gap-3">
-            <Link href="/" className="flex min-w-0 items-center gap-2 font-black tracking-tight" aria-label="Friction-Free home">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-premium-dark text-white shadow-soft sm:h-11 sm:w-11">
-                <Store className="h-5 w-5" />
-              </span>
-              <span className="hidden leading-tight sm:block">
-                <span className="block font-display text-lg leading-none">Friction-Free</span>
-                <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-primary">The trusted marketplace</span>
-              </span>
-            </Link>
+            <BrandLogo href="/" size="md" showTagline className="min-w-0" />
             <div className="hidden items-center gap-1 md:flex">
               <LocationSelector />
               <CategoriesMenu />
@@ -224,7 +218,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <div className="flex items-center gap-1.5 sm:gap-2">
               <GlobalAssistant />
               <Button asChild className="hidden shadow-trust sm:inline-flex" variant="trust">
-                <Link href="/login?next=/dashboard/listings/create">Sell</Link>
+                <Link href="/dashboard/listings/create">Sell</Link>
               </Button>
               <AuthNav />
             </div>
@@ -244,14 +238,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <footer className="border-t border-border bg-premium-dark text-white">
         <div className="app-container grid gap-10 py-10 sm:py-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)]">
           <div className="space-y-5">
-            <Link href="/" className="inline-flex items-center gap-2 font-black tracking-tight text-white" aria-label="Friction-Free home">
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-trust-soft text-trust">
-                <ShieldCheck className="h-5 w-5" />
-              </span>
-              Friction-Free
-            </Link>
+            <BrandLogo href="/" size="lg" tone="onDark" showTagline />
             <p className="max-w-md text-sm leading-6 text-slate-300">
-              A local marketplace for clearer listings, safer payments, verified seller signals, and better handoffs.
+              {brandProfile.promise}
             </p>
             <div className="flex flex-wrap gap-3">
               <Badge className="border-white/15 bg-white/10 text-white">Web · Android · iOS</Badge>

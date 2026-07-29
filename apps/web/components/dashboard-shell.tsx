@@ -27,7 +27,7 @@ export function DashboardShell({
       <div className="dashboard-hero">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
           <div>
-            <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-emerald-300">
+            <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-sky-300">
               <Bell className="h-4 w-4" /> {kicker}
             </p>
             <h2 className="mt-3 text-2xl font-black tracking-tight sm:text-4xl">{title}</h2>

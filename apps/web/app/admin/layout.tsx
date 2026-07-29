@@ -41,7 +41,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         <div className="overflow-hidden rounded-[1.75rem] border border-slate-900/10 bg-premium-dark p-4 text-white shadow-admin sm:rounded-[2rem] sm:p-6">
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
             <div>
-              <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-emerald-300">
+              <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-sky-300">
                 <ShieldCheck className="h-4 w-4" /> Admin-only workspace
               </p>
               <h1 className="mt-3 text-2xl font-black capitalize tracking-tight sm:text-4xl">Internal operations console</h1>
@@ -60,7 +60,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
                 })}
               </div>
               <div className="flex min-w-0 items-center gap-3 rounded-2xl bg-white/10 p-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-emerald-300">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-sky-300">
                   <UserRound className="h-5 w-5" />
                 </span>
                 <div className="min-w-0">
