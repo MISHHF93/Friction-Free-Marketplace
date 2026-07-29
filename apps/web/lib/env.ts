@@ -21,6 +21,8 @@ function isBuildOrCompilePhase() {
     phase === "phase-export" ||
     lifecycle === "build" ||
     lifecycle === "web:build" ||
+    lifecycle === "vercel-build" ||
+    process.env.CI === "true" ||
     // Vercel compile workers often lack npm lifecycle; they also lack NEXT_RUNTIME until the function boots.
     (process.env.VERCEL === "1" && !process.env.NEXT_RUNTIME)
   );

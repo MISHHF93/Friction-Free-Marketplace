@@ -39,6 +39,8 @@ function isBuildOrCompilePhase() {
     phase === "phase-export" ||
     lifecycle === "build" ||
     lifecycle === "web:build" ||
+    lifecycle === "vercel-build" ||
+    process.env.CI === "true" ||
     (process.env.VERCEL === "1" && !process.env.NEXT_RUNTIME)
   );
 }

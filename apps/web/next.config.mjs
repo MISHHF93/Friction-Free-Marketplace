@@ -125,7 +125,15 @@ function validateStartupEnvironment() {
 }
 
 const isNextLint = process.argv.some((argument) => argument.includes("next-lint") || argument === "lint");
-const isProductionBuild = process.argv.includes("build") || process.env.npm_lifecycle_event === "build" || process.env.VERCEL === "1";
+const lifecycleEvent = process.env.npm_lifecycle_event ?? "";
+// Vercel monorepo root Directory is apps/web; CI and vercel-build must never require local .env.
+const isProductionBuild =
+  process.argv.includes("build") ||
+  lifecycleEvent === "build" ||
+  lifecycleEvent === "web:build" ||
+  lifecycleEvent === "vercel-build" ||
+  process.env.VERCEL === "1" ||
+  process.env.CI === "true";
 const shouldHydrateLocalDevelopmentEnvironment = process.env.NODE_ENV !== "production" && process.env.CI !== "true";
 
 if (!isProductionBuild && shouldHydrateLocalDevelopmentEnvironment) {
