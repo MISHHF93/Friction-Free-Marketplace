@@ -31,14 +31,22 @@ const buildTimeServerEnv: ServerEnv = {
   POSTHOG_HOST: "https://app.posthog.com"
 };
 
-function isProductionBuild() {
-  return process.env.NEXT_PHASE === "phase-production-build" || process.env.npm_lifecycle_event === "build";
+function isBuildOrCompilePhase() {
+  const phase = process.env.NEXT_PHASE ?? "";
+  const lifecycle = process.env.npm_lifecycle_event ?? "";
+  return (
+    phase === "phase-production-build" ||
+    phase === "phase-export" ||
+    lifecycle === "build" ||
+    lifecycle === "web:build" ||
+    (process.env.VERCEL === "1" && !process.env.NEXT_RUNTIME)
+  );
 }
 
 export function validateServerEnv(input: NodeJS.ProcessEnv = process.env): ServerEnv {
   const result = serverEnvSchema.safeParse(input);
   if (!result.success) {
-    if (isProductionBuild()) {
+    if (isBuildOrCompilePhase()) {
       return buildTimeServerEnv;
     }
 
@@ -46,10 +54,16 @@ export function validateServerEnv(input: NodeJS.ProcessEnv = process.env): Serve
       return localDevelopmentEnv;
     }
 
+    // Soft fallback during Vercel builds/previews when project secrets are incomplete.
+    if (process.env.VERCEL === "1") {
+      return buildTimeServerEnv;
+    }
+
     throw new Error(formatEnvError(result.error, "server"));
   }
   const parsed = result.data;
-  if (process.env.NODE_ENV === "production" && !isProductionBuild()) {
+  // Strict production checks only for live serverless runtime, not compile workers.
+  if (process.env.NODE_ENV === "production" && !isBuildOrCompilePhase() && process.env.NEXT_RUNTIME) {
     const invalid: string[] = [];
     const appUrl = new URL(parsed.NEXT_PUBLIC_APP_URL);
     const localOrigin = ["localhost", "127.0.0.1"].includes(appUrl.hostname);

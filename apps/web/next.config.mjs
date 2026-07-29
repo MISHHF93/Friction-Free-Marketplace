@@ -32,9 +32,12 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" }
 ];
 
+// Standalone output is for Docker/self-host. Vercel manages its own output packaging.
+const useStandaloneOutput = process.env.VERCEL !== "1";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  ...(useStandaloneOutput ? { output: "standalone" } : {}),
   allowedDevOrigins: ["127.0.0.1"],
   async headers() {
     return [

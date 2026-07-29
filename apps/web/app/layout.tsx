@@ -11,10 +11,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: brandChrome.lumenBlue },
-    { media: "(prefers-color-scheme: dark)", color: brandChrome.ink }
-  ]
+  themeColor: brandChrome.lumenBlue
 };
 
 export const metadata: Metadata = {
@@ -34,10 +31,7 @@ export const metadata: Metadata = {
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }
     ],
     shortcut: "/favicon.png",
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
-    other: [
-      { rel: "mask-icon", url: "/brand/logo-mark.svg", color: brandChrome.lumenBlue }
-    ]
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }]
   },
   title: {
     default: `${brandProfile.legalName} | ${brandProfile.tagline}`,
@@ -60,6 +54,9 @@ export const metadata: Metadata = {
     description: brandProfile.promise,
     images: ["/icon-1024.png"]
   },
+  other: {
+    "msapplication-TileColor": brandChrome.ink
+  },
   robots: {
     index: true,
     follow: true,
@@ -75,13 +72,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <link rel="icon" href="/favicon.png" sizes="32x32" type="image/png" />
-        <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <meta name="theme-color" content={brandChrome.lumenBlue} />
-        <meta name="msapplication-TileColor" content={brandChrome.ink} />
-      </head>
       <body>
         <SiteShell>{children}</SiteShell>
         <PwaRegistrar />
