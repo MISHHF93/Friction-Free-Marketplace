@@ -1,3 +1,11 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Privacy policy",
+  description: "How Friction-Free Marketplace handles account, listing, message, and payment information.",
+  robots: { index: true, follow: true }
+};
+
 export default function PrivacyPage() {
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6">

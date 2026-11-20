@@ -148,7 +148,7 @@ export default async function ListingsDashboardPage() {
                   {listing.listing_images?.[0]?.public_url ? (
                     <Image
                       src={listing.listing_images[0].public_url}
-                      alt=""
+                      alt={listing.title}
                       width={80}
                       height={80}
                       unoptimized

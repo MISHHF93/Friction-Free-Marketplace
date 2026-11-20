@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { publicEnv } from "@/lib/env";
 import { centsToDollars } from "@/lib/payments/money";
+import { formatMoney } from "@/lib/i18n/format";
 import { quoteCheckoutAmounts } from "@/lib/payments/quote";
 
 type StripeJs = {
@@ -118,11 +119,11 @@ export function CheckoutCard({ listingId, priceAmount, currency, shippingCents =
         </div>
         <div className="rounded-xl border border-border bg-background p-3" id="stripe-card-element" />
         <div className="space-y-1 rounded-xl bg-background p-3 text-sm">
-          <p className="flex flex-wrap justify-between gap-2"><span>Item</span><strong>{currency} ${centsToDollars(quote.itemCents).toFixed(2)}</strong></p>
-          <p className="flex flex-wrap justify-between gap-2"><span>Shipping</span><strong>{currency} ${centsToDollars(quote.shippingCents).toFixed(2)}</strong></p>
-          <p className="flex flex-wrap justify-between gap-2"><span>Tax</span><strong>{currency} ${centsToDollars(quote.taxCents).toFixed(2)}</strong></p>
-          <p className="flex flex-wrap justify-between gap-2"><span>Protection fee</span><strong>{currency} ${centsToDollars(quote.platformFeeCents).toFixed(2)}</strong></p>
-          <p className="flex flex-wrap justify-between gap-2 text-base"><span>Total authorized</span><strong>{currency} ${centsToDollars(quote.totalCents).toFixed(2)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2"><span>Item</span><strong>{formatMoney(centsToDollars(quote.itemCents), currency)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2"><span>Shipping</span><strong>{formatMoney(centsToDollars(quote.shippingCents), currency)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2"><span>Tax</span><strong>{formatMoney(centsToDollars(quote.taxCents), currency)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2"><span>Protection fee</span><strong>{formatMoney(centsToDollars(quote.platformFeeCents), currency)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2 text-base"><span>Total authorized</span><strong>{formatMoney(centsToDollars(quote.totalCents), currency)}</strong></p>
         </div>
         <Button className="w-full" size="lg" onClick={startCheckout} disabled={disabled || !checkoutConfigured || !cardReady || isSubmitting}>
           <ShieldCheck className="h-4 w-4" /> {isSubmitting ? "Authorizing…" : "Authorize payment"}

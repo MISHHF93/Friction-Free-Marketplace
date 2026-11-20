@@ -11,6 +11,7 @@ import { GlobalAssistant } from "@/components/ai/global-assistant";
 import { brandProfile } from "@/lib/brand-profile";
 import { getDevBypassSession } from "@/lib/auth/dev-bypass-session";
 import { createClient } from "@/lib/supabase/server";
+import { MenuDisclosure } from "@/components/menu-disclosure";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -59,7 +60,7 @@ const footerSections = [
       { href: "/safety", label: "Trust and safety" },
       { href: "/dashboard/trust-score", label: "Trust scores" },
       { href: "/dashboard/verification", label: "Verification" },
-      { href: "/admin/fraud-alerts", label: "Fraud review" }
+      { href: "/safety", label: "Report a problem" }
     ]
   },
   {
@@ -100,12 +101,18 @@ async function AuthNav() {
         <MessageSquare className="h-4 w-4" />
       </Link>
       <NotificationBell />
-      <details className="group relative">
-        <summary className="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label="Open user menu">
+      <MenuDisclosure
+        className="group relative"
+        label="Open user menu"
+        summaryClassName="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden"
+        summary={
+          <>
           <UserRound className="h-4 w-4" />
           <span className="hidden max-w-28 truncate sm:inline">{user?.email ?? localUser?.email ?? "Local user"}</span>
           <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
-        </summary>
+          </>
+        }
+      >
         <div className="absolute right-0 z-50 mt-3 w-64 rounded-2xl border border-border bg-card p-2 shadow-soft motion-dropdown">
           <Link href="/dashboard" className="block rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Dashboard</Link>
           <Link href="/account/settings" className="block rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Account settings</Link>
@@ -116,7 +123,7 @@ async function AuthNav() {
             </button>
           </form>
         </div>
-      </details>
+      </MenuDisclosure>
     </>
   );
 }
@@ -138,12 +145,18 @@ function HeaderSearch() {
 
 function LocationSelector() {
   return (
-    <details className="group relative">
-      <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label="Choose marketplace location">
+    <MenuDisclosure
+      className="group relative"
+      label="Choose marketplace location"
+      summaryClassName="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden"
+      summary={
+        <>
         <MapPin className="h-4 w-4 text-primary" />
         <span className="hidden sm:inline">Nearby</span>
         <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
-      </summary>
+        </>
+      }
+    >
       <div className="fixed left-4 right-4 top-32 z-50 rounded-2xl border border-border bg-card p-4 shadow-soft motion-dropdown md:absolute md:left-0 md:right-auto md:top-auto md:mt-3 md:w-72">
         <p className="font-bold">Shop near you</p>
         <p className="mt-1 text-sm text-muted-foreground">Use location, pickup, shipping, and radius filters to narrow results.</p>
@@ -155,18 +168,24 @@ function LocationSelector() {
           ))}
         </div>
       </div>
-    </details>
+    </MenuDisclosure>
   );
 }
 
 function CategoriesMenu() {
   return (
-    <details className="group relative">
-      <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl px-2 text-sm font-bold text-muted-foreground transition hover:text-foreground [&::-webkit-details-marker]:hidden" aria-label="Open categories menu">
+    <MenuDisclosure
+      className="group relative"
+      label="Open categories menu"
+      summaryClassName="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl px-2 text-sm font-bold text-muted-foreground transition hover:text-foreground [&::-webkit-details-marker]:hidden"
+      summary={
+        <>
         <Menu className="h-4 w-4" />
         Categories
         <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
-      </summary>
+        </>
+      }
+    >
       <div className="fixed left-4 right-4 top-32 z-50 grid gap-2 rounded-2xl border border-border bg-card p-3 shadow-soft motion-dropdown sm:grid-cols-3 md:absolute md:left-0 md:right-auto md:top-auto md:mt-3 md:w-[min(42rem,calc(100vw-2rem))]">
         {categoryLinks.map((category) => (
           <Link href={category.href} className="rounded-xl px-3 py-2 text-sm font-bold hover:bg-secondary" key={category.href}>
@@ -174,18 +193,24 @@ function CategoriesMenu() {
           </Link>
         ))}
       </div>
-    </details>
+    </MenuDisclosure>
   );
 }
 
 function MobilePrimaryNav() {
   return (
-    <details className="group relative shrink-0 md:hidden">
-      <summary className="inline-flex h-11 cursor-pointer list-none items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-bold shadow-xs transition hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label="Open mobile navigation">
+    <MenuDisclosure
+      className="group relative shrink-0 md:hidden"
+      label="Open mobile navigation"
+      summaryClassName="inline-flex h-11 cursor-pointer list-none items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-bold shadow-xs transition hover:bg-secondary [&::-webkit-details-marker]:hidden"
+      summary={
+        <>
         <Menu className="h-4 w-4" aria-hidden="true" />
         Menu
         <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" aria-hidden="true" />
-      </summary>
+        </>
+      }
+    >
       <div className="fixed left-4 right-4 top-32 z-50 rounded-2xl border border-border bg-card p-3 shadow-soft motion-dropdown">
         <nav className="grid gap-1" aria-label="Mobile primary navigation">
           {navLinks.map((link) => (
@@ -195,7 +220,7 @@ function MobilePrimaryNav() {
           ))}
         </nav>
       </div>
-    </details>
+    </MenuDisclosure>
   );
 }
 
@@ -208,10 +233,15 @@ export function SiteShell({ children }: { children: ReactNode }) {
         <div className="app-container flex flex-col gap-3 py-3">
           <div className="flex items-center justify-between gap-3">
             <BrandLogo href="/" size="md" showTagline className="min-w-0" />
-            <div className="hidden items-center gap-1 md:flex">
+            <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
+              {navLinks.map((link) => (
+                <Link key={link.href} href={link.href} className="rounded-xl px-2 py-2 text-sm font-bold text-muted-foreground hover:text-foreground">
+                  {link.label}
+                </Link>
+              ))}
               <LocationSelector />
               <CategoriesMenu />
-            </div>
+            </nav>
             <div className="hidden min-w-[12rem] flex-1 md:block xl:max-w-2xl">
               <HeaderSearch />
             </div>
@@ -271,7 +301,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
               <Link href="/safety" className="hover:text-white">Safety</Link>
               <Link href="/pricing" className="hover:text-white">Fees</Link>
               <Link href="/company" className="hover:text-white">Company</Link>
-              <Link href="/account/settings" className="hover:text-white">Privacy</Link>
+              <Link href="/privacy" className="hover:text-white">Privacy</Link>
             </div>
           </div>
         </div>
