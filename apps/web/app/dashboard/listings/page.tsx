@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
+import { PayoutSetupPrompt } from "@/components/payments/payout-setup-prompt";
 
 export const dynamic = "force-dynamic";
 
@@ -87,6 +88,7 @@ export default async function ListingsDashboardPage() {
       title="My listings"
       description="Manage drafts, active listings, AI-generated recommendations, and moderation status from one place."
     >
+      <PayoutSetupPrompt />
       <div className="flex justify-end">
         <Button asChild>
           <Link href="/dashboard/listings/create">

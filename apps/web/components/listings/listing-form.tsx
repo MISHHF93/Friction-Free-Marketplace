@@ -631,7 +631,7 @@ export function ListingForm({
             <Button type="button" className="flex-1" disabled={disabled} onClick={() => submitListing(true)}>Publish listing</Button>
           )}
         </div>
-        {error ? <p className="text-sm text-destructive" role="alert">{error}</p> : null}
+        {error ? <p className="text-sm text-destructive" role="alert">{error}{error.startsWith("Set up payouts") ? <> <a className="font-semibold underline" href="/dashboard/payments">Set up payouts</a></> : null}</p> : null}
         <Card className={sellStep === 1 || sellStep === 2 ? "" : "hidden"}>
           <CardHeader className="p-4 sm:p-6">
             <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Json } from "@/types/database";
 import { evaluateListingFraud } from "@/lib/fraud/detection";
+import { assertSellerPayoutsReady } from "@/lib/listings/payout-readiness";
 import {
   assertListingLifecyclePermission,
   getListingForPermission,
@@ -128,6 +129,7 @@ export async function createListing(
   if (input.publish && input.images.length === 0) {
     throw new Error("Add at least one listing photo before publishing.");
   }
+  if (input.publish) await assertSellerPayoutsReady(supabase, sellerId);
   const categoryId = await getCategoryId(
     supabase,
     input.category,
@@ -230,6 +232,7 @@ export async function updateListing(
   if (input.publish && input.images?.length === 0) {
     throw new Error("Add at least one listing photo before publishing.");
   }
+  if (input.publish === true) await assertSellerPayoutsReady(supabase, existing.data.seller_id);
   const currentMetadata = (existing.data.metadata ?? {}) as Record<
     string,
     unknown
@@ -399,6 +402,7 @@ export async function setListingStatus(
   if (actorId) {
     assertListingLifecyclePermission(permissionListing, actorId, lifecycleAction);
   }
+  if (status === "active" && permissionListing?.seller_id) await assertSellerPayoutsReady(supabase, permissionListing.seller_id);
   const existing = await supabase
     .from("listings")
     .select("*")

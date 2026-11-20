@@ -5,6 +5,7 @@ import {
 import { isLiveDatabaseConfigured } from "@/lib/marketplace/demo-mode";
 import { LISTING_CATEGORIES } from "@/lib/listings/validation";
 import { createClient } from "@/lib/supabase/server";
+import { PayoutSetupPrompt } from "@/components/payments/payout-setup-prompt";
 
 export const dynamic = "force-dynamic";
 
@@ -46,5 +47,10 @@ async function getCategoryOptions(): Promise<ListingCategoryOption[]> {
 
 export default async function CreateListingPage() {
   const categories = await getCategoryOptions();
-  return <ListingForm categories={categories} />;
+  return (
+    <>
+      <div className="mx-auto w-full max-w-5xl px-4 pt-4 empty:hidden"><PayoutSetupPrompt /></div>
+      <ListingForm categories={categories} />
+    </>
+  );
 }
