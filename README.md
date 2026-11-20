@@ -6,7 +6,7 @@ Friction-Free Marketplace is an AI-powered consumer commerce platform built arou
 
 This is the single source repository for the complete product: the hosted Next.js web application and backend, the Android application, the iOS application, shared packages, database schema, infrastructure, CI, and store-release automation. Android and iOS are Capacitor packages of the same hosted product; they are not separate products or repositories.
 
-- **App Router + TypeScript:** public marketplace pages, authenticated dashboards, admin surfaces, API routes, and middleware.
+- **App Router + TypeScript:** public marketplace pages, authenticated dashboards, admin surfaces, and API routes. Next.js 16 uses `apps/web/proxy.ts` as the request proxy (the successor to `middleware.ts`).
 - **Tailwind CSS + shadcn/ui-style components:** reusable buttons, cards, forms, labels, inputs, badges, listing cards, dashboards, and shells.
 - **Supabase:** SSR/browser/admin clients, auth middleware, database types, RLS-oriented SQL migration, and seed categories.
 - **Stripe Connect:** seller onboarding, checkout/payment intent, escrow transaction routes, webhooks, refunds, disputes, and release flows.
@@ -48,8 +48,8 @@ apps/web/
   components/           shadcn/ui-style primitives and feature components
   lib/                  Supabase, Stripe, OpenAI, Meilisearch, Resend, PostHog, validation, and domain helpers
   tests/                Vitest unit tests and Playwright E2E specs
-  middleware.ts         Supabase session refresh and protected-route guards
-  .env.example          Local configuration template
+  proxy.ts              Request proxy: session checks and protected-route guards
+  ../../.env.example    Authoritative environment variable list
 
 apps/mobile/
   src/                  Native fallback/bridge source
@@ -86,13 +86,13 @@ docs/                   Product and technical architecture blueprints
    npm install
    ```
 
-2. Create local environment variables:
+2. Create local environment variables from the repository root. `.env.example` is the only variable list:
 
    ```bash
-   cp apps/web/.env.example apps/web/.env.local
+   cp .env.example apps/web/.env.local
    ```
 
-3. Fill in at least these values in `apps/web/.env.local`:
+3. Fill in the required values in `apps/web/.env.local`. Optional services (OpenAI, Meilisearch, Resend, and PostHog) can stay empty; the app degrades instead of crashing. Supabase and Stripe are required for live accounts and checkout:
 
    ```bash
    NEXT_PUBLIC_APP_URL=http://localhost:3001
@@ -157,6 +157,14 @@ The full Next.js application can deploy from GitHub to Vercel or as the included
 The current evidence, weighted readiness score, and release blockers are tracked in [docs/production-readiness-scorecard.md](docs/production-readiness-scorecard.md). Run `npm run release:check` for the portable application checks; GitHub Actions additionally validates Docker, Supabase, Android, iOS, browser, and artifact-specific requirements.
 
 After deploying a real HTTPS origin, run `PRODUCTION_URL=https://market.yourdomain.com npm run production:smoke` with the actual hostname. The manual “Production proof” workflow records public-origin and browser evidence. Use [docs/release-evidence-template.md](docs/release-evidence-template.md) to prove the authenticated buyer, seller, protected-payment, trust, and real-device journeys before promotion.
+
+## Architecture
+
+The hosted product is `apps/web`, a Next.js App Router application. `packages/shared` holds code shared with other workspaces. `apps/mobile` is a Capacitor shell around the same hosted origin. `supabase/migrations` is the database history; `database/migrations` is reference material and is not applied on its own.
+
+`apps/web/proxy.ts` runs on each matched request. It checks mutation origins and redirects unauthenticated visitors away from dashboard, admin, and account pages. API handlers still check the caller themselves. A local auth bypass exists only when `ALLOW_DEV_AUTH_BYPASS=true`, the process is not production, Vercel, or CI, the Host is loopback, and the bypass cookie is present. It never grants admin.
+
+The interface is English (`lang="en"` `dir="ltr"`). Formatting helpers recognize additional locales, but there is no locale routing or translation catalog yet.
 
 ## Database notes
 
