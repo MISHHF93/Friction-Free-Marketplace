@@ -63,6 +63,25 @@ async function activityFor(userId: string) {
   }
 }
 
+async function unreadMessagesFor(userId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: conversations } = await supabase.from("conversations").select("id").or(`buyer_id.eq.${userId},seller_id.eq.${userId}`).limit(200);
+    const ids = ((conversations ?? []) as Array<{ id: string }>).map((conversation) => conversation.id);
+    if (!ids.length) return 0;
+    const { count } = await supabase
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .in("conversation_id", ids)
+      .neq("sender_id", userId)
+      .is("read_at", null)
+      .is("deleted_at", null);
+    return count ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 async function countsFor(userId: string) {
   try {
     const supabase = await createClient();
@@ -91,6 +110,7 @@ export default async function DashboardPage() {
   if (!session) redirect("/login?next=/dashboard");
   const counts = session.source === "supabase" ? await countsFor(session.id) : isolatedPreviewCounts(session.id);
   const activity = session.source === "supabase" ? await activityFor(session.id) : { items: [] as ActivityItem[], trustScore: null };
+  const unreadMessages = session.source === "supabase" ? await unreadMessagesFor(session.id) : 0;
   const hasActivity = counts.listings + counts.offers + counts.messages + counts.orders > 0 || activity.items.length > 0;
   const attentionItems = activity.items.filter((item) => {
     if (item.id.startsWith("offer-")) return ATTENTION_OFFER_STATUSES.has(item.status);
@@ -101,6 +121,7 @@ export default async function DashboardPage() {
   return (
     <DashboardShell
       title={`${session.displayName}'s overview`}
+      description={session.email ? `Signed in as ${session.email}` : undefined}
       actions={
         <>
           <Button asChild variant="trust"><Link href="/dashboard/listings/create">Create listing</Link></Button>
@@ -109,12 +130,17 @@ export default async function DashboardPage() {
       }
     >
       {hasActivity ? (
-        <DashboardSectionCard icon={MessageSquare} title="Needs your attention" description="Pending offers and orders that still need a next step.">
+        <DashboardSectionCard icon={MessageSquare} title="Needs your attention" description="Unread messages, pending offers, and orders that still need a next step.">
+          {unreadMessages ? (
+            <DashboardListItem title={`You have ${unreadMessages} unread message${unreadMessages === 1 ? "" : "s"}`} detail="Reply in the thread to keep the sale moving." status="Unread">
+              <Button asChild size="sm" variant="outline"><Link href="/dashboard/messages">Open</Link></Button>
+            </DashboardListItem>
+          ) : null}
           {attentionItems.length ? attentionItems.map((item) => (
             <DashboardListItem key={item.id} title={item.title} detail={item.detail} status={item.status}>
               {item.href ? <Button asChild size="sm" variant="outline"><Link href={item.href}>Open</Link></Button> : null}
             </DashboardListItem>
-          )) : (
+          )) : unreadMessages ? null : (
             <p className="text-sm text-muted-foreground">Nothing needs your attention right now.</p>
           )}
         </DashboardSectionCard>
