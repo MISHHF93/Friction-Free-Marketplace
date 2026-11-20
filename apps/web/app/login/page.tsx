@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/forms/auth-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDevBypassSession } from "@/lib/auth/dev-bypass-session";
+import { e2eUserFromCookie } from "@/lib/auth/e2e-session";
 import { createClient } from "@/lib/supabase/server";
 
 function getSafeNext(next?: string | string[]) {
@@ -16,7 +18,12 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
   const devBypass = await getDevBypassSession();
 
   if (devBypass.user) {
-    redirect(next);
+    redirect(next.startsWith("/admin") ? "/dashboard?adminDenied=1" : next);
+  }
+
+  const e2eUser = e2eUserFromCookie((await cookies()).get("ffm-e2e-user")?.value, (await headers()).get("host"));
+  if (e2eUser) {
+    redirect(next.startsWith("/admin") ? "/dashboard?adminDenied=1" : next);
   }
 
   const supabase = await createClient();
@@ -25,6 +32,11 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
   } = await supabase.auth.getUser();
 
   if (user) {
+    if (next === "/admin" || next.startsWith("/admin/")) {
+      const { data: account } = await supabase.from("users").select("role,status").eq("id", user.id).maybeSingle();
+      const isAdmin = account?.status === "active" && (account.role === "admin" || account.role === "super_admin");
+      redirect(isAdmin ? next : "/dashboard?adminDenied=1");
+    }
     redirect(next);
   }
 

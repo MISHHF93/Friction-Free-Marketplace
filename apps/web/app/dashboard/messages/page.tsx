@@ -28,7 +28,7 @@ export default async function MessagesPage({ searchParams }: { searchParams?: Pr
 
   return (
     <DashboardShell title="Messages" description="Buyer and seller conversations with offers, pickup details, deposits, and safety tools in one place.">
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
+      <div className="dashboard-lead mb-6 grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-base"><Zap className="h-4 w-4 text-primary" />Live messages</CardTitle></CardHeader>
           <CardContent className="text-sm text-muted-foreground">See messages, attachments, offer updates, typing indicators, and read receipts as they arrive.</CardContent>

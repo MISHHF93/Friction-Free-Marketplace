@@ -13,7 +13,14 @@ vi.mock("@supabase/ssr", () => ({
         const user = await response.json() as { id?: string };
         return { data: { user: user?.id ? user : null }, error: user?.id ? null : new Error("auth failed") };
       }
-    }
+    },
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({ data: { role: "buyer", status: "active" }, error: null })
+        })
+      })
+    })
   })
 }));
 
@@ -123,8 +130,49 @@ describe("middleware", () => {
 
     const response = await proxy(createRequest("/dashboard", `sb-example-project-auth-token=base64-${encodedNullSession}`));
 
-    expect(fetchMock).not.toHaveBeenCalled();
     expect(response.headers.get("location")).toBe("https://marketplace.example/login?next=%2Fdashboard");
+  });
+
+  it("sends a local e2e buyer from admin and from login back to the dashboard", async () => {
+    enableLocalBypass();
+    vi.stubEnv("FFM_E2E_AUTH", "true");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const admin = await proxy(createRequest("/admin", "ffm-e2e-user=alice", { host: "127.0.0.1:3001" }));
+    const login = await proxy(createRequest("/login?next=/admin", "ffm-e2e-user=alice", { host: "127.0.0.1:3001" }));
+
+    expect(admin.headers.get("location")).toBe("https://marketplace.example/dashboard?adminDenied=1");
+    expect(login.headers.get("location")).toBe("https://marketplace.example/dashboard?adminDenied=1");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("sends a dev-bypass session that asks for admin back to the dashboard", async () => {
+    enableLocalBypass();
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", supabaseUrl);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", anonKey);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await proxy(createRequest("/login?next=/admin", `${DEV_AUTH_BYPASS_COOKIE}=1`, { host: "127.0.0.1:3001" }));
+
+    expect(response.headers.get("location")).toBe("https://marketplace.example/dashboard?adminDenied=1");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("sends a signed-in non-admin from admin to the dashboard", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", supabaseUrl);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", anonKey);
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (String(url).includes("/auth/v1/user")) return new Response(JSON.stringify({ id: "user-1" }), { status: 200 });
+      return new Response(JSON.stringify([{ role: "buyer", status: "active" }]), { status: 200 });
+    }));
+
+    const response = await proxy(createRequest("/admin"));
+    const login = await proxy(createRequest("/login?next=/admin"));
+
+    expect(response.headers.get("location")).toBe("https://marketplace.example/dashboard?adminDenied=1");
+    expect(login.headers.get("location")).toBe("https://marketplace.example/dashboard?adminDenied=1");
   });
 
   it("redirects protected routes to login when auth lookup fails", async () => {
@@ -177,7 +225,6 @@ describe("middleware", () => {
       const response = await proxy(createRequest(path, `${DEV_AUTH_BYPASS_COOKIE}=1`, { host: "localhost:3001" }));
       expect(response.headers.get("location")).toBe(`https://marketplace.example/login?next=${encodeURIComponent(path)}`);
     }
-    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("does not activate the bypass in production, on Vercel, or without the explicit flag", async () => {

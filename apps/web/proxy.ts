@@ -13,7 +13,6 @@ type PublicMiddlewareEnv = {
   NEXT_PUBLIC_SUPABASE_ANON_KEY: string;
 };
 
-const BASE64_PREFIX = "base64-";
 const serverMutationPrefixes = [
   "/api/stripe/webhooks",
   "/api/stripe/connect/webhook",
@@ -78,64 +77,17 @@ function getAuthenticatedRedirectUrl(request: NextRequest) {
   return redirectUrl;
 }
 
-function getSupabaseProjectRef(env: PublicMiddlewareEnv) {
-  return new URL(env.NEXT_PUBLIC_SUPABASE_URL).hostname.split(".")[0];
+function isAdminNext(request: NextRequest) {
+  const next = getSafeRedirectPath(request.nextUrl.searchParams.get("next"), "");
+  return next === "/admin" || next.startsWith("/admin/");
 }
 
-function getChunkedCookieValue(request: NextRequest, cookieName: string) {
-  const directValue = request.cookies.get(cookieName)?.value;
-  if (directValue) return directValue;
-
-  const chunks: string[] = [];
-  for (let index = 0; ; index += 1) {
-    const chunkValue = request.cookies.get(`${cookieName}.${index}`)?.value;
-    if (!chunkValue) break;
-    chunks.push(chunkValue);
-  }
-
-  return chunks.length ? chunks.join("") : null;
-}
-
-function decodeBase64Url(value: string) {
-  const base64 = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
-  const binary = atob(base64);
-  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
-}
-
-function decodeSessionCookie(value: string) {
-  if (!value.startsWith(BASE64_PREFIX)) return value;
-  return decodeBase64Url(value.slice(BASE64_PREFIX.length));
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function getNestedAccessToken(value: unknown) {
-  if (!isRecord(value)) return null;
-
-  const accessToken = value.access_token;
-  return typeof accessToken === "string" && accessToken ? accessToken : null;
-}
-
-function getAccessTokenFromCookie(request: NextRequest, env: PublicMiddlewareEnv) {
-  const cookieValue = getChunkedCookieValue(request, `sb-${getSupabaseProjectRef(env)}-auth-token`);
-  if (!cookieValue) return null;
-
-  try {
-    const session = JSON.parse(decodeSessionCookie(cookieValue)) as unknown;
-
-    if (Array.isArray(session)) {
-      return typeof session[0] === "string" && session[0] ? session[0] : null;
-    }
-
-    if (!isRecord(session)) return null;
-
-    return getNestedAccessToken(session) ?? getNestedAccessToken(session.currentSession) ?? getNestedAccessToken(session.session);
-  } catch {
-    return null;
-  }
+function adminDeniedUrl(request: NextRequest) {
+  const redirectUrl = request.nextUrl.clone();
+  redirectUrl.pathname = "/dashboard";
+  redirectUrl.search = "";
+  redirectUrl.searchParams.set("adminDenied", "1");
+  return redirectUrl;
 }
 
 function copyResponseCookies(source: NextResponse, target: NextResponse) {
@@ -145,7 +97,7 @@ function copyResponseCookies(source: NextResponse, target: NextResponse) {
   return target;
 }
 
-async function refreshSupabaseUser(request: NextRequest, response: NextResponse, env: PublicMiddlewareEnv): Promise<SupabaseUser | null> {
+async function refreshSupabaseUser(request: NextRequest, response: NextResponse, env: PublicMiddlewareEnv) {
   const supabase = createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
     cookies: {
       getAll() {
@@ -162,39 +114,19 @@ async function refreshSupabaseUser(request: NextRequest, response: NextResponse,
     const { data, error } = await supabase.auth.getUser();
     if (error) {
       console.error("Proxy Supabase auth lookup failed", error);
-      return null;
+      return { user: null as SupabaseUser | null, supabase };
     }
-    return data.user?.id ? { id: data.user.id } : null;
+    return { user: data.user?.id ? { id: data.user.id } : null, supabase };
   } catch (error) {
     console.error("Proxy Supabase auth lookup failed", error);
-    return null;
+    return { user: null as SupabaseUser | null, supabase };
   }
 }
 
-async function getAppUserAccess(userId: string, accessToken: string, env: PublicMiddlewareEnv): Promise<AppUserAccess | null> {
-  const query = new URL(`${env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/users`);
-  query.searchParams.set("select", "role,status");
-  query.searchParams.set("id", `eq.${userId}`);
-  query.searchParams.set("limit", "1");
-
-  try {
-    const response = await fetch(query, {
-      headers: {
-        apikey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/json"
-      },
-      cache: "no-store"
-    });
-
-    if (!response.ok) return null;
-
-    const users = (await response.json()) as AppUserAccess[];
-    return users[0] ?? null;
-  } catch (error) {
-    console.error("Proxy app user lookup failed", error);
-    return null;
-  }
+async function readAppUserAccess(supabase: { from: (table: string) => any }, userId: string): Promise<AppUserAccess | null> {
+  const { data, error } = await supabase.from("users").select("role,status").eq("id", userId).maybeSingle();
+  if (error) return null;
+  return data ?? null;
 }
 
 export async function proxy(request: NextRequest) {
@@ -214,7 +146,10 @@ export async function proxy(request: NextRequest) {
 
   const host = request.headers.get("host") ?? request.nextUrl.host;
   const e2eUser = e2eUserFromCookie(request.cookies.get(E2E_USER_COOKIE)?.value, host);
-  if (e2eUser && !pathname.startsWith("/admin")) {
+  if (e2eUser) {
+    if (pathname.startsWith("/admin") || (isAuthRoute(pathname) && isAdminNext(request))) {
+      return NextResponse.redirect(adminDeniedUrl(request));
+    }
     if (isAuthRoute(pathname)) {
       return NextResponse.redirect(getAuthenticatedRedirectUrl(request));
     }
@@ -223,6 +158,14 @@ export async function proxy(request: NextRequest) {
   const bypassCookie = request.cookies.get(DEV_AUTH_BYPASS_COOKIE)?.value;
   if (isDevAuthBypassCookieValue(bypassCookie, host) && !isDevBypassBlockedPath(pathname)) {
     if (isAuthRoute(pathname)) {
+      const next = getSafeRedirectPath(request.nextUrl.searchParams.get("next"));
+      if (next.startsWith("/admin")) return NextResponse.redirect(adminDeniedUrl(request));
+      if (isDevBypassBlockedPath(next)) {
+        const redirectUrl = request.nextUrl.clone();
+        redirectUrl.pathname = "/dashboard";
+        redirectUrl.search = "";
+        return NextResponse.redirect(redirectUrl);
+      }
       return NextResponse.redirect(getAuthenticatedRedirectUrl(request));
     }
     return continueRequest(request);
@@ -231,30 +174,29 @@ export async function proxy(request: NextRequest) {
   const env = getPublicMiddlewareEnv();
   const sessionResponse = continueRequest(request);
 
-  if (!env || !getAccessTokenFromCookie(request, env)) {
+  if (!env) {
     return isProtectedRoute(pathname) ? copyResponseCookies(sessionResponse, NextResponse.redirect(getLoginRedirectUrl(request))) : sessionResponse;
   }
 
-  const user = await refreshSupabaseUser(request, sessionResponse, env);
-  const accessToken = getAccessTokenFromCookie(request, env);
+  const { user, supabase } = await refreshSupabaseUser(request, sessionResponse, env);
 
   if (isProtectedRoute(pathname) && !user) {
     return copyResponseCookies(sessionResponse, NextResponse.redirect(getLoginRedirectUrl(request)));
   }
 
-  if (user && isAuthRoute(pathname)) {
-    return copyResponseCookies(sessionResponse, NextResponse.redirect(getAuthenticatedRedirectUrl(request)));
+  if (user && (pathname.startsWith("/admin") || (isAuthRoute(pathname) && isAdminNext(request)))) {
+    const appUser = await readAppUserAccess(supabase, user.id);
+    const isAdmin = appUser?.status === "active" && ["admin", "super_admin"].includes(appUser.role ?? "");
+    if (!isAdmin) {
+      return copyResponseCookies(sessionResponse, NextResponse.redirect(adminDeniedUrl(request)));
+    }
+    if (isAuthRoute(pathname)) {
+      return copyResponseCookies(sessionResponse, NextResponse.redirect(getAuthenticatedRedirectUrl(request)));
+    }
   }
 
-  if (user && accessToken && pathname.startsWith("/admin")) {
-    const appUser = await getAppUserAccess(user.id, accessToken, env);
-
-    if (!appUser || appUser.status !== "active" || !["admin", "super_admin"].includes(appUser.role ?? "")) {
-      const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = "/dashboard";
-      redirectUrl.searchParams.set("adminDenied", "1");
-      return copyResponseCookies(sessionResponse, NextResponse.redirect(redirectUrl));
-    }
+  if (user && isAuthRoute(pathname)) {
+    return copyResponseCookies(sessionResponse, NextResponse.redirect(getAuthenticatedRedirectUrl(request)));
   }
 
   return sessionResponse;
