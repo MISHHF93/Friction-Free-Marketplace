@@ -74,7 +74,11 @@ export function PageTitleMirror() {
   const titleRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
     const apply = () => {
-      if (titleRef.current) titleRef.current.textContent = visiblePageTitle();
+      const node = titleRef.current;
+      if (!node) return;
+      const next = visiblePageTitle();
+      // Only write on change: writing textContent is itself a body mutation and would re-trigger the observer forever.
+      if (node.textContent !== next) node.textContent = next;
     };
     apply();
     const observer = new MutationObserver(apply);
