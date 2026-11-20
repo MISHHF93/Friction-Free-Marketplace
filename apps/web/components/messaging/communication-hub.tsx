@@ -385,6 +385,9 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
                 <Button disabled={!canRespondToPendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "declined", message: "Rejected from chat." }))}>Reject</Button>
                 <Button disabled={!canWithdrawPendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "withdrawn", message: "Withdrawn from chat." }))}>Withdraw</Button>
                 <Button disabled={!canExpirePendingOffer || isPending} onClick={() => pendingOffer && runAction(() => respondToOfferAction({ offerId: pendingOffer.id, status: "expired", message: "Expired from chat." }))}>Expire</Button>
+                {orderedOffers.some((offer) => offer.status === "accepted" && offer.buyer_id === userId) ? (
+                  <Button asChild variant="trust"><Link href={`/listings/${orderedOffers.find((offer) => offer.status === "accepted" && offer.buyer_id === userId)?.listing_id}?offer=${orderedOffers.find((offer) => offer.status === "accepted" && offer.buyer_id === userId)?.id}#protected-checkout`}>Pay accepted offer</Link></Button>
+                ) : null}
               </div>
               {latestOffer?.offer_status_history && latestOffer.offer_status_history.length > 0 && (
                 <div className="rounded-xl border p-3 text-xs">

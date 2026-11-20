@@ -27,9 +27,10 @@ type CheckoutCardProps = {
   currency: string;
   shippingCents?: number;
   disabled?: boolean;
+  offerId?: string;
 };
 
-export function CheckoutCard({ listingId, priceAmount, currency, shippingCents = 0, disabled = false }: CheckoutCardProps) {
+export function CheckoutCard({ listingId, priceAmount, currency, shippingCents = 0, disabled = false, offerId }: CheckoutCardProps) {
   const stripeKey = publicEnv.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   const checkoutConfigured = Boolean(stripeKey && !stripeKey.includes("placeholder"));
   const [stripe, setStripe] = useState<StripeJs | null>(null);
@@ -86,6 +87,7 @@ export function CheckoutCard({ listingId, priceAmount, currency, shippingCents =
         },
         body: JSON.stringify({
           listingId,
+          offerId,
           shippingCents: quote.shippingCents,
           taxCents: quote.taxCents
         })

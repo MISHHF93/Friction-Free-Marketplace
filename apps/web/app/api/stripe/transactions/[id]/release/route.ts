@@ -8,6 +8,7 @@ import { recordTransactionEvent } from "@/lib/payments/audit";
 import { dollarsToCents } from "@/lib/payments/money";
 import { enqueueTemplateNotification } from "@/lib/notifications/service";
 import { buildReleaseJournal, postLedgerJournal } from "@/lib/financial/ledger";
+import { claimEscrowPayment, claimTransactionStatus, escrowActionKey } from "@/lib/payments/escrow";
 import { getStripe } from "@/lib/stripe/server";
 
 const transactionIdSchema = z.string().uuid();
@@ -31,16 +32,26 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (payment.status !== "held") return NextResponse.json({ error: "Payment must be captured and held before release." }, { status: 409 });
   if (!payment.provider_charge_id) return NextResponse.json({ error: "Payment charge is not available for release." }, { status: 409 });
 
-  const transfer = await getStripe().transfers.create({
-    amount: dollarsToCents(Number(payment.seller_net_amount)),
-    currency: payment.currency.toLowerCase(),
-    destination: sellerAccount.stripe_account_id,
-    source_transaction: payment.provider_charge_id ?? undefined,
-    transfer_group: `transaction_${transactionId.data}`,
-    metadata: { transaction_id: transactionId.data, escrow_payment_id: payment.id }
-  }, {
-    idempotencyKey: request.headers.get("idempotency-key") ?? `release:${transactionId.data}:${payment.id}`
-  });
+  const claimed = await claimEscrowPayment(supabase, payment.id, "held", "releasing");
+  if (!claimed) return NextResponse.json({ error: "This release is already in progress." }, { status: 409 });
+
+  let transfer;
+  try {
+    transfer = await getStripe().transfers.create({
+      amount: dollarsToCents(Number(payment.seller_net_amount)),
+      currency: payment.currency.toLowerCase(),
+      destination: sellerAccount.stripe_account_id,
+      source_transaction: payment.provider_charge_id ?? undefined,
+      transfer_group: `transaction_${transactionId.data}`,
+      metadata: { transaction_id: transactionId.data, escrow_payment_id: payment.id }
+    }, {
+      idempotencyKey: escrowActionKey("release", transactionId.data, payment.id)
+    });
+  } catch (error) {
+    await claimEscrowPayment(supabase, payment.id, "releasing", "held");
+    const message = error instanceof Error ? error.message : "Stripe release failed.";
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
 
   await supabase.from("payouts").insert({
     transaction_id: transactionId.data,
@@ -71,8 +82,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     metadata: { transfer_id: transfer.id }
   });
 
-  await supabase.from("escrow_payments").update({ status: "released", released_at: new Date().toISOString() }).eq("id", payment.id);
-  await supabase.from("transactions").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", transactionId.data);
+  const releasedPayment = await supabase.from("escrow_payments").update({ status: "released", released_at: new Date().toISOString() }).eq("id", payment.id).eq("status", "releasing").select("id");
+  if (releasedPayment.error || !releasedPayment.data?.length) return NextResponse.json({ error: "Release could not be recorded." }, { status: 409 });
+  const completed = await claimTransactionStatus(supabase, transactionId.data, "escrowed", "completed", { completed_at: new Date().toISOString() });
+  if (!completed) return NextResponse.json({ error: "Transaction was no longer escrowed." }, { status: 409 });
   await supabase.from("listings").update({ status: "sold", quantity: 0 }).eq("id", transaction.listing_id);
   await postLedgerJournal(supabase, buildReleaseJournal({
     transactionId: transactionId.data,
