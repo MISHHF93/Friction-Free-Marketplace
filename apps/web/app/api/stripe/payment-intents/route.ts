@@ -77,6 +77,17 @@ export async function POST(request: Request) {
     tax: quote.taxAmount,
     fee: quote.platformFeeAmount,
   };
+  const { data: openSale, error: openSaleError } = await supabase
+    .from("transactions")
+    .select("id,buyer_id,idempotency_key")
+    .eq("listing_id", listing.id)
+    .in("status", ["pending_payment", "paid", "escrowed"])
+    .limit(1)
+    .maybeSingle();
+  if (openSaleError) return NextResponse.json({ error: "Could not check listing availability." }, { status: 500 });
+  if (openSale && openSale.idempotency_key !== idempotencyKey) {
+    return NextResponse.json({ error: "This listing already has an open checkout." }, { status: 409 });
+  }
   let { data: transaction } = await supabase
     .from("transactions")
     .select("*")
@@ -141,6 +152,9 @@ export async function POST(request: Request) {
         .eq("buyer_id", auth.user.id)
         .eq("idempotency_key", idempotencyKey)
         .maybeSingle();
+      if (!raced.data) {
+        return NextResponse.json({ error: "This listing already has an open checkout." }, { status: 409 });
+      }
       transaction = raced.data;
     }
     if (!transaction) return NextResponse.json({ error: "Could not create transaction." }, { status: 500 });
