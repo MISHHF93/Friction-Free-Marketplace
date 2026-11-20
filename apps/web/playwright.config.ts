@@ -12,7 +12,7 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_SKIP_WEB_SERVER
     ? undefined
     : {
-        command: process.env.PLAYWRIGHT_USE_PROD === "true" ? "npx next start --hostname 127.0.0.1 -p 3001" : "npm run dev",
+        command: process.env.PLAYWRIGHT_USE_PROD === "true" ? "bash scripts/start-playwright-prod.sh" : "npm run dev",
         url: "http://127.0.0.1:3001",
         reuseExistingServer: !process.env.CI && process.env.PLAYWRIGHT_USE_PROD !== "true",
         env: {
@@ -38,7 +38,9 @@ export default defineConfig({
           FFM_E2E_AUTH: "true",
           MARKETPLACE_DEMO_MODE: "true",
           NEXT_DIST_DIR: ".next-playwright",
-          NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3001"
+          NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3001",
+          HOSTNAME: "127.0.0.1",
+          PORT: "3001"
         },
         timeout: 120_000
       },
