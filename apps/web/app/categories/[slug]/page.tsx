@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Layers3, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const { category } = await getCategoryPage(slug);
+  if (!category) return { title: "Category not found" };
   return {
     title: `${category.name} listings | Friction-Free Marketplace`,
     description: category.description ?? `Browse trusted ${category.name} listings with verified seller signals and protected checkout support.`,
@@ -32,6 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const { category, listings, categories, source } = await getCategoryPage(slug);
+  if (!category) notFound();
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">

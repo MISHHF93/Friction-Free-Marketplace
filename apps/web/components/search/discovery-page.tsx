@@ -28,6 +28,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { SaveSearchForm } from "@/components/saved-searches/save-search-form";
+import { getPublicCategories } from "@/lib/public-marketplace";
 import { getFavoriteListingIds } from "@/lib/saves/user-saves";
 import { searchMarketplace } from "@/lib/search/discovery";
 import type { DiscoveryDocument, DiscoverySearchParams } from "@/lib/search/schema";
@@ -106,12 +107,13 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
   const params = parseDiscoveryParamsFromRecord(searchParams, { sort: mode === "browse" ? "recommended" : "newest", limit: discoveryPageSize });
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const [results, recommended, trending, broadRecommendations, favoriteIds] = await Promise.all([
+  const [results, recommended, trending, broadRecommendations, favoriteIds, categoryResult] = await Promise.all([
     searchMarketplace(params),
     searchMarketplace({ ...params, sort: "recommended", limit: 3 }),
     searchMarketplace({ category: params.category, sort: "trending", limit: 3 }),
     searchMarketplace({ sort: "recommended", limit: 3 }),
-    user ? getFavoriteListingIds(user.id) : Promise.resolve(new Set<string>())
+    user ? getFavoriteListingIds(user.id) : Promise.resolve(new Set<string>()),
+    getPublicCategories(20)
   ]);
 
   const currentHref = new URLSearchParams();
@@ -124,12 +126,12 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
   const trustStats = results.facetStats.seller_trust_score;
   const totalPages = Math.max(1, Math.ceil(results.total / discoveryPageSize));
   const currentPage = Math.max(params.page ?? 1, 1);
-  const modeHref = mode === "search" ? "/search" : "/browse";
+  const modeHref = "/search";
   const emptyRecommendations = recommended.listings.length ? recommended.listings : broadRecommendations.listings;
 
   return (
     <section className="app-container-wide section-y">
-      <SearchHeader mode={mode} params={params} resultsTotal={results.total} source={results.source} priceStats={priceStats} />
+      <SearchHeader mode={mode} params={params} resultsTotal={results.total} source={results.source} priceStats={priceStats} categories={categoryResult.categories} />
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(15rem,17rem)_minmax(0,1fr)] xl:gap-6 2xl:grid-cols-[18rem_minmax(0,1fr)]">
         <aside className="hidden">
@@ -171,8 +173,8 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
   );
 }
 
-function SearchHeader({ mode, params, resultsTotal, source, priceStats }: { mode: "browse" | "search"; params: DiscoverySearchParams; resultsTotal: number; source: string; priceStats?: { min: number; max: number } }) {
-  const modeHref = mode === "search" ? "/search" : "/browse";
+function SearchHeader({ mode, params, resultsTotal, source, priceStats, categories = [] }: { mode: "browse" | "search"; params: DiscoverySearchParams; resultsTotal: number; source: string; priceStats?: { min: number; max: number }; categories?: { slug: string; name: string }[] }) {
+  const modeHref = "/search";
   const sourceLabel = source === "meilisearch"
     ? "Live marketplace index"
     : source === "database"
@@ -207,6 +209,19 @@ function SearchHeader({ mode, params, resultsTotal, source, priceStats }: { mode
         <Input name="radiusMiles" defaultValue={params.radiusMiles} placeholder="Radius" type="number" min="1" />
         <Button variant="trust" className="md:col-span-2 lg:col-span-1"><SlidersHorizontal className="h-4 w-4" aria-hidden="true" /> Search</Button>
       </form>
+      {categories.length ? (
+        <div className="flex gap-2 overflow-x-auto px-3 pb-3 sm:px-4" aria-label="Categories">
+          {categories.map((category) => {
+            const active = params.category === category.slug;
+            const href = active ? modeHref : `${modeHref}?category=${encodeURIComponent(category.slug)}`;
+            return (
+              <Link key={category.slug} href={href} className={`shrink-0 rounded-full border px-3 py-1.5 text-sm font-bold ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background hover:bg-secondary"}`}>
+                {category.name}
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -203,13 +203,10 @@ export async function getCategoryPage(slug: string) {
     getPublicCategories(20),
     searchMarketplace({ category: slug, sort: "recommended", limit: 18 })
   ]);
-  const category = categories.find((item) => item.slug === slug) ?? {
-    id: slug,
-    slug,
-    name: slug.split("-").map((part) => part[0]?.toUpperCase() + part.slice(1)).join(" "),
-    description: "Trusted listings in this marketplace category.",
-    listingCount: listings.total
-  };
+  const category = categories.find((item) => item.slug === slug);
+  if (!category) {
+    return { category: null, listings, categories, source };
+  }
 
   return { category: { ...category, listingCount: listings.total || category.listingCount }, listings, categories, source };
 }
