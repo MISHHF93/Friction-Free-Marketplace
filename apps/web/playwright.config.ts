@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// chrome-headless-shell hangs on accessibility queries and axe evaluate in this environment.
+process.env.PLAYWRIGHT_CHROMIUM_USE_HEADLESS_SHELL ??= "0";
+
 export default defineConfig({
   testDir: "tests/e2e",
   timeout: 30_000,
