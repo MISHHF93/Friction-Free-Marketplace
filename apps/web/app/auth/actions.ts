@@ -98,7 +98,7 @@ export async function signupAction(_previousState: AuthActionState, formData: Fo
     options: {
       emailRedirectTo: redirectTo,
       data: {
-        display_name: parsed.data.displayName || (data.user ? memberDisplayName(data.user.id) : "Member"),
+        display_name: parsed.data.displayName || "Member",
         full_name: parsed.data.displayName
       }
     }

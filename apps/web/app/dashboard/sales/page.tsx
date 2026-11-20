@@ -83,7 +83,7 @@ export default async function SalesPage() {
         <CardContent className="grid gap-3">
           {sales.length ? sales.map((sale) => (
             <DashboardListItem key={sale.id} title={sale.title} detail={`${money(sale.total_amount, sale.currency)} · ${sellerNextStep(sale.status)}`} status={sale.status}>
-              <Button asChild size="sm"><Link href={sale.conversationId ? `/dashboard/messages?conversation=${sale.conversationId}` : "/dashboard/messages"}>Manage</Link></Button>
+              <Button asChild size="sm"><Link href={"conversationId" in sale && sale.conversationId ? `/dashboard/messages?conversation=${sale.conversationId}` : "/dashboard/messages"}>Manage</Link></Button>
               <EscrowActions transactionId={sale.id} role="seller" status={sale.status} amount={Number(sale.total_amount)} currency={sale.currency} />
             </DashboardListItem>
           )) : (
