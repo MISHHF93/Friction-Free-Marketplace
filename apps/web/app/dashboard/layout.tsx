@@ -63,7 +63,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             </div>
             <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center xl:flex xl:justify-end">
               <div className="grid gap-2 sm:flex sm:flex-wrap xl:justify-end">
-                <Button asChild variant="trust" size="sm"><Link href="/dashboard/listings/create"><Plus className="h-4 w-4" /> New listing</Link></Button>
+                <Button asChild variant="trust" size="sm"><Link href="/dashboard/listings/create" style={{ backgroundColor: "#0c3f66", color: "#ffffff", borderColor: "#0c3f66" }}><Plus className="h-4 w-4" /> New listing</Link></Button>
                 <Button asChild variant="surface" size="sm"><Link href="/search"><Search className="h-4 w-4" /> Search market</Link></Button>
                 <Button asChild variant="surface" size="sm"><Link href="/dashboard/ai-listing-creator"><Sparkles className="h-4 w-4" /> Assistant</Link></Button>
               </div>

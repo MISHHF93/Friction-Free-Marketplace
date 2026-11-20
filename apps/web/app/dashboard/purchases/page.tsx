@@ -79,7 +79,7 @@ export default async function PurchasesPage() {
             <DashboardListItem key={purchase.id} title={purchase.title} detail={`${money(purchase.total_amount, purchase.currency)} · ${purchaseMilestone(purchase)}`} status={purchase.status}>
               <ol className="grid gap-1 text-xs" aria-label="Order status">
                 {["paid", "escrowed", "shipped", "delivered", "completed"].map((step) => (
-                  <li key={step} className={purchase.status === step ? "font-bold text-primary" : "text-muted-foreground"} aria-current={purchase.status === step ? "step" : undefined}>{step}</li>
+                  <li key={step} className={purchase.status === step ? "font-bold text-[#0c3f66]" : "text-muted-foreground"} aria-current={purchase.status === step ? "step" : undefined}>{step}</li>
                 ))}
               </ol>
               <Button asChild size="sm" variant="outline"><Link href={`/listings/${purchase.listing_id}`}>View listing</Link></Button>

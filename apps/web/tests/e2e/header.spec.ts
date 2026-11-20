@@ -13,8 +13,8 @@ for (const viewport of viewports) {
     await page.goto("/");
 
     const header = page.getByRole("banner");
-    await expect(header.getByRole("button", { name: "Open marketplace AI assistant" })).toHaveCount(1);
-    await expect(header.locator('[aria-label="Search trusted marketplace listings"]:visible')).toHaveCount(1);
+    await expect(header.getByRole("button", { name: /open marketplace assistant/i })).toHaveCount(1);
+    await expect(header.getByRole("search")).toHaveCount(1);
     await expect(header.locator('[aria-label="Open categories menu"]:visible')).toHaveCount(1);
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

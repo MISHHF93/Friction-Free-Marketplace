@@ -142,7 +142,7 @@
     --secondary: 218 20% 14%;
     --secondary-foreground: 210 40% 96%;
     --muted: 218 20% 14%;
-    --muted-foreground: 215 16% 28%;
+    --muted-foreground: 214 16% 70%;
     --accent: 209 40% 16%;
     --accent-foreground: 210 40% 96%;
     --border: 215 16% 22%;
@@ -827,4 +827,18 @@
 @keyframes page-arrive {
   from { opacity: 0; transform: translateY(0.75rem); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+html:not(.dark) {
+  --muted-foreground: 215 28% 18%;
+}
+
+html:not(.dark) .ui-button-primary,
+html:not(.dark) .ui-button-trust,
+html:not(.dark) a.ui-button-trust,
+html:not(.dark) button.ui-button-trust,
+html:not(.dark) .bg-primary {
+  background-color: #0c3f66 !important;
+  border-color: #0c3f66 !important;
+  color: #ffffff !important;
 }
