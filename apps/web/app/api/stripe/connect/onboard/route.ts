@@ -7,6 +7,7 @@ import { recordTransactionEvent } from "@/lib/payments/audit";
 import {
   createAccountLink,
   createExpressAccountForSeller,
+  sellerConnectCountry,
   formatConnectError,
   getStoredSellerAccount,
   mapStripeAccountStatus,
@@ -25,9 +26,23 @@ export async function POST(request: Request) {
   try {
     const stored = await getStoredSellerAccount(supabase, auth.user.id);
     const stripe = getStripe();
-    const account = stored?.stripe_account_id
-      ? await stripe.accounts.retrieve(stored.stripe_account_id)
-      : await createExpressAccountForSeller({ id: auth.user.id, email: auth.user.email });
+    let account;
+    if (stored?.stripe_account_id) {
+      account = await stripe.accounts.retrieve(stored.stripe_account_id);
+    } else {
+      const { data: address } = await supabase
+        .from("addresses")
+        .select("country_code")
+        .eq("user_id", auth.user.id)
+        .order("is_default", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const country = sellerConnectCountry(address?.country_code);
+      if (!country) {
+        return NextResponse.json({ error: "Add a US or Canada address before connecting payouts." }, { status: 400 });
+      }
+      account = await createExpressAccountForSeller({ id: auth.user.id, email: auth.user.email, country });
+    }
 
     if (account.deleted) {
       return NextResponse.json({ error: "The saved Stripe account was deleted. Contact support to reconnect payouts." }, { status: 409 });

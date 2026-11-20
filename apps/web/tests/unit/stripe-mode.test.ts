@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { sellerConnectCountry } from "@/lib/payments/connect";
 import { canApplyTransactionStatus, stripeSecretIsLive, stripeSecretMode } from "@/lib/payments/stripe-mode";
 
 describe("stripe key mode", () => {
@@ -11,11 +12,23 @@ describe("stripe key mode", () => {
   });
 });
 
+describe("seller connect country", () => {
+  it("accepts the United States and Canada only", () => {
+    expect(sellerConnectCountry("ca")).toBe("CA");
+    expect(sellerConnectCountry("US")).toBe("US");
+    expect(sellerConnectCountry("MX")).toBeNull();
+    expect(sellerConnectCountry(null)).toBeNull();
+  });
+});
+
 describe("transaction status guard", () => {
   it("allows forward moves and blocks replay over a finished order", () => {
     expect(canApplyTransactionStatus("pending_payment", "paid")).toBe(true);
     expect(canApplyTransactionStatus("escrowed", "paid")).toBe(false);
     expect(canApplyTransactionStatus("completed", "cancelled")).toBe(false);
+    expect(canApplyTransactionStatus("escrowed", "refunded")).toBe(true);
+    expect(canApplyTransactionStatus("completed", "refunded")).toBe(true);
+    expect(canApplyTransactionStatus("cancelled", "refunded")).toBe(false);
     expect(canApplyTransactionStatus("paid", "cancelled")).toBe(true);
     expect(canApplyTransactionStatus(null, "paid")).toBe(true);
   });

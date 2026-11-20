@@ -13,6 +13,7 @@ if (!jobGuard.includes("hasValidBearerSecret") || !jobGuard.includes("status: 50
 
 const serverRoutes = [
   ["apps/web/app/api/stripe/webhooks/route.ts", ["webhooks.constructEvent", "STRIPE_WEBHOOK_SECRET"]],
+  ["apps/web/app/api/stripe/connect/webhook/route.ts", ["webhooks.constructEvent", "STRIPE_CONNECT_WEBHOOK_SECRET"]],
   ["apps/web/app/api/search/sync/route.ts", ["authorizeJobRequest", "SEARCH_SYNC_SECRET"]],
   ["apps/web/app/api/admin/trust-safety/workers/route.ts", ["hasValidBearerSecret", "ADMIN_WORKER_SECRET"]],
   ["apps/web/app/api/notifications/dispatch/route.ts", ["authorizeJobRequest", "SCHEDULED_JOB_SECRET"]],

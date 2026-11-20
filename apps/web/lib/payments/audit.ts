@@ -16,7 +16,7 @@ export async function recordTransactionEvent(
     metadata?: Record<string, unknown>;
   }
 ) {
-  await supabase.from("transaction_events").insert({
+  const inserted = await supabase.from("transaction_events").insert({
     transaction_id: event.transaction_id ?? null,
     actor_id: event.actor_id ?? null,
     type: event.type,
@@ -29,4 +29,5 @@ export async function recordTransactionEvent(
     message: event.message ?? null,
     metadata: event.metadata ?? {}
   });
+  if (inserted.error) throw new Error(inserted.error.message);
 }

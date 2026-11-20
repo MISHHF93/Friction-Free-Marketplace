@@ -133,13 +133,19 @@ export async function getStoredSellerAccount(supabase: SupabaseClient<any>, sell
   return data;
 }
 
-export async function createExpressAccountForSeller(seller: { id: string; email?: string | null }) {
+export function sellerConnectCountry(country: string | null | undefined) {
+  const code = country?.trim().toUpperCase();
+  if (code === "US" || code === "CA") return code;
+  return null;
+}
+
+export async function createExpressAccountForSeller(seller: { id: string; email?: string | null; country: "US" | "CA" }) {
   const stripe = getStripe();
 
   return stripe.accounts.create(
     {
       type: "express",
-      country: "US",
+      country: seller.country,
       email: seller.email ?? undefined,
       capabilities: {
         card_payments: { requested: true },
@@ -149,11 +155,11 @@ export async function createExpressAccountForSeller(seller: { id: string; email?
       metadata: { seller_id: seller.id },
       settings: {
         payouts: {
-          schedule: { interval: "manual" }
+          schedule: { interval: "daily" }
         }
       }
     },
-    { idempotencyKey: `connect-account:${seller.id}` }
+    { idempotencyKey: `connect-account:${seller.id}:${seller.country}` }
   );
 }
 

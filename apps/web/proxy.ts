@@ -14,6 +14,7 @@ const protectedRoutePrefixes = ["/dashboard", "/admin", "/account"] as const;
 const authRoutePaths = ["/login", "/signup"] as const;
 const serverMutationPrefixes = [
   "/api/stripe/webhooks",
+  "/api/stripe/connect/webhook",
   "/api/search/sync",
   "/api/admin/trust-safety/workers",
   "/api/notifications/dispatch",
