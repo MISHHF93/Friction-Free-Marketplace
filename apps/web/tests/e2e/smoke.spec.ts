@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 const routes = [
-  { path: "/", heading: /good things find their next person/i },
+  { path: "/", heading: /buy and sell locally with protected payment/i },
   { path: "/browse", heading: /find trusted listings/i },
   { path: "/search", heading: /find trusted listings/i },
-  { path: "/login", heading: /log in/i },
+  { path: "/login", heading: /log in to your account/i },
   { path: "/signup", heading: /create account/i },
   { path: "/privacy", heading: /privacy policy/i },
   { path: "/terms", heading: /terms of service/i },

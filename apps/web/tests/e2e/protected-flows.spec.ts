@@ -14,7 +14,7 @@ test.describe("protected flows", () => {
       await page.goto(path);
 
       await expect(page).toHaveURL(new RegExp(`/login\\?next=${encodeURIComponent(path).replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}`));
-      await expect(page.getByRole("heading", { name: "Log in" })).toBeVisible();
+      await expect(page.getByRole("heading", { name: /log in to your account/i })).toBeVisible();
     });
   }
 

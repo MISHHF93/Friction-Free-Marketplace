@@ -44,7 +44,7 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
     <section className="mx-auto grid min-h-[70vh] max-w-6xl place-items-center px-4 py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md shadow-soft">
         <CardHeader>
-          <CardTitle className="text-2xl">Log in</CardTitle>
+          <CardTitle className="text-2xl">Log in to your account</CardTitle>
           <CardDescription>Access your buyer, seller, or admin workspace.</CardDescription>
         </CardHeader>
         <CardContent>

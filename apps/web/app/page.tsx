@@ -1,25 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, BadgeCheck, Bot, CreditCard, Search, ShieldCheck, Sparkles, Store, WalletCards } from "lucide-react";
+import { ArrowRight, Store } from "lucide-react";
 import { PublicListingGrid } from "@/components/public-listing-grid";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartCard, MetricCard, SearchBar, TrustBadge } from "@/components/ui-library";
-import { getFeaturedListings, getPublicCategories, getTrustSafetyStats } from "@/lib/public-marketplace";
+import { getFeaturedListings, getPublicCategories } from "@/lib/public-marketplace";
 import { NoncedJsonLd } from "@/components/security/nonce-script";
-import { marketplaceJsonLd, publicCategories } from "@/lib/public-site";
+import { marketplaceJsonLd } from "@/lib/public-site";
 
 export const dynamic = "force-dynamic";
 
+const promise = "Buy and sell locally with protected payment.";
+
 export const metadata: Metadata = {
-  title: "Friction-Free Marketplace | Premium AI-powered commerce",
-  description: "Buy and sell with AI-assisted discovery, professional seller tools, protected checkout, trust signals, and marketplace safety workflows.",
-  keywords: ["AI marketplace", "trusted commerce", "protected checkout", "seller tools", "local marketplace"],
+  title: `Friction-Free Marketplace | ${promise.replace(/\.$/, "")}`,
+  description: promise,
+  keywords: ["local marketplace", "protected payment", "buy and sell"],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Friction-Free Marketplace | Premium AI-powered commerce",
-    description: "A premium marketplace platform for clearer listings, safer payments, professional sellers, and AI-assisted commerce.",
+    title: "Friction-Free Marketplace",
+    description: promise,
     url: "/",
     type: "website",
     siteName: "Friction-Free Marketplace",
@@ -27,206 +27,85 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [featured, categoryResult, stats] = await Promise.all([
+  const [featured, categoryResult] = await Promise.all([
     getFeaturedListings(6),
     getPublicCategories(12),
-    getTrustSafetyStats(),
   ]);
-
-  const countBySlug = new Map(categoryResult.categories.map((category) => [category.slug, category.listingCount]));
-  const categoryChart = publicCategories.slice(0, 5).map((category) => ({
-    label: category.title,
-    value: countBySlug.get(category.slug) ?? 0,
-    tone: category.tone,
-  }));
 
   return (
     <>
-      <NoncedJsonLd data={marketplaceJsonLd("/", "Friction-Free Marketplace", metadata.description ?? "")} />
+      <NoncedJsonLd data={marketplaceJsonLd("/", "Friction-Free Marketplace", promise)} />
 
-      <section className="app-container relative isolate grid gap-10 overflow-hidden py-section-sm lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)] lg:items-center">
-        <div className="hero-orb hero-orb-primary" aria-hidden="true" />
-        <div className="hero-orb hero-orb-ai" aria-hidden="true" />
+      <section className="app-container relative isolate grid gap-8 py-8">
         <div className="relative z-10">
-          <Badge variant="ai" className="w-fit gap-1">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            Thoughtful tools. Safer exchanges.
-          </Badge>
-          <h1 className="mt-5 max-w-5xl text-hero text-balance">
-            Good things find <span className="brand-accent-text">their next person.</span>
-          </h1>
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-muted-foreground">
-            Discover well-described items, meet trusted sellers, and move from “is this available?” to a protected handoff without the usual marketplace friction.
+          <Badge variant="trust" className="w-fit">Local marketplace</Badge>
+          <h1 className="mt-5 max-w-4xl text-hero text-balance">{promise}</h1>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+            Find local listings, message sellers, and pay with protection until you confirm you received the item.
           </p>
-          <div className="mt-7">
-            <SearchBar
-              action="/search"
-              placeholder="Search listings"
-              suggestions={[
-                { label: "verified camera kit", href: "/search?q=verified%20camera%20kit" },
-                { label: "sofa with delivery", href: "/search?q=sofa%20with%20delivery" },
-                { label: "trusted seller tools", href: "/categories/tools" },
-              ]}
-            />
-          </div>
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg" variant="trust">
-              <Link href="/browse">
-                Browse marketplace <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              <Link href="/search">
+                Search listings <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
               <Link href="/dashboard/listings/create">Start selling</Link>
             </Button>
           </div>
-          <div className="mt-6 flex flex-wrap gap-2">
-            <TrustBadge label="Verified sellers" />
-            <TrustBadge label="Protected checkout" tone="premium" icon={<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />} />
-            <TrustBadge label="AI risk checks" tone="ai" icon={<Bot className="h-3.5 w-3.5" aria-hidden="true" />} />
-          </div>
-        </div>
-
-        <div className="relative z-10">
-          <Card className="relative overflow-hidden bg-premium-dark text-white shadow-admin">
-            <CardHeader>
-              <Badge variant="dark" className="w-fit">Marketplace today</Badge>
-              <CardTitle className="text-3xl text-white">A community measured in good exchanges.</CardTitle>
-              <CardDescription className="text-slate-300">Clear listings, responsive people, and safer transactions—visible at a glance.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2">
-              <HeroMetric label="Active listings" value={stats.activeListings.toLocaleString("en-US")} />
-              <HeroMetric label="Trusted sellers" value={stats.trustedSellers.toLocaleString("en-US")} />
-              <HeroMetric label="Completed trades" value={stats.completedTransactions.toLocaleString("en-US")} />
-              <HeroMetric label="Low-risk mix" value={`${stats.lowRiskRate}%`} />
-            </CardContent>
-          </Card>
         </div>
       </section>
 
-      <section className="app-container section-y">
-        <div className="mb-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-          <div>
-            <p className="brand-kicker">Find your way in</p>
-            <h2 className="mt-3 text-section">Browse like a person, not a database.</h2>
-            <p className="mt-4 max-w-3xl text-lg leading-8 text-muted-foreground">
-              Start with what you need—or what you did not know you wanted. Every category keeps condition, location, and trust close at hand.
-            </p>
+      {categoryResult.categories.length ? (
+        <section className="app-container section-y">
+          <div className="mb-6">
+            <h2 className="text-section">Browse by category</h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">Only categories with live marketplace inventory are shown.</p>
           </div>
-          <Button asChild variant="outline">
-            <Link href="/categories">View all categories</Link>
-          </Button>
-        </div>
-        <div className="adaptive-grid">
-          {publicCategories.slice(0, 8).map((category) => (
-            <Link key={category.slug} href={`/categories/${category.slug}`} className="card-base card-interactive p-5">
-              <span className={`brand-icon brand-icon-${category.tone}`}>
-                <category.icon className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <h3 className="mt-5 text-xl font-black tracking-tight">{category.title}</h3>
-              <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">{category.description}</p>
-              <div className="mt-5 flex items-center justify-between gap-3">
-                <Badge variant="trust">{(countBySlug.get(category.slug) ?? 0).toLocaleString("en-US")} live</Badge>
-                <span className="inline-flex items-center gap-1 text-sm font-bold text-primary">
-                  Explore <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+          <div className="adaptive-grid">
+            {categoryResult.categories.map((category) => (
+              <Link key={category.slug} href={`/categories/${category.slug}`} className="card-base card-interactive p-5">
+                <h3 className="text-xl font-black tracking-tight">{category.name}</h3>
+                {category.description ? <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">{category.description}</p> : null}
+                <div className="mt-5 flex items-center justify-between gap-3">
+                  <Badge variant="trust">{category.listingCount.toLocaleString("en-US")} live</Badge>
+                  <span className="inline-flex items-center gap-1 text-sm font-bold text-primary">
+                    Explore <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="app-container section-y">
-        <div className="mb-8 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+        <div className="mb-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
           <div>
-            <p className="brand-kicker">Worth a closer look</p>
-            <h2 className="mt-3 text-section">Fresh finds, clearly presented.</h2>
-            <p className="mt-4 max-w-3xl text-lg leading-8 text-muted-foreground">
-              Price, condition, location, and seller confidence are visible before you open a listing—because clarity should come first.
-            </p>
+            <h2 className="text-section">Latest listings</h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">Price, condition, and location are visible before you open a listing.</p>
           </div>
           <Button asChild variant="trust">
-            <Link href="/browse">Browse all listings</Link>
+            <Link href="/search">Browse all listings</Link>
           </Button>
         </div>
         <PublicListingGrid listings={featured.listings} />
       </section>
 
-      <section className="app-container section-y">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
-          <div>
-            <p className="brand-kicker">Made for real exchanges</p>
-            <h2 className="mt-3 text-section">Simple on the surface. Thoughtful underneath.</h2>
-            <p className="mt-4 text-lg leading-8 text-muted-foreground">
-              Buyers get clarity. Sellers get useful tools. Both sides get safer conversations, protected payments, and help exactly when it matters.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <MetricCard label="Buyer experience" value="Search" detail="Plain-language search, filters, saved searches, and trust-rich listing cards." icon={Search} tone="ai" />
-            <MetricCard label="Seller experience" value="Sell" detail="Listing assistant, offers, payments, payout setup, and seller analytics." icon={Store} tone="commerce" />
-            <MetricCard label="Trust layer" value="Protect" detail="Risk signals, reporting, disputes, moderation queues, and audit-aware decisions." icon={ShieldCheck} tone="trust" />
-            <MetricCard label="Financial layer" value="Report" detail="Fees, payouts, ledger-ready reporting, and Stripe Connect workflows." icon={WalletCards} tone="premium" />
-          </div>
-        </div>
-      </section>
-
-      <section className="app-container section-y">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,0.8fr)]">
-          <ChartCard
-            title="Category demand snapshot"
-            description="A current view of marketplace availability across the most active categories."
-            data={categoryChart}
-            caption={`Source: ${categoryResult.source} marketplace category data.`}
-          />
-          <Card className="card-ai">
-            <CardHeader>
-              <Badge variant="ai" className="w-fit">AI commerce</Badge>
-              <CardTitle>Intelligence supports the transaction, not the other way around.</CardTitle>
-              <CardDescription>
-                AI helps buyers search, sellers create better listings, and operators spot risk. The system still keeps pricing, payment, and safety actions explicit.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-              {["Listing copy and categorization", "Buyer intent and ranking", "Risk and moderation signals", "Seller pricing context"].map((item) => (
-                <p key={item} className="flex items-center gap-2 rounded-2xl bg-white/60 px-3 py-2 text-sm font-semibold">
-                  <BadgeCheck className="h-4 w-4 text-ai" aria-hidden="true" />
-                  {item}
-                </p>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
       <section className="app-container py-section">
-        <div className="overflow-hidden rounded-shell border border-white/15 bg-premium-dark p-6 text-white shadow-admin sm:p-8 lg:p-10">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-            <div>
-              <p className="text-eyebrow text-white/90">Ready to explore</p>
-              <h2 className="mt-4 max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl">Build trust into every listing, offer, and transaction.</h2>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-slate-200">
-                Start with marketplace discovery, then move into professional buyer, seller, and platform workflows as the product scales.
-              </p>
-            </div>
-            <div className="grid gap-3 sm:flex lg:grid">
-              <Button asChild size="lg" className="border border-white/20 bg-white text-premium-graphite shadow-md hover:bg-white/95 hover:text-premium-graphite">
-                <Link href="/browse">Browse marketplace</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white">
-                <Link href="/contact">Talk to us</Link>
-              </Button>
-            </div>
+        <div className="overflow-hidden rounded-shell border border-white/15 bg-premium-dark p-6 text-white shadow-admin sm:p-8">
+          <h2 className="max-w-3xl text-3xl font-black tracking-tight text-white sm:text-4xl">Ready to buy or sell?</h2>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-slate-200">{promise}</p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <Button asChild size="lg" className="border border-white/20 bg-white text-premium-graphite shadow-md hover:bg-white/95">
+              <Link href="/search">Search listings</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white">
+              <Link href="/dashboard/listings/create"><Store className="h-4 w-4" /> Start selling</Link>
+            </Button>
           </div>
         </div>
       </section>
     </>
-  );
-}
-
-function HeroMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-      <p className="text-3xl font-black tracking-tight text-white">{value}</p>
-      <p className="mt-1 text-xs font-bold uppercase tracking-[0.16em] text-slate-300">{label}</p>
-    </div>
   );
 }
