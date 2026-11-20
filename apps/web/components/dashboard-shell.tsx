@@ -33,7 +33,7 @@ export function DashboardShell({
             <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-sky-300">
               <Bell className="h-4 w-4" /> {kicker}
             </p>
-            <h2 className="mt-3 text-2xl font-black tracking-tight sm:text-4xl">{title}</h2>
+            <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-4xl">{title}</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">{description}</p>
           </div>
           {actions ? <div className="grid gap-2 sm:flex sm:flex-wrap md:justify-end">{actions}</div> : null}

@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { deleteAccountAction } from "@/app/auth/actions";
 import { LogoutButton } from "@/components/auth/logout-button";
-import { LocaleForm } from "@/components/account/locale-form";
 import { AccountSettingsForm } from "@/components/forms/account-settings-form";
 import { NotificationPreferencesForm } from "@/components/notifications/notification-preferences-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +17,6 @@ export default async function AccountSettingsPage({ searchParams }: { searchPara
     return (
       <section className="mx-auto grid max-w-4xl gap-6 px-4 py-10 sm:px-6 lg:px-8">
         <h1 className="text-3xl font-bold tracking-tight">Account settings</h1>
-        <LocaleForm locale={session.locale} />
         <AccountSettingsForm email={session.email} profile={{ display_name: session.displayName, username: null, bio: null, location_label: null, website_url: null }} />
         <p className="text-sm text-muted-foreground">{session.email}</p>
       </section>
@@ -49,7 +47,6 @@ export default async function AccountSettingsPage({ searchParams }: { searchPara
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">Account</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight">Account settings</h1>
-        <LocaleForm locale={profile?.locale ?? session.locale} />
         <p className="mt-3 max-w-2xl text-muted-foreground">
           Manage your marketplace identity and public profile. Your session is verified on the server before this page loads.
         </p>
@@ -73,7 +70,7 @@ export default async function AccountSettingsPage({ searchParams }: { searchPara
             <CardDescription>End your active Supabase session on this device.</CardDescription>
           </CardHeader>
           <CardContent>
-            <LogoutButton className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-semibold" label="Sign out" />
+            <LogoutButton className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-semibold" label="Log out" />
             <div className="mt-6 border-t border-border pt-6">
               <p className="font-semibold text-destructive">Delete account</p>
               <p className="mt-2 text-xs leading-5 text-muted-foreground">

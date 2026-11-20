@@ -1,12 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ChevronDown, MessageSquare, Search, UserRound } from "lucide-react";
+import { ChevronDown, UserRound } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { ToastCenter } from "@/components/ui/toast-center";
-import { GlobalAssistant } from "@/components/ai/global-assistant";
+import { ConditionalHeaderSearch } from "@/components/header-search";
 import { brandProfile } from "@/lib/brand-profile";
 import { getMarketplaceSession } from "@/lib/auth/session";
 import { MobileBackBar, MobileTabBar, PageTitleMirror, PhoneFrame } from "@/components/mobile/mobile-chrome";
@@ -39,9 +39,6 @@ async function AuthNav() {
 
   return (
     <>
-      <Link href="/dashboard/messages" className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "relative")} aria-label="Open messages">
-        <MessageSquare className="h-4 w-4" />
-      </Link>
       <NotificationBell />
       <MenuDisclosure
         className="group relative"
@@ -69,21 +66,6 @@ async function AuthNav() {
   );
 }
 
-function HeaderSearch({ id = "global-marketplace-search", placeholder = "Search listings" }: { id?: string; placeholder?: string }) {
-  return (
-    <form action="/search" className="relative w-full" role="search">
-      <label htmlFor={id} className="sr-only">Search listings</label>
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-      <input
-        id={id}
-        name="q"
-        placeholder={placeholder}
-        className="h-10 w-full rounded-xl border border-input bg-card pl-10 pr-4 text-sm font-medium shadow-sm outline-none transition placeholder:text-muted-foreground hover:border-primary focus:border-primary focus:ring-2 focus:ring-ring/30"
-      />
-    </form>
-  );
-}
-
 export function SiteShell({ children }: { children: ReactNode }) {
   return (
     <PhoneFrame>
@@ -100,11 +82,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <GlobalAssistant />
               <AuthNav />
             </div>
           </div>
-          <HeaderSearch />
+          <ConditionalHeaderSearch />
         </div>
       </header>
       <main id="main-content" className="px-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))]" tabIndex={-1}>{children}</main>

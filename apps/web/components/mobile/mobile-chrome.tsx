@@ -21,7 +21,7 @@ const tabs = [
   { href: "/search", label: "Search", icon: Search },
   { href: "/dashboard/listings/create", label: "Sell", icon: Plus, emphasize: true },
   { href: "/dashboard/messages", label: "Messages", icon: MessageSquare, badge: "messages" },
-  { href: "/account/settings", label: "Account", icon: UserRound, badge: "offers" }
+  { href: "/account", label: "Me", icon: UserRound }
 ] as const;
 
 const rootPaths = new Set(["/", "/browse", "/search", "/login", "/signup"]);
