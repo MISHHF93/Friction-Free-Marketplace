@@ -57,7 +57,10 @@ async function getBuyerPurchases(userId: string) {
 export default async function PurchasesPage() {
   const session = await getMarketplaceSession();
   if (!session) redirect("/login?next=/dashboard/purchases");
-  const purchases = session.source === "supabase" ? await getBuyerPurchases(session.id) : [];
+  const purchases = session.source === "supabase" ? await getBuyerPurchases(session.id) : session.source === "e2e" ? [
+    { id: "44444444-4444-4444-8444-444444444444", listing_id: "verified-road-bike", status: "completed", total_amount: 20, currency: "USD", created_at: new Date().toISOString(), updated_at: new Date().toISOString(), paid_at: new Date().toISOString(), delivered_at: null, completed_at: new Date().toISOString(), title: "Preview completed order" },
+    { id: "55555555-5555-4555-8555-555555555555", listing_id: "verified-road-bike", status: "escrowed", total_amount: 40, currency: "USD", created_at: new Date().toISOString(), updated_at: new Date().toISOString(), paid_at: new Date().toISOString(), delivered_at: null, completed_at: null, title: "Preview escrow order" }
+  ] : [];
   const active = purchases.filter((purchase) => !["completed", "cancelled", "refunded"].includes(purchase.status));
   const completed = purchases.filter((purchase) => purchase.status === "completed");
   const support = purchases.filter((purchase) => ["disputed", "refunded"].includes(purchase.status));
@@ -75,7 +78,7 @@ export default async function PurchasesPage() {
           {purchases.length ? purchases.map((purchase) => (
             <DashboardListItem key={purchase.id} title={purchase.title} detail={`${money(purchase.total_amount, purchase.currency)} · ${purchaseMilestone(purchase)}`} status={purchase.status}>
               <Button asChild size="sm" variant="outline"><Link href={`/listings/${purchase.listing_id}`}>View listing</Link></Button>
-              <EscrowActions transactionId={purchase.id} role="buyer" status={purchase.status} />
+              <EscrowActions transactionId={purchase.id} role="buyer" status={purchase.status} amount={Number(purchase.total_amount)} currency={purchase.currency} />
             </DashboardListItem>
           )) : (
             <div className="rounded-2xl border border-dashed border-border bg-secondary/50 p-5 text-sm text-muted-foreground">
@@ -84,7 +87,7 @@ export default async function PurchasesPage() {
           )}
         </CardContent>
       </Card>
-      <OrderFollowUpForms />
+      <OrderFollowUpForms orders={purchases.map((purchase) => ({ id: purchase.id, title: purchase.title, status: purchase.status, amount: Number(purchase.total_amount), currency: purchase.currency }))} />
       <DashboardActionCard icon={LifeBuoy} title="Buyer protection" description="Open support cases, request returns, report unsafe meetup behavior, and keep every protected payment event in one ledger.">
         <Button asChild variant="outline"><Link href="/contact">Contact support</Link></Button>
       </DashboardActionCard>

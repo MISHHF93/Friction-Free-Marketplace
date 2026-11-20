@@ -19,7 +19,7 @@ function shortId(value: unknown) {
 
 function money(amount: unknown, currency = "USD") {
   const value = Number(amount ?? 0);
-  return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(Number.isFinite(value) ? value / 100 : 0);
+  return new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 0 }).format(Number.isFinite(value) ? value : 0);
 }
 
 function when(value: unknown) {

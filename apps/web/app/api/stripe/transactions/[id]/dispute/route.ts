@@ -7,6 +7,7 @@ import { requireUser } from "@/lib/payments/auth";
 import { recordTransactionEvent } from "@/lib/payments/audit";
 import { enqueueTemplateNotification } from "@/lib/notifications/service";
 import { buildDisputeHoldJournal, postLedgerJournal } from "@/lib/financial/ledger";
+import { claimTransactionStatus } from "@/lib/payments/escrow";
 
 const disputeSchema = z.object({ reason: z.string().min(10), evidence: z.record(z.unknown()).default({}) });
 const transactionIdSchema = z.string().uuid();
@@ -25,6 +26,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!transaction || ![transaction.buyer_id, transaction.seller_id].includes(auth.user.id)) return NextResponse.json({ error: "Transaction not found." }, { status: 404 });
   if (!["paid", "escrowed", "shipped", "delivered"].includes(transaction.status)) {
     return NextResponse.json({ error: "This order cannot be disputed in its current state." }, { status: 409 });
+  }
+  const { data: payment } = await supabase.from("escrow_payments").select("*").eq("transaction_id", transactionId.data).maybeSingle();
+  if (!payment || !["held", "authorized"].includes(payment.status)) {
+    return NextResponse.json({ error: "A dispute can be opened only while payment is authorized or held." }, { status: 409 });
   }
   const { data: existingDispute } = await supabase
     .from("disputes")
@@ -46,9 +51,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }).select("*").single();
   if (error) return NextResponse.json({ error: "Could not create dispute." }, { status: 500 });
 
-  await supabase.from("transactions").update({ status: "disputed" }).eq("id", transactionId.data);
-  const { data: payment } = await supabase.from("escrow_payments").select("*").eq("transaction_id", transactionId.data).maybeSingle();
-  if (payment?.status === "held") {
+  const disputed = await claimTransactionStatus(supabase, transactionId.data, transaction.status, "disputed");
+  if (!disputed) {
+    await supabase.from("disputes").delete().eq("id", dispute.id);
+    return NextResponse.json({ error: "The order could not be marked disputed." }, { status: 409 });
+  }
+  if (payment.status === "held") {
     await postLedgerJournal(supabase, buildDisputeHoldJournal({
       transactionId: transactionId.data,
       totalAmount: Number(payment.amount),
@@ -89,5 +97,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     })
   ]);
 
-  return NextResponse.json({ status: "disputed", disputeId: dispute.id });
+  return NextResponse.json({ status: "disputed", disputeId: dispute.id, message: "Dispute opened. The order is marked disputed and no new charge was made." });
 }

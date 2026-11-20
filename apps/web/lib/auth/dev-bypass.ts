@@ -42,13 +42,20 @@ export function isLocalDevelopmentHost(host: string | null | undefined) {
  * signal (NODE_ENV, Vercel, CI) turns it off even if the flag is set.
  * The caller must also prove the request Host is loopback and present the cookie.
  */
-export function isDevAuthBypassEnabled(host: string | null | undefined, remoteAddress?: string | null) {
+export function boundLoopbackPeer() {
+  const bound = process.env.FFM_BIND_HOST?.trim().toLowerCase();
+  if (bound === "127.0.0.1" || bound === "::1" || bound === "localhost") return "127.0.0.1";
+  return null;
+}
+
+export function isDevAuthBypassEnabled(host: string | null | undefined) {
   if (process.env.ALLOW_DEV_AUTH_BYPASS !== "true") return false;
   if (!isExactLocalRuntime()) return false;
   if (process.env.VERCEL === "1") return false;
   if (process.env.CI === "true") return false;
   if (!isLocalDevelopmentHost(host)) return false;
-  if (remoteAddress && !isLoopbackAddress(remoteAddress)) return false;
+  const peer = boundLoopbackPeer();
+  if (!peer || !isLoopbackAddress(peer)) return false;
   return true;
 }
 
@@ -56,12 +63,12 @@ export function isDevBypassBlockedPath(pathname: string) {
   return devBypassBlockedPrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 
-export function isDevAuthBypassCookieValue(value: string | undefined, host: string | null | undefined, remoteAddress?: string | null) {
-  return isDevAuthBypassEnabled(host, remoteAddress) && value === "1";
+export function isDevAuthBypassCookieValue(value: string | undefined, host: string | null | undefined) {
+  return isDevAuthBypassEnabled(host) && value === "1";
 }
 
-export function getLocalAuthUser(cookieValue?: string, host?: string | null, remoteAddress?: string | null) {
-  if (!isDevAuthBypassCookieValue(cookieValue, host ?? null, remoteAddress)) return null;
+export function getLocalAuthUser(cookieValue?: string, host?: string | null) {
+  if (!isDevAuthBypassCookieValue(cookieValue, host ?? null)) return null;
   return DEV_AUTH_BYPASS_USER;
 }
 

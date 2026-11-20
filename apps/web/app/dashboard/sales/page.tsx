@@ -81,7 +81,7 @@ export default async function SalesPage() {
           {sales.length ? sales.map((sale) => (
             <DashboardListItem key={sale.id} title={sale.title} detail={`${money(sale.total_amount, sale.currency)} · ${sellerNextStep(sale.status)}`} status={sale.status}>
               <Button asChild size="sm"><Link href="/dashboard/messages">Manage</Link></Button>
-              <EscrowActions transactionId={sale.id} role="seller" status={sale.status} />
+              <EscrowActions transactionId={sale.id} role="seller" status={sale.status} amount={Number(sale.total_amount)} currency={sale.currency} />
             </DashboardListItem>
           )) : (
             <div className="rounded-2xl border border-dashed border-border bg-secondary/50 p-5 text-sm text-muted-foreground">

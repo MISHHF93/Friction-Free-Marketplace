@@ -20,6 +20,7 @@ const serverMutationPrefixes = [
   "/api/admin/trust-safety/workers",
   "/api/notifications/dispatch",
   "/api/offers/expire",
+  "/api/payments/reconcile",
   "/api/mcp",
 ] as const;
 const mutationMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -44,17 +45,13 @@ function getPublicMiddlewareEnv(): PublicMiddlewareEnv | null {
 
 export { isAuthRoute, isProtectedRoute };
 
-function requestRemoteAddress(request: NextRequest) {
-  return request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
-}
-
 function continueRequest(request: NextRequest) {
-  if (process.env.NODE_ENV !== "production") return NextResponse.next();
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const policy = contentSecurityPolicy({ development: false, nonce });
+  const development = process.env.NODE_ENV !== "production";
+  const policy = contentSecurityPolicy({ development, nonce: development ? undefined : nonce });
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
-  requestHeaders.set("Content-Security-Policy", policy);
+  if (!development) requestHeaders.set("Content-Security-Policy", policy);
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", policy);
   return response;
@@ -207,8 +204,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const host = request.headers.get("host") ?? request.nextUrl.host;
-  const remoteAddress = requestRemoteAddress(request);
-  const e2eUser = e2eUserFromCookie(request.cookies.get(E2E_USER_COOKIE)?.value, host, remoteAddress);
+  const e2eUser = e2eUserFromCookie(request.cookies.get(E2E_USER_COOKIE)?.value, host);
   if (e2eUser && !pathname.startsWith("/admin")) {
     if (isAuthRoute(pathname)) {
       return NextResponse.redirect(getAuthenticatedRedirectUrl(request));
@@ -216,7 +212,7 @@ export async function proxy(request: NextRequest) {
     if (isProtectedRoute(pathname)) return continueRequest(request);
   }
   const bypassCookie = request.cookies.get(DEV_AUTH_BYPASS_COOKIE)?.value;
-  if (isDevAuthBypassCookieValue(bypassCookie, host, remoteAddress) && !isDevBypassBlockedPath(pathname)) {
+  if (isDevAuthBypassCookieValue(bypassCookie, host) && !isDevBypassBlockedPath(pathname)) {
     if (isAuthRoute(pathname)) {
       return NextResponse.redirect(getAuthenticatedRedirectUrl(request));
     }

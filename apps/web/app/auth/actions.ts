@@ -38,8 +38,7 @@ function formatValidationError(error: z.ZodError) {
 async function establishLocalAuthSession(next: string): Promise<never> {
   const headerStore = await headers();
   const host = headerStore.get("host");
-  const remoteAddress = headerStore.get("x-real-ip") || headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
-  if (!isDevAuthBypassEnabled(host, remoteAddress)) {
+  if (!isDevAuthBypassEnabled(host)) {
     redirect(`/login?next=${encodeURIComponent(next)}&authError=${encodeURIComponent("Developer bypass is not available in this environment.")}`);
   }
 

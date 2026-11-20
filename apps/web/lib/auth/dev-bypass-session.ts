@@ -9,12 +9,11 @@ export async function getRequestHost() {
 export async function getDevBypassSession() {
   const headerStore = await headers();
   const host = headerStore.get("host");
-  const remoteAddress = headerStore.get("x-real-ip") || headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
   const cookieStore = await cookies();
   const cookie = cookieStore.get(DEV_AUTH_BYPASS_COOKIE)?.value;
   return {
     host,
-    enabled: isDevAuthBypassEnabled(host, remoteAddress),
-    user: getLocalAuthUser(cookie, host, remoteAddress)
+    enabled: isDevAuthBypassEnabled(host),
+    user: getLocalAuthUser(cookie, host)
   };
 }

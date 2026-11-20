@@ -65,13 +65,25 @@ export async function POST(request: Request) {
   if (payload.data.offerId) {
     const { data: acceptedOffer, error: offerError } = await supabase
       .from("offers")
-      .select("id,amount,currency,status,buyer_id,listing_id,expires_at")
+      .select("id,amount,currency,status,buyer_id,listing_id,payment_due_at")
       .eq("id", payload.data.offerId)
       .maybeSingle();
     if (offerError) return NextResponse.json({ error: "Could not load the accepted offer." }, { status: 500 });
-    const expired = acceptedOffer?.expires_at && new Date(acceptedOffer.expires_at).getTime() <= Date.now();
-    if (!acceptedOffer || acceptedOffer.status !== "accepted" || acceptedOffer.buyer_id !== auth.user.id || acceptedOffer.listing_id !== listing.id || expired) {
+    const paymentDue = acceptedOffer?.payment_due_at && new Date(acceptedOffer.payment_due_at).getTime() <= Date.now();
+    const currencyMismatch = acceptedOffer && normalizeCurrency(acceptedOffer.currency) !== normalizeCurrency(listing.currency);
+    if (!acceptedOffer || acceptedOffer.status !== "accepted" || acceptedOffer.buyer_id !== auth.user.id || acceptedOffer.listing_id !== listing.id || paymentDue || !acceptedOffer.payment_due_at) {
       return NextResponse.json({ error: "That accepted offer cannot be paid." }, { status: 409 });
+    }
+    if (currencyMismatch) return NextResponse.json({ error: "Offer currency does not match the listing." }, { status: 409 });
+    const { data: usedOffer, error: usedOfferError } = await supabase
+      .from("transactions")
+      .select("id,idempotency_key")
+      .eq("offer_id", acceptedOffer.id)
+      .in("status", [...openCheckoutStatuses])
+      .maybeSingle();
+    if (usedOfferError) return NextResponse.json({ error: "Could not check the accepted offer." }, { status: 500 });
+    if (usedOffer && usedOffer.idempotency_key !== idempotencyKey) {
+      return NextResponse.json({ error: "offer already used for checkout" }, { status: 409 });
     }
     offer = acceptedOffer;
   }
@@ -157,28 +169,38 @@ export async function POST(request: Request) {
       shipping_amount: expectedAmounts.shipping,
       tax_amount: expectedAmounts.tax,
       marketplace_fee_amount: expectedAmounts.fee,
-      currency: currency.toUpperCase(),
+      currency: String(offer?.currency ?? currency).toUpperCase(),
       offer_id: offer?.id ?? null,
       idempotency_key: idempotencyKey,
       metadata: {
         checkout_kind: offer ? "accepted_offer" : "full_purchase",
         offer_id: offer?.id ?? null,
+        offer_currency: offer?.currency ?? null,
         seller_stripe_account_id: sellerAccount.stripe_account_id
       }
     }).select("*").single();
     transaction = inserted.data;
 
     if (inserted.error?.code === "23505") {
-      const raced = await supabase
-        .from("transactions")
-        .select("*")
-        .eq("buyer_id", auth.user.id)
-        .eq("idempotency_key", idempotencyKey)
-        .maybeSingle();
-      if (!raced.data) {
-        return NextResponse.json({ error: "This listing already has an open checkout." }, { status: 409 });
+      if (offer) {
+        const byOffer = await supabase.from("transactions").select("*").eq("offer_id", offer.id).in("status", [...openCheckoutStatuses]).maybeSingle();
+        if (byOffer.data && byOffer.data.idempotency_key !== idempotencyKey) {
+          return NextResponse.json({ error: "offer already used for checkout" }, { status: 409 });
+        }
+        transaction = byOffer.data;
       }
-      transaction = raced.data;
+      if (!transaction) {
+        const raced = await supabase
+          .from("transactions")
+          .select("*")
+          .eq("buyer_id", auth.user.id)
+          .eq("idempotency_key", idempotencyKey)
+          .maybeSingle();
+        if (!raced.data) {
+          return NextResponse.json({ error: "This listing already has an open checkout." }, { status: 409 });
+        }
+        transaction = raced.data;
+      }
     }
     if (!transaction) return NextResponse.json({ error: "Could not create transaction." }, { status: 500 });
   }

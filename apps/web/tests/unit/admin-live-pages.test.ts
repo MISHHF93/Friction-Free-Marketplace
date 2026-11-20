@@ -17,4 +17,11 @@ describe("admin live rows", () => {
   it("returns an empty queue when the table has no records", () => {
     expect(adminTableRows("listings", [])).toEqual([]);
   });
+
+  it("formats stored dollar amounts without dividing by 100", () => {
+    const rows = adminTableRows("transactions", [
+      { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", buyer_id: "buyer", seller_id: "seller", status: "paid", total_amount: 1280, currency: "USD" }
+    ]);
+    expect(rows[0]?.amount).toBe("$1,280");
+  });
 });

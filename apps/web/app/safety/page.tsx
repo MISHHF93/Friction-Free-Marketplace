@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MetricCard, TrustBadge } from "@/components/ui-library";
 import { getTrustSafetyStats } from "@/lib/public-marketplace";
+import { NoncedJsonLd } from "@/components/security/nonce-script";
 import { marketplaceJsonLd, safetyPillars } from "@/lib/public-site";
 
 export const dynamic = "force-dynamic";
@@ -40,10 +41,7 @@ export default async function SafetyPage() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(marketplaceJsonLd("/safety", "Safety center", metadata.description ?? "")) }}
-      />
+      <NoncedJsonLd data={marketplaceJsonLd("/safety", "Safety center", metadata.description ?? "")} />
 
       <section className="app-container py-section-sm">
         <div className="rounded-shell border border-border bg-card p-6 shadow-panel sm:p-8 lg:p-10">

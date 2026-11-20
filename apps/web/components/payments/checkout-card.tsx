@@ -151,7 +151,10 @@ export function SampleCheckoutPreview({ listingId }: { listingId: string }) {
     try {
       const response = await fetch("/api/stripe/payment-intents", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": crypto.randomUUID()
+        },
         body: JSON.stringify({ listingId, shippingCents: 0, taxCents: 0, preview: true })
       });
       const payment = await response.json();

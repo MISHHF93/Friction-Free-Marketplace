@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { MetricCard, SearchBar } from "@/components/ui-library";
 import { getFeaturedListings, getTrustSafetyStats } from "@/lib/public-marketplace";
 import { CompactListingLink } from "@/components/public-listing-grid";
+import { NoncedJsonLd } from "@/components/security/nonce-script";
 import { howItWorksSteps, marketplaceJsonLd } from "@/lib/public-site";
 
 export const dynamic = "force-dynamic";
@@ -27,10 +28,7 @@ export default async function HowItWorksPage() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(marketplaceJsonLd("/how-it-works", "How Friction-Free Marketplace works", metadata.description ?? "")) }}
-      />
+      <NoncedJsonLd data={marketplaceJsonLd("/how-it-works", "How Friction-Free Marketplace works", metadata.description ?? "")} />
 
       <section className="app-container py-section-sm">
         <div className="rounded-shell border border-border bg-card p-6 shadow-panel sm:p-8 lg:p-10">

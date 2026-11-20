@@ -19,6 +19,7 @@ test.describe("phone layout", () => {
     await page.goto("/");
     await page.screenshot({ path: "/opt/cursor/artifacts/mobile-home-390.png", fullPage: false });
     await page.goto("/listings/verified-road-bike");
+    await page.getByRole("button", { name: "Open checkout" }).click();
     await expect(page.getByRole("button", { name: "Preview test authorization" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Back to home" })).toBeVisible();
     await page.screenshot({ path: "/opt/cursor/artifacts/mobile-listing-390.png", fullPage: false });
