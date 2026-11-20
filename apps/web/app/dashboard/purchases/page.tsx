@@ -29,14 +29,24 @@ function money(amount: number, currency: string) {
 }
 
 function purchaseMilestone(transaction: TransactionRow) {
-  if (transaction.status === "pending_payment") return "Payment authorization is still pending.";
-  if (transaction.status === "paid") return "Payment is authorized. Waiting for seller capture or fulfillment.";
-  if (transaction.status === "escrowed") return "Funds are held while seller fulfills the item.";
-  if (transaction.status === "completed") return `Completed ${formatDate(transaction.completed_at ?? transaction.updated_at)}.`;
-  if (transaction.status === "disputed") return "Dispute is open. Keep all evidence in the marketplace.";
-  if (transaction.status === "refunded") return "Refund has been recorded on this purchase.";
+  if (transaction.status === "pending_payment") return "Payment is still being confirmed.";
+  if (transaction.status === "paid") return "You paid. The seller can now accept the order.";
+  if (transaction.status === "escrowed") return "Your payment is held until you confirm you got the item.";
+  if (transaction.status === "shipped") return "The seller marked this as shipped. Confirm when it arrives.";
+  if (transaction.status === "delivered") return "The item was marked received. Release payment if everything looks right.";
+  if (transaction.status === "completed") return "This order is done. Payment has been released.";
+  if (transaction.status === "cancelled") return "This order was cancelled.";
+  if (transaction.status === "disputed") return "A problem was reported. Keep all evidence in the marketplace.";
+  if (transaction.status === "refunded") return "This payment was refunded.";
   return `Last updated ${formatDate(transaction.updated_at)}.`;
 }
+
+const purchaseSteps = [
+  { label: "Paid", statuses: ["pending_payment", "paid", "escrowed"] },
+  { label: "Shipped", statuses: ["shipped"] },
+  { label: "Received", statuses: ["delivered"] },
+  { label: "Done", statuses: ["completed"] }
+];
 
 async function getBuyerPurchases(userId: string) {
   const supabase = await createClient();
@@ -76,9 +86,12 @@ export default async function PurchasesPage() {
           {purchases.length ? purchases.map((purchase) => (
             <DashboardListItem key={purchase.id} title={purchase.title} detail={`${money(purchase.total_amount, purchase.currency)} · ${purchaseMilestone(purchase)}`} status={purchase.status}>
               <ol className="grid gap-1 text-xs" aria-label="Order status">
-                {["paid", "escrowed", "shipped", "delivered", "completed"].map((step) => (
-                  <li key={step} className={purchase.status === step ? "font-bold text-[#0c3f66]" : "text-muted-foreground"} aria-current={purchase.status === step ? "step" : undefined}>{step}</li>
-                ))}
+                {purchaseSteps.map((step) => {
+                  const current = step.statuses.includes(purchase.status);
+                  return (
+                    <li key={step.label} className={current ? "font-bold text-[#0c3f66]" : "text-muted-foreground"} aria-current={current ? "step" : undefined}>{step.label}</li>
+                  );
+                })}
               </ol>
               <Button asChild size="sm" variant="outline"><Link href={`/listings/${purchase.listing_id}`}>View listing</Link></Button>
               <EscrowActions transactionId={purchase.id} role="buyer" status={purchase.status} amount={Number(purchase.total_amount)} currency={purchase.currency} />

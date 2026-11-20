@@ -51,13 +51,15 @@ async function getSellerSales(userId: string) {
   const transactions = (data ?? []) as SaleTransaction[];
   const transactionIds = transactions.map((transaction) => transaction.id);
   const listingIds = [...new Set(transactions.map((transaction) => transaction.listing_id))];
-  const [{ data: listings }, { data: payouts }] = await Promise.all([
+  const [{ data: listings }, { data: payouts }, { data: conversations }] = await Promise.all([
     listingIds.length ? (supabase as any).from("listings").select("id,title").in("id", listingIds) : Promise.resolve({ data: [] }),
-    transactionIds.length ? (supabase as any).from("payouts").select("transaction_id,status,amount,currency").in("transaction_id", transactionIds) : Promise.resolve({ data: [] })
+    transactionIds.length ? (supabase as any).from("payouts").select("transaction_id,status,amount,currency").in("transaction_id", transactionIds) : Promise.resolve({ data: [] }),
+    listingIds.length ? (supabase as any).from("conversations").select("id,listing_id").eq("seller_id", userId).in("listing_id", listingIds) : Promise.resolve({ data: [] })
   ]);
   const titleById = new Map(((listings ?? []) as Array<{ id: string; title: string }>).map((listing) => [listing.id, listing.title]));
   const payoutByTransaction = new Map(((payouts ?? []) as PayoutRow[]).map((payout) => [payout.transaction_id, payout]));
-  return transactions.map((transaction) => ({ ...transaction, title: titleById.get(transaction.listing_id) ?? "Marketplace sale", payout: payoutByTransaction.get(transaction.id) }));
+  const conversationByListing = new Map(((conversations ?? []) as Array<{ id: string; listing_id: string }>).map((conversation) => [conversation.listing_id, conversation.id]));
+  return transactions.map((transaction) => ({ ...transaction, title: titleById.get(transaction.listing_id) ?? "Marketplace sale", payout: payoutByTransaction.get(transaction.id), conversationId: conversationByListing.get(transaction.listing_id) }));
 }
 
 export default async function SalesPage() {
@@ -81,7 +83,7 @@ export default async function SalesPage() {
         <CardContent className="grid gap-3">
           {sales.length ? sales.map((sale) => (
             <DashboardListItem key={sale.id} title={sale.title} detail={`${money(sale.total_amount, sale.currency)} · ${sellerNextStep(sale.status)}`} status={sale.status}>
-              <Button asChild size="sm"><Link href="/dashboard/messages">Manage</Link></Button>
+              <Button asChild size="sm"><Link href={sale.conversationId ? `/dashboard/messages?conversation=${sale.conversationId}` : "/dashboard/messages"}>Manage</Link></Button>
               <EscrowActions transactionId={sale.id} role="seller" status={sale.status} amount={Number(sale.total_amount)} currency={sale.currency} />
             </DashboardListItem>
           )) : (

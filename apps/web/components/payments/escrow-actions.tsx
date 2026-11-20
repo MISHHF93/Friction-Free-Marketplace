@@ -69,12 +69,12 @@ export function EscrowActions({ transactionId, role, status, amount, currency = 
     <div className="grid gap-2">
       {canCapture ? (
         <Button type="button" size="sm" disabled={pending !== null} onClick={() => run("Capture", `${base}/capture`)}>
-          {pending === "Capture" ? "Capturing…" : "Capture payment"}
+          {pending === "Capture" ? "Accepting…" : "Accept order"}
         </Button>
       ) : null}
       {canShip ? (
         <>
-          <Button type="button" size="sm" disabled={pending !== null} onClick={() => shipDialog.current?.showModal()}>Mark shipped</Button>
+          <Button type="button" size="sm" disabled={pending !== null} onClick={() => shipDialog.current?.showModal()}>Ship</Button>
           <dialog ref={shipDialog} className="w-[min(100%,28rem)] rounded-2xl border border-border bg-background p-5 text-foreground">
             <h2 className="text-lg font-bold">Mark this order shipped?</h2>
             <label className="mt-3 grid gap-1 text-sm font-semibold">Carrier
@@ -134,22 +134,25 @@ export function EscrowActions({ transactionId, role, status, amount, currency = 
         </>
       ) : null}
       {canDispute ? (
-        <form
-          className="grid gap-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const reason = String(new FormData(event.currentTarget).get("reason") ?? "");
-            void run("Dispute", `${base}/dispute`, { reason });
-          }}
-        >
-          <label className="grid gap-1 text-xs font-medium" htmlFor={`dispute-${transactionId}`}>
-            Dispute reason
-            <textarea id={`dispute-${transactionId}`} name="reason" required minLength={10} rows={2} className="rounded-xl border border-border bg-background px-3 py-2 text-sm" placeholder="Describe what went wrong with this order." />
-          </label>
-          <Button type="submit" size="sm" variant="outline" disabled={pending !== null}>
-            {pending === "Dispute" ? "Opening dispute…" : "Open dispute"}
-          </Button>
-        </form>
+        <details className="rounded-xl border border-border p-3">
+          <summary className="cursor-pointer text-sm font-semibold">Problem with this order?</summary>
+          <form
+            className="mt-3 grid gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const reason = String(new FormData(event.currentTarget).get("reason") ?? "");
+              void run("Dispute", `${base}/dispute`, { reason });
+            }}
+          >
+            <label className="grid gap-1 text-xs font-medium" htmlFor={`dispute-${transactionId}`}>
+              What happened
+              <textarea id={`dispute-${transactionId}`} name="reason" required minLength={10} rows={2} className="rounded-xl border border-border bg-background px-3 py-2 text-sm" placeholder="Describe what went wrong with this order." />
+            </label>
+            <Button type="submit" size="sm" variant="outline" disabled={pending !== null}>
+              {pending === "Dispute" ? "Opening dispute…" : "Open dispute"}
+            </Button>
+          </form>
+        </details>
       ) : null}
       {message ? <p className="text-xs text-muted-foreground" role="status">{message}</p> : null}
     </div>

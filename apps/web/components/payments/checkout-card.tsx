@@ -116,25 +116,20 @@ export function CheckoutCard({ listingId, priceAmount, currency, shippingCents =
         <CardTitle className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-primary" /> Protected checkout</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
-        <div className="rounded-xl border border-primary/20 bg-background p-3 text-xs leading-5 text-muted-foreground">
-          Shipping and tax are calculated on the server from the listing. The amount you authorize is the server quote, not a value typed in the browser.
-        </div>
+        <p className="text-sm leading-6 text-muted-foreground">Your payment is held until you confirm you got the item.</p>
         <div className="rounded-xl border border-border bg-background p-3" id="stripe-card-element" />
         <div className="space-y-1 rounded-xl bg-background p-3 text-sm">
           <p className="flex flex-wrap justify-between gap-2"><span>Item</span><strong>{formatMoney(centsToDollars(quote.itemCents), currency)}</strong></p>
           <p className="flex flex-wrap justify-between gap-2"><span>Shipping</span><strong>{formatMoney(centsToDollars(quote.shippingCents), currency)}</strong></p>
           <p className="flex flex-wrap justify-between gap-2"><span>Tax</span><strong>{formatMoney(centsToDollars(quote.taxCents), currency)}</strong></p>
-          <p className="flex flex-wrap justify-between gap-2"><span>Protection fee</span><strong>{formatMoney(centsToDollars(quote.platformFeeCents), currency)}</strong></p>
-          <p className="flex flex-wrap justify-between gap-2 text-base"><span>Total authorized</span><strong>{formatMoney(centsToDollars(quote.totalCents), currency)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2"><span>Buyer protection</span><strong>{formatMoney(centsToDollars(quote.platformFeeCents), currency)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2 text-base"><span>Total</span><strong>{formatMoney(centsToDollars(quote.totalCents), currency)}</strong></p>
         </div>
         <Button className="w-full" size="lg" onClick={startCheckout} disabled={disabled || !checkoutConfigured || !cardReady || isSubmitting}>
-          <ShieldCheck className="h-4 w-4" /> {isSubmitting ? "Authorizing…" : "Authorize payment"}
+          <ShieldCheck className="h-4 w-4" /> {isSubmitting ? "Paying…" : `Pay ${formatMoney(centsToDollars(quote.totalCents), currency)}`}
         </Button>
         {transactionId && (
-          <div className="grid gap-2 rounded-xl border border-border bg-background p-3 text-xs text-muted-foreground">
-            <p className="flex items-center gap-2"><ReceiptText className="h-4 w-4" /> Transaction {transactionId}</p>
-            <Button asChild size="sm" variant="outline"><Link href="/dashboard/purchases">Track in Purchases</Link></Button>
-          </div>
+          <Button asChild size="sm" variant="outline"><Link href="/dashboard/purchases">Track in Purchases</Link></Button>
         )}
         <p className="text-xs text-muted-foreground">{status}</p>
       </CardContent>
