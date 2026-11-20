@@ -1,3 +1,4 @@
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { DEV_AUTH_BYPASS_COOKIE, isDevAuthBypassCookieValue, isDevBypassBlockedPath } from "@/lib/auth/dev-bypass";
 import { E2E_USER_COOKIE, e2eUserFromCookie } from "@/lib/auth/e2e-session";
@@ -137,29 +138,36 @@ function getAccessTokenFromCookie(request: NextRequest, env: PublicMiddlewareEnv
   }
 }
 
-async function getAuthenticatedUser(
-  request: NextRequest,
-  env: PublicMiddlewareEnv
-): Promise<{ user: SupabaseUser | null; accessToken: string | null }> {
-  const accessToken = getAccessTokenFromCookie(request, env);
-  if (!accessToken) return { user: null, accessToken: null };
+function copyResponseCookies(source: NextResponse, target: NextResponse) {
+  source.cookies.getAll().forEach((cookie) => {
+    target.cookies.set(cookie);
+  });
+  return target;
+}
+
+async function refreshSupabaseUser(request: NextRequest, response: NextResponse, env: PublicMiddlewareEnv): Promise<SupabaseUser | null> {
+  const supabase = createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet: Array<{ name: string; value: string; options?: Parameters<NextResponse["cookies"]["set"]>[2] }>) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+      }
+    }
+  });
 
   try {
-    const response = await fetch(`${env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`, {
-      headers: {
-        apikey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${accessToken}`
-      },
-      cache: "no-store"
-    });
-
-    if (!response.ok) return { user: null, accessToken: null };
-
-    const user = (await response.json()) as SupabaseUser;
-    return user?.id ? { user, accessToken } : { user: null, accessToken: null };
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error("Proxy Supabase auth lookup failed", error);
+      return null;
+    }
+    return data.user?.id ? { id: data.user.id } : null;
   } catch (error) {
     console.error("Proxy Supabase auth lookup failed", error);
-    return { user: null, accessToken: null };
+    return null;
   }
 }
 
@@ -221,19 +229,21 @@ export async function proxy(request: NextRequest) {
   }
 
   const env = getPublicMiddlewareEnv();
+  const sessionResponse = continueRequest(request);
 
-  if (!env) {
-    return isProtectedRoute(pathname) ? NextResponse.redirect(getLoginRedirectUrl(request)) : continueRequest(request);
+  if (!env || !getAccessTokenFromCookie(request, env)) {
+    return isProtectedRoute(pathname) ? copyResponseCookies(sessionResponse, NextResponse.redirect(getLoginRedirectUrl(request))) : sessionResponse;
   }
 
-  const { user, accessToken } = await getAuthenticatedUser(request, env);
+  const user = await refreshSupabaseUser(request, sessionResponse, env);
+  const accessToken = getAccessTokenFromCookie(request, env);
 
   if (isProtectedRoute(pathname) && !user) {
-    return NextResponse.redirect(getLoginRedirectUrl(request));
+    return copyResponseCookies(sessionResponse, NextResponse.redirect(getLoginRedirectUrl(request)));
   }
 
   if (user && isAuthRoute(pathname)) {
-    return NextResponse.redirect(getAuthenticatedRedirectUrl(request));
+    return copyResponseCookies(sessionResponse, NextResponse.redirect(getAuthenticatedRedirectUrl(request)));
   }
 
   if (user && accessToken && pathname.startsWith("/admin")) {
@@ -243,11 +253,11 @@ export async function proxy(request: NextRequest) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/dashboard";
       redirectUrl.searchParams.set("adminDenied", "1");
-      return NextResponse.redirect(redirectUrl);
+      return copyResponseCookies(sessionResponse, NextResponse.redirect(redirectUrl));
     }
   }
 
-  return continueRequest(request);
+  return sessionResponse;
 }
 
 export const config = {

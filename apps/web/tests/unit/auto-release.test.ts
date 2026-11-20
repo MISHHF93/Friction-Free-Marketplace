@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AUTO_RELEASE_AFTER_MS, AUTO_RELEASE_SHIPPED_MS, autoReleaseCandidateFilter, autoReleaseEligible, durableAutoReleaseSkip } from "@/lib/payments/auto-release";
+import { AUTO_RELEASE_AFTER_MS, AUTO_RELEASE_SHIPPED_MS, autoReleaseCandidateFilter, autoReleaseCheckColumn, autoReleaseEligible, durableAutoReleaseSkip, stampAutoReleaseCheck } from "@/lib/payments/auto-release";
 import { buildSettlementPlan, planFromStored, settlementLegs } from "@/lib/payments/settlement-plan";
 import { isEscrowTransition } from "@/lib/payments/escrow";
 
@@ -16,6 +16,8 @@ describe("auto release", () => {
     expect(durableAutoReleaseSkip("refunded")).toBe("refunded");
     expect(durableAutoReleaseSkip("held")).toBeNull();
     expect(durableAutoReleaseSkip(null)).toBeNull();
+    expect(autoReleaseCheckColumn).toBe("metadata->>last_auto_release_check_at");
+    expect(stampAutoReleaseCheck({ keep: true }, "2026-01-01T00:00:00.000Z")).toEqual({ keep: true, last_auto_release_check_at: "2026-01-01T00:00:00.000Z" });
   });
 });
 

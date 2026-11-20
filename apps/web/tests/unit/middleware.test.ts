@@ -1,6 +1,22 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { DEV_AUTH_BYPASS_COOKIE } from "@/lib/auth/dev-bypass";
+
+vi.mock("@supabase/ssr", () => ({
+  createServerClient: () => ({
+    auth: {
+      getUser: async () => {
+        const response = await fetch("https://example-project.supabase.co/auth/v1/user", {
+          headers: { apikey: "test-anon-key" }
+        });
+        if (!response.ok) return { data: { user: null }, error: new Error("auth failed") };
+        const user = await response.json() as { id?: string };
+        return { data: { user: user?.id ? user : null }, error: user?.id ? null : new Error("auth failed") };
+      }
+    }
+  })
+}));
+
 import { config, getSafeRedirectPath, isAuthRoute, isProtectedRoute, proxy } from "../../proxy";
 
 const supabaseUrl = "https://example-project.supabase.co";

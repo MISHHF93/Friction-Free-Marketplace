@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { env } from "@/lib/env.server";
 import { authorizeJobRequest } from "@/lib/security/secrets";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { AUTO_RELEASE_AFTER_MS, AUTO_RELEASE_SHIPPED_MS, autoReleaseCandidateFilter, autoReleaseEligible, durableAutoReleaseSkip, isOpenDisputeStatus } from "@/lib/payments/auto-release";
+import { AUTO_RELEASE_AFTER_MS, AUTO_RELEASE_SHIPPED_MS, autoReleaseCandidateFilter, autoReleaseCheckColumn, autoReleaseEligible, durableAutoReleaseSkip, isOpenDisputeStatus, stampAutoReleaseCheck } from "@/lib/payments/auto-release";
 import { releaseHeldEscrow } from "@/lib/payments/release-held";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +14,7 @@ async function loadCandidates(supabase: any, status: "delivered" | "shipped", co
     .eq("status", status)
     .lte(column, cutoff)
     .or(autoReleaseCandidateFilter)
-    .order(column, { ascending: true })
+    .order(autoReleaseCheckColumn, { ascending: true, nullsFirst: true })
     .limit(25);
 }
 
@@ -46,6 +46,7 @@ async function autoRelease(request: Request) {
         skipped += 1;
         continue;
       }
+      const checkedAt = new Date().toISOString();
       if (!payment || !autoReleaseEligible({
         transactionStatus: transaction.status,
         deliveredAt: transaction.delivered_at,
@@ -54,11 +55,17 @@ async function autoRelease(request: Request) {
         hasOpenDispute,
         now
       })) {
+        await supabase.from("transactions").update({
+          metadata: stampAutoReleaseCheck(transaction.metadata, checkedAt)
+        }).eq("id", transaction.id);
         skipped += 1;
         continue;
       }
       const { data: sellerAccount } = await supabase.from("seller_payment_accounts").select("stripe_account_id").eq("seller_id", transaction.seller_id).maybeSingle();
       if (!sellerAccount?.stripe_account_id || !payment.provider_charge_id) {
+        await supabase.from("transactions").update({
+          metadata: stampAutoReleaseCheck(transaction.metadata, checkedAt)
+        }).eq("id", transaction.id);
         skipped += 1;
         continue;
       }
@@ -66,6 +73,9 @@ async function autoRelease(request: Request) {
       if ("error" in result && result.error) failed += 1;
       else released += 1;
     } catch {
+      await supabase.from("transactions").update({
+        metadata: stampAutoReleaseCheck(transaction.metadata, new Date().toISOString())
+      }).eq("id", transaction.id);
       failed += 1;
     }
   }

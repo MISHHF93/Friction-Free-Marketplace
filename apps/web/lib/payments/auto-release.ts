@@ -8,6 +8,11 @@ export function isOpenDisputeStatus(status: string | null | undefined) {
 }
 
 export const autoReleaseCandidateFilter = "metadata->>auto_release_ineligible.is.null,metadata->>auto_release_ineligible.neq.true";
+export const autoReleaseCheckColumn = "metadata->>last_auto_release_check_at";
+
+export function stampAutoReleaseCheck(metadata: Record<string, unknown> | null | undefined, checkedAt: string) {
+  return { ...(metadata ?? {}), last_auto_release_check_at: checkedAt };
+}
 
 const terminalPaymentStatuses = new Set(["cancelled", "refunded", "released", "failed"]);
 

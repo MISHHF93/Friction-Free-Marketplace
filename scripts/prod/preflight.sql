@@ -22,13 +22,64 @@ where email::text ilike '%@example.com'
      '22222222-2222-4222-8222-222222222222'
    );
 
-select count(*) as e2e_transactions
+select id, email::text as email
+from public.users
+where email::text ilike '%@example.com'
+order by email;
+
+select count(*) as demo_transactions
+from public.transactions as transaction_row
+where transaction_row.id in (
+    '44444444-4444-4444-8444-444444444444',
+    '55555555-5555-4555-8555-555555555555',
+    '66666666-6666-4666-8666-666666666666'
+  )
+   or (
+     coalesce(transaction_row.metadata->>'is_demo', '') = 'true'
+     and (
+       transaction_row.buyer_id in (
+         '11111111-1111-4111-8111-111111111111',
+         '22222222-2222-4222-8222-222222222222'
+       )
+       or transaction_row.seller_id in (
+         '11111111-1111-4111-8111-111111111111',
+         '22222222-2222-4222-8222-222222222222'
+       )
+       or exists (
+         select 1 from public.users as account
+         where account.email::text ilike '%@example.com'
+           and account.id in (transaction_row.buyer_id, transaction_row.seller_id)
+       )
+     )
+   )
+   or (
+     transaction_row.buyer_id in (
+       '11111111-1111-4111-8111-111111111111',
+       '22222222-2222-4222-8222-222222222222'
+     )
+     and transaction_row.seller_id in (
+       '11111111-1111-4111-8111-111111111111',
+       '22222222-2222-4222-8222-222222222222'
+     )
+   );
+
+-- Run this before applying 20260728150000. That migration rebuilds unique
+-- indexes and aborts if either query returns a row. It is not merged yet, so
+-- do not edit it while dc20ded is under test. Fold this check into that file
+-- only if that commit is rewritten before it is applied.
+select listing_id, count(*) as open_checkouts
 from public.transactions
-where id in (
-  '44444444-4444-4444-8444-444444444444',
-  '55555555-5555-4555-8555-555555555555',
-  '66666666-6666-4666-8666-666666666666'
-);
+where listing_id is not null
+  and status in ('pending_payment', 'paid', 'escrowed', 'shipped', 'delivered', 'disputed', 'resolving')
+group by listing_id
+having count(*) > 1;
+
+select offer_id, count(*) as open_offer_checkouts
+from public.transactions
+where offer_id is not null
+  and status in ('pending_payment', 'paid', 'escrowed', 'shipped', 'delivered', 'disputed', 'resolving')
+group by offer_id
+having count(*) > 1;
 
 select count(*) as demo_listings
 from public.listings

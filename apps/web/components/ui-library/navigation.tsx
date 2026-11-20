@@ -286,7 +286,7 @@ export function SearchBar({
 }: SearchBarProps) {
   const [internalValue, setInternalValue] = React.useState(value ?? "");
   const inputValue = value ?? internalValue;
-  const inputId = React.useId();
+  const inputId = props.id ? `${props.id}-input` : "marketplace-search-input";
 
   return (
     <form
