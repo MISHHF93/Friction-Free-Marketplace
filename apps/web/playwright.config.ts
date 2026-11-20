@@ -22,7 +22,7 @@ export default defineConfig({
         timeout: 120_000
       },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] }, testIgnore: /mobile-layout\.spec\.ts/ },
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "pixel-7", use: { ...devices["Pixel 7"] }, testMatch: /mobile-layout\.spec\.ts|core-flows\.spec\.ts/ },
     {
       name: "iphone-14",

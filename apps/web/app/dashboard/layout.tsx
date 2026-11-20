@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus, Search, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { dashboardLinks, getSerializableDashboardLinks } from "@/components/dashboard-config";
-import { DashboardMobileBottomNav, DashboardMobileNavigation, DashboardSidebar } from "@/components/dashboard-navigation";
+import { DashboardMobileNavigation } from "@/components/dashboard-navigation";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Button } from "@/components/ui/button";
 import { getMarketplaceSession } from "@/lib/auth/session";
@@ -46,11 +46,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const navigationLinks = getSerializableDashboardLinks(dashboardLinks);
 
   return (
-    <section className="app-container-wide grid gap-5 pb-28 pt-6 sm:gap-6 sm:pt-8 lg:grid-cols-[minmax(16rem,18rem)_minmax(0,1fr)] lg:pb-10" aria-label="Authenticated user dashboard">
+    <section className="grid gap-5 py-4" aria-label="Authenticated user dashboard">
       <a className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-background focus:px-4 focus:py-2 focus:shadow" href="#dashboard-content">
         Skip to dashboard content
       </a>
-      <DashboardSidebar links={navigationLinks} user={{ name: displayName, email: session.email || "No email on file", location: profile?.location_label ?? profile?.username ?? "Marketplace workspace" }} />
       <div className="min-w-0 space-y-6">
         <DashboardMobileNavigation links={navigationLinks} showQuickLinks={false} />
         <div className="overflow-hidden rounded-[1.75rem] border border-slate-900/10 bg-premium-dark p-4 text-white shadow-admin sm:rounded-[2rem] sm:p-6">
@@ -85,7 +84,6 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           {children}
         </div>
       </div>
-      <DashboardMobileBottomNav links={navigationLinks} />
     </section>
   );
 }

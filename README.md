@@ -168,7 +168,7 @@ The document language follows the signed-in profile locale, then the browser lan
 
 ## Mobile and installed web app
 
-The web app is designed for a 360–430px phone first. A bottom tab bar (Home, Search, Sell, Messages, Account) and a compact top bar with back navigation appear below the desktop breakpoint. Listing checkout stays sticky above that bar. `apps/web/public/sw.js` serves the offline page for public navigations and never caches `/api` or signed-in routes. The Capacitor projects in `apps/mobile` keep loading the hosted web origin. Nothing in this repository publishes a store build.
+The web app uses one phone shell at every width. On a larger screen the same column is centered at about 480px, with a neutral backdrop around it. Admin pages use the same bar and tabs in a slightly wider column so tables stay readable. A bottom tab bar (Home, Search, Sell, Messages, Account) and a compact top bar with back navigation are always present. Listing checkout stays sticky above that bar. `apps/web/public/sw.js` serves the offline page for public navigations and never caches `/api` or signed-in routes. The Capacitor projects in `apps/mobile` keep loading the hosted web origin. Nothing in this repository publishes a store build.
 
 ## Marketplace MCP
 
