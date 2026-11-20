@@ -74,6 +74,7 @@ export async function POST(request: Request) {
     uploads.push({
       path,
       token: signedUpload.token,
+      signedUrl: signedUpload.signedUrl,
       publicUrl,
       fileName: file.name,
       contentType: file.type,

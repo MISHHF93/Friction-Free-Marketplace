@@ -31,7 +31,6 @@ import {
   LISTING_STATUSES,
   type AiListingResponse,
 } from "@/lib/listings/validation";
-import { createClient as createBrowserClient } from "@/lib/supabase/browser";
 import { cn } from "@/lib/utils";
 
 const MAX_IMAGES = 12;
@@ -378,19 +377,18 @@ export function ListingForm({
     });
   }
 
+
   async function uploadPhotos(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
     if (!files.length) return;
     setBusy("Uploading photos");
     setError(null);
-    const authorization = await fetch("/api/uploads/sign", {
+    const body = new FormData();
+    body.set("existingCount", String(images.length));
+    for (const file of files) body.append("files", file);
+    const authorization = await fetch("/api/uploads/listing", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        purpose: "listing",
-        existingCount: images.length,
-        files: files.map((file) => ({ name: file.name, type: file.type, size: file.size }))
-      })
+      body
     });
     const payload = await authorization.json();
     if (!authorization.ok) {
@@ -398,17 +396,12 @@ export function ListingForm({
       setError(typeof payload.error === "string" ? payload.error : "Unable to authorize photo uploads.");
       return;
     }
-    const storage = createBrowserClient().storage.from(payload.bucket);
-    const uploaded: UploadedImage[] = [];
-    for (const [index, upload] of payload.uploads.entries()) {
-      const { error: uploadError } = await storage.uploadToSignedUrl(upload.path, upload.token, files[index], { contentType: files[index].type });
-      if (uploadError) {
-        setBusy(null);
-        setError(uploadError.message);
-        return;
-      }
-      uploaded.push({ storagePath: upload.path, publicUrl: upload.publicUrl, altText: files[index].name.replace(/\.[^.]+$/, ""), sortOrder: upload.sortOrder });
-    }
+    const uploaded: UploadedImage[] = (payload.uploads ?? []).map((upload: { path: string; publicUrl?: string; sortOrder: number }, index: number) => ({
+      storagePath: upload.path,
+      publicUrl: upload.publicUrl,
+      altText: files[index]?.name.replace(/\.[^.]+$/, "") || "",
+      sortOrder: upload.sortOrder
+    }));
     setBusy(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
     updateImages([...images, ...uploaded].slice(0, MAX_IMAGES));
@@ -623,7 +616,7 @@ export function ListingForm({
     >
       <div className="space-y-6">
         <div className="grid grid-cols-5 gap-1" aria-label="Listing steps">
-          {["Photos", "Details", "Price", "Fulfilment", "Review"].map((label, index) => {
+          {["Photos", "Details", "Price", "Fulfillment", "Review"].map((label, index) => {
             const stepHasError = firstStepWithError(errors) === index && Object.keys(errors).length > 0;
             return (
             <button key={label} type="button" className={cn("min-h-11 rounded-xl px-1 text-xs font-bold", sellStep === index ? "bg-[#0c3f66] text-white" : stepHasError ? "bg-destructive/15 text-destructive" : "bg-secondary text-foreground")} aria-current={sellStep === index ? "step" : undefined} onClick={() => setSellStep(index)}>{label}{stepHasError ? " !" : ""}</button>
@@ -781,7 +774,6 @@ export function ListingForm({
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 multiple
                 className="mt-4"
                 onChange={uploadPhotos}
