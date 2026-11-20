@@ -31,3 +31,12 @@ pnpm-debug.log*
 test-results/
 playwright-report/
 .ui-audit/
+
+# Next.js generated agent rules and isolated build dirs
+apps/web/AGENTS.md
+.next-smoke/
+apps/web/.next-smoke/
+
+# Supabase CLI local state
+supabase/.branches/
+supabase/.temp/
