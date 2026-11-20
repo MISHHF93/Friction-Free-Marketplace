@@ -33,6 +33,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (payment.status === "released") return NextResponse.json({ status: "completed", alreadyReleased: true });
   if (!["held", "releasing"].includes(payment.status)) return NextResponse.json({ error: "Payment must be captured and held before release." }, { status: 409 });
   if (!payment.provider_charge_id) return NextResponse.json({ error: "Payment charge is not available for release." }, { status: 409 });
+  const { data: seller } = await supabase.from("users").select("status").eq("id", transaction.seller_id).maybeSingle();
+  if (seller && ["suspended", "banned"].includes(seller.status)) return NextResponse.json({ error: "Payout is frozen while the seller account is restricted." }, { status: 409 });
 
   const prepared = await prepareEscrowAction(supabase, payment, "held", "releasing");
   if (!prepared.payment || prepared.payment.status !== "releasing") {

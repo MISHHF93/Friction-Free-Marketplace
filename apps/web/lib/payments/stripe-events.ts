@@ -150,7 +150,7 @@ export async function saveStripeDispute(dispute: Stripe.Dispute) {
     assertWrite(insert.error, "Insert dispute");
   }
   if (!closed && canApplyTransactionStatus(transaction.status, "disputed")) {
-    const transactionUpdate = await supabase.from("transactions").update({ status: "disputed" }).eq("id", payment.transaction_id);
+    const transactionUpdate = await supabase.from("transactions").update({ status: "disputed" }).eq("id", payment.transaction_id).in("status", ["paid", "escrowed", "shipped", "delivered"]).select("id");
     assertWrite(transactionUpdate.error, "Mark transaction disputed");
   }
   if (payment.status === "held" && !existing) {
@@ -188,12 +188,17 @@ async function applyChargeRefund(charge: Stripe.Charge) {
   }
   const refunded = centsToDollars(charge.amount_refunded);
   const fullyRefunded = charge.refunded || refunded >= Number(payment.amount);
-  const paymentUpdate = await supabase.from("escrow_payments").update({
-    refunded_amount: refunded,
-    status: fullyRefunded ? "refunded" : payment.status,
-    refunded_at: fullyRefunded ? new Date().toISOString() : payment.refunded_at,
-    provider_charge_id: charge.id
-  }).eq("id", payment.id).in("status", [...refundStatusSources]).select("id");
+  const paymentUpdate = fullyRefunded
+    ? await supabase.from("escrow_payments").update({
+      refunded_amount: refunded,
+      status: "refunded",
+      refunded_at: new Date().toISOString(),
+      provider_charge_id: charge.id
+    }).eq("id", payment.id).in("status", [...refundStatusSources]).select("id")
+    : await supabase.from("escrow_payments").update({
+      refunded_amount: refunded,
+      provider_charge_id: charge.id
+    }).eq("id", payment.id).in("status", [...refundStatusSources]).select("id");
   assertWrite(paymentUpdate.error, "Record refund");
   if (!paymentUpdate.data?.length) {
     await recordTransactionEvent(supabase, { transaction_id: payment.transaction_id, type: "refund_succeeded", from_status: payment.status, to_status: payment.status, provider_object_id: charge.id, amount: refunded, currency: charge.currency, message: "Ignored charge.refunded because the payment status had changed." });

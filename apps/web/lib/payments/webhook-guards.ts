@@ -33,8 +33,13 @@ export function reconcileStuckPayment(input: {
     if (input.intentStatus === "canceled") return "cancelled" as const;
     return null;
   }
-  if (input.status === "releasing") return input.hasTransfer ? "released" as const : "held" as const;
-  if (input.intentStatus === "canceled" && input.refundedCents <= 0) return "cancelled" as const;
+  if (input.status === "releasing") {
+    if (input.intentStatus === "requires_capture" || input.intentStatus === "canceled") return input.intentStatus === "canceled" ? "cancelled" as const : "authorized" as const;
+    return input.hasTransfer ? "released" as const : "held" as const;
+  }
+  if (input.intentStatus === "requires_capture") return "authorized" as const;
+  if (input.intentStatus === "canceled") return "cancelled" as const;
+  if (input.intentStatus !== "succeeded") return null;
   if (input.amountCents > 0 && input.refundedCents >= input.amountCents) return "refunded" as const;
   return "held" as const;
 }
