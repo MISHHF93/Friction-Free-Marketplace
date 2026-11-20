@@ -3,6 +3,9 @@ import { defineConfig, devices } from "@playwright/test";
 // chrome-headless-shell hangs on accessibility queries and axe evaluate in this environment.
 process.env.PLAYWRIGHT_CHROMIUM_USE_HEADLESS_SHELL ??= "0";
 
+// Chromium-only flags; WebKit rejects them.
+const chromiumLaunch = { args: ["--no-sandbox", "--disable-dev-shm-usage"] };
+
 export default defineConfig({
   testDir: "tests/e2e",
   timeout: 30_000,
@@ -50,11 +53,11 @@ export default defineConfig({
         timeout: 120_000
       },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "pixel-7", use: { ...devices["Pixel 7"], deviceScaleFactor: 2 }, testMatch: /mobile-layout\.spec\.ts|core-flows\.spec\.ts|a11y\.spec\.ts|money-actions\.spec\.ts/ },
+    { name: "chromium", use: { ...devices["Desktop Chrome"], launchOptions: chromiumLaunch } },
+    { name: "pixel-7", use: { ...devices["Pixel 7"], deviceScaleFactor: 2, launchOptions: chromiumLaunch }, testMatch: /mobile-layout\.spec\.ts|core-flows\.spec\.ts|a11y\.spec\.ts|money-actions\.spec\.ts/ },
     {
       name: "iphone-14",
-      use: { ...devices["iPhone 14"], browserName: "chromium", defaultBrowserType: "chromium" },
+      use: { ...devices["iPhone 14"], browserName: "chromium", defaultBrowserType: "chromium", launchOptions: chromiumLaunch },
       testMatch: /mobile-layout\.spec\.ts|core-flows\.spec\.ts|a11y\.spec\.ts|money-actions\.spec\.ts/
     },
     {
