@@ -4,7 +4,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   AlertTriangle,
-  ArrowRight,
   BadgeCheck,
   CalendarDays,
   CheckCircle2,
@@ -17,7 +16,6 @@ import {
   LockKeyhole,
   MapPin,
   MessageSquare,
-  PackageCheck,
   ScanSearch,
   ShieldAlert,
   ShieldCheck,
@@ -41,6 +39,7 @@ import { quoteCheckoutAmounts } from "@/lib/payments/quote";
 import { normalizeCurrency } from "@/lib/payments/money";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StartConversationCard } from "@/components/messaging/start-conversation-card";
+import { MakeOfferSheet } from "@/components/offers/make-offer-sheet";
 import { PriceDisplay, TrustBadge } from "@/components/marketplace-design-system";
 import { PublicListingGrid } from "@/components/public-listing-grid";
 import { getFeaturedListings, getListingById, getPublicListingParams } from "@/lib/public-marketplace";
@@ -179,10 +178,23 @@ function numberValue(value: unknown) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function rewriteMarketplaceAssetUrl(url: string) {
+  try {
+    const parsed = new URL(url);
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+    if (supabaseUrl && /placeholder/i.test(parsed.hostname)) {
+      return new URL(`${parsed.pathname}${parsed.search}`, supabaseUrl).toString();
+    }
+  } catch {
+    // Keep the stored URL when it is not an absolute path we can rewrite.
+  }
+  return url;
+}
+
 function galleryImages(listing: DiscoveryDocument, dbListing: DbListing | null) {
   const urls = [
-    ...(dbListing?.listing_images ?? []).flatMap((image) => image.public_url ? [{ src: image.public_url, alt: image.alt_text || listing.title }] : []),
-    ...(listing.image_url ? [{ src: listing.image_url, alt: listing.title }] : [])
+    ...(dbListing?.listing_images ?? []).flatMap((image) => image.public_url ? [{ src: rewriteMarketplaceAssetUrl(image.public_url), alt: image.alt_text || listing.title }] : []),
+    ...(listing.image_url ? [{ src: rewriteMarketplaceAssetUrl(listing.image_url), alt: listing.title }] : [])
   ];
   const seen = new Set<string>();
   return urls.filter((image) => {
@@ -294,15 +306,9 @@ export default async function ListingDetailPage({ params, searchParams }: { para
   return (
     <main className="app-container section-y pb-28">
       <StripeJsScript />
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 text-sm">
-        <Link href="/browse" className="inline-flex items-center gap-2 font-bold text-muted-foreground hover:text-foreground">
-          <ArrowRight className="h-4 w-4 rotate-180" aria-hidden="true" />
-          Back to marketplace
-        </Link>
-        <div className="hidden flex-wrap gap-2 sm:flex">
-          <Badge variant="trust"><ShieldCheck className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Protected checkout eligible</Badge>
-          <Badge variant="ai"><Sparkles className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Listing signals reviewed</Badge>
-        </div>
+      <div className="mb-5 hidden flex-wrap gap-2 sm:flex">
+        <Badge variant="trust"><ShieldCheck className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Protected checkout eligible</Badge>
+        <Badge variant="ai"><Sparkles className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Listing signals reviewed</Badge>
       </div>
 
       <section className="grid min-w-0 max-w-full grid-cols-1 gap-6 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(19rem,24rem)] lg:items-start xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-8" aria-labelledby="listing-title">
@@ -316,7 +322,7 @@ export default async function ListingDetailPage({ params, searchParams }: { para
                 <Badge variant={moderationStatus === "active" || moderationStatus === "approved" ? "trust" : "warning"}>{moderationStatus === "active" || moderationStatus === "approved" ? "Marketplace reviewed" : "Review pending"}</Badge>
               </div>
               <div className="space-y-3">
-                <h1 id="listing-title" className="text-2xl font-black tracking-tight sm:text-4xl">{listing.title}</h1>
+                <h1 id="listing-title" data-page-title={listing.title} className="text-2xl font-black tracking-tight sm:text-4xl">{listing.title}</h1>
                 <p className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
                   <MapPin className="h-4 w-4 text-primary" aria-hidden="true" />
                   {listing.location_label || "Location after contact"}
@@ -332,7 +338,14 @@ export default async function ListingDetailPage({ params, searchParams }: { para
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <Button asChild size="lg" variant="premium"><Link href="#message-seller">Make offer</Link></Button>
+                <MakeOfferSheet
+                  listingId={listing.id}
+                  currency={listing.currency}
+                  signedOut={!user}
+                  isOwner={Boolean(user && user.id === listing.seller_id)}
+                  disabled={!isLiveDatabaseListing}
+                  className="w-full"
+                />
                 <OpenCheckoutButton className="w-full sm:w-auto" variant="trust">Buy now</OpenCheckoutButton>
                 <Button asChild size="lg" variant="outline"><Link href="#message-seller"><MessageSquare className="h-4 w-4" aria-hidden="true" /> Message seller</Link></Button>
                 <FavoriteToggleForm listingId={listing.id} isFavorited={favoriteIds.has(listing.id)} variant="outline" size="lg" className="w-full" />
@@ -436,12 +449,11 @@ function ListingGallery({ title, images }: { title: string; images: Array<{ src:
     contentType: "image/*"
   }));
   const primary = mediaItems[0];
-  const thumbnails: Array<MediaViewerItem | null> = mediaItems.slice(1, 5);
-  const thumbnailSlots: Array<MediaViewerItem | null> = thumbnails.length ? thumbnails : Array.from<MediaViewerItem | null>({ length: 4 }).fill(null);
+  const thumbnails = mediaItems.slice(1, 5);
 
   return (
     <section className="min-w-0 max-w-full overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-soft sm:rounded-[2rem]" aria-label="Listing image gallery">
-      <div className="grid min-w-0 grid-cols-1 gap-3 p-2 sm:p-3 lg:grid-cols-[minmax(0,1fr)_12rem] xl:grid-cols-[minmax(0,1fr)_14rem]">
+      <div className={cn("grid min-w-0 grid-cols-1 gap-3 p-2 sm:p-3", thumbnails.length ? "lg:grid-cols-[minmax(0,1fr)_12rem] xl:grid-cols-[minmax(0,1fr)_14rem]" : "")}>
         <div className="min-w-0 overflow-hidden rounded-[1.5rem] bg-secondary">
           {primary ? (
             <MediaViewer items={mediaItems} initialIndex={0} mode="gallery" surface="listingGallery" triggerLabel={`Open ${title} media gallery`} thumbnailClassName="h-72 w-full object-cover sm:h-96 lg:h-[30rem] xl:h-[32.5rem]" />
@@ -452,17 +464,10 @@ function ListingGallery({ title, images }: { title: string; images: Array<{ src:
             </div>
           )}
         </div>
-        {primary ? <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-1">
-          {thumbnailSlots.map((image, index) => (
-            <div className="overflow-hidden rounded-2xl border border-border bg-secondary" key={image ? image.src : index}>
-              {image ? (
-                <MediaViewer items={mediaItems} initialIndex={index + 1} mode="gallery" surface="listingGallery" triggerLabel={`Open ${title} media ${index + 2}`} thumbnailClassName="h-24 w-full object-cover sm:h-28 lg:h-[7rem] xl:h-[7.55rem]" />
-              ) : (
-                <div className={cn("flex h-24 items-center justify-center text-muted-foreground sm:h-28 lg:h-[7rem] xl:h-[7.55rem]", index === 0 && primary && "bg-trust-soft")}>
-                  <PackageCheck className="h-7 w-7" aria-hidden="true" />
-                  <span className="sr-only">{title} gallery placeholder</span>
-                </div>
-              )}
+        {thumbnails.length ? <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-1">
+          {thumbnails.map((image, index) => (
+            <div className="overflow-hidden rounded-2xl border border-border bg-secondary" key={image.src}>
+              <MediaViewer items={mediaItems} initialIndex={index + 1} mode="gallery" surface="listingGallery" triggerLabel={`Open ${title} media ${index + 2}`} thumbnailClassName="h-24 w-full object-cover sm:h-28 lg:h-[7rem] xl:h-[7.55rem]" />
             </div>
           ))}
         </div> : null}

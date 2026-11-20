@@ -26,10 +26,10 @@ const securityHeaders = [
           "form-action 'self'",
           `script-src ${scriptSrc}`,
           "style-src 'self' 'unsafe-inline'",
-          "img-src 'self' data: blob: https:",
+          "img-src 'self' data: blob: https: http://127.0.0.1:54321 http://localhost:54321",
           "font-src 'self' data:",
           "frame-src https://js.stripe.com https://hooks.stripe.com",
-          "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.posthog.com"
+          "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.posthog.com http://127.0.0.1:54321 http://localhost:54321 ws://127.0.0.1:54321 ws://localhost:54321"
         ].join("; ")
       }]
     : []),
@@ -45,6 +45,13 @@ const useStandaloneOutput = process.env.VERCEL !== "1";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "*.supabase.co" },
+      { protocol: "http", hostname: "127.0.0.1", port: "54321", pathname: "/storage/**" },
+      { protocol: "http", hostname: "localhost", port: "54321", pathname: "/storage/**" }
+    ]
+  },
   ...(useStandaloneOutput ? { output: "standalone" } : {}),
   // Playwright starts `next dev` after `next build`. A separate directory keeps
   // the production webpack graph from being served as a dev module map.
