@@ -142,7 +142,7 @@
     --secondary: 218 20% 14%;
     --secondary-foreground: 210 40% 96%;
     --muted: 218 20% 14%;
-    --muted-foreground: 214 16% 70%;
+    --muted-foreground: 215 16% 28%;
     --accent: 209 40% 16%;
     --accent-foreground: 210 40% 96%;
     --border: 215 16% 22%;
@@ -378,10 +378,12 @@
   }
 
   .ui-button-primary,
-  .ui-button-trust {
-    background-color: #0e4b7a;
-    border-color: #0e4b7a;
-    color: #ffffff;
+  .ui-button-trust,
+  a.ui-button-trust,
+  button.ui-button-trust {
+    background-color: #0e4b7a !important;
+    border-color: #0e4b7a !important;
+    color: #ffffff !important;
   }
 
   .ui-button-surface {

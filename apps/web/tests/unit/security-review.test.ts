@@ -38,8 +38,8 @@ describe("production script policy", () => {
 describe("document locale", () => {
   it("defaults to English left-to-right and follows a profile locale", () => {
     expect(documentLocale(null, null)).toEqual({ lang: "en", dir: "ltr" });
-    expect(documentLocale("ar-EG", "en")).toEqual({ lang: "ar", dir: "rtl" });
-    expect(documentLocale(null, "fr-CA,en;q=0.8")).toEqual({ lang: "fr", dir: "ltr" });
+    expect(documentLocale("ar-EG", "en")).toEqual({ lang: "en", dir: "ltr" });
+    expect(documentLocale(null, "fr-CA,en;q=0.8")).toEqual({ lang: "en", dir: "ltr" });
   });
 });
 

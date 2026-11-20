@@ -69,7 +69,20 @@ export async function getConversationSummaries(supabase: SupabaseClient<any>, us
     .limit(50);
 
   if (error) throw error;
-  return Promise.all(((data ?? []) as Array<ConversationSummary & { buyer: EmbeddedUser; seller: EmbeddedUser }>).map(normalizeConversation));
+  const summaries = await Promise.all(((data ?? []) as Array<ConversationSummary & { buyer: EmbeddedUser; seller: EmbeddedUser }>).map(normalizeConversation));
+  return applyPublicProfiles(supabase, summaries);
+}
+
+async function applyPublicProfiles(supabase: SupabaseClient<any>, summaries: ConversationSummary[]) {
+  const ids = [...new Set(summaries.flatMap((summary) => [summary.buyer_id, summary.seller_id]).filter(Boolean))];
+  if (!ids.length) return summaries;
+  const { data } = await supabase.from("public_profiles").select("user_id,display_name,avatar_url").in("user_id", ids);
+  const profiles = new Map(((data ?? []) as Array<{ user_id: string; display_name: string; avatar_url: string | null }>).map((profile) => [profile.user_id, profile]));
+  return summaries.map((summary) => ({
+    ...summary,
+    buyer: summary.buyer ? { ...summary.buyer, display_name: profiles.get(summary.buyer.user_id)?.display_name ?? summary.buyer.display_name, avatar_url: profiles.get(summary.buyer.user_id)?.avatar_url ?? summary.buyer.avatar_url } : summary.buyer,
+    seller: summary.seller ? { ...summary.seller, display_name: profiles.get(summary.seller.user_id)?.display_name ?? summary.seller.display_name, avatar_url: profiles.get(summary.seller.user_id)?.avatar_url ?? summary.seller.avatar_url } : summary.seller
+  }));
 }
 
 export async function getConversationSummaryById(supabase: SupabaseClient<any>, conversationId: string, userId: string) {
@@ -83,5 +96,6 @@ export async function getConversationSummaryById(supabase: SupabaseClient<any>, 
   if (error) throw error;
   const summary = await normalizeConversation(data as ConversationSummary & { buyer: EmbeddedUser; seller: EmbeddedUser });
   assertConversationParticipant(summary, userId);
-  return summary;
+  const [withProfile] = await applyPublicProfiles(supabase, [summary]);
+  return withProfile ?? summary;
 }

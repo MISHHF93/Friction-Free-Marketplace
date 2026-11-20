@@ -612,7 +612,7 @@ export function ListingForm({
       <div className="space-y-6">
         <div className="grid grid-cols-5 gap-1" aria-label="Listing steps">
           {["Photos", "Details", "Price", "Fulfilment", "Review"].map((label, index) => (
-            <button key={label} type="button" className={cn("min-h-11 rounded-xl px-1 text-[11px] font-bold", sellStep === index ? "bg-primary text-primary-foreground" : "bg-secondary")} aria-current={sellStep === index ? "step" : undefined} onClick={() => setSellStep(index)}>{label}</button>
+            <button key={label} type="button" className={cn("min-h-11 rounded-xl px-1 text-xs font-bold", sellStep === index ? "bg-[#0c3f66] text-white" : "bg-secondary text-foreground")} aria-current={sellStep === index ? "step" : undefined} onClick={() => setSellStep(index)}>{label}</button>
           ))}
         </div>
         <Card className={sellStep === 1 || sellStep === 2 ? "" : "hidden"}>
