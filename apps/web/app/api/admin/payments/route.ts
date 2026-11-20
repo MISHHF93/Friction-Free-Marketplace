@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdminPermission } from "@/lib/admin/permissions";
-import { getAdminDirectoryRows, getAdminOverview, recordAdminAction } from "@/lib/admin/queries";
+import { applyAdminMutation } from "@/lib/admin/mutations";
+import { getAdminDirectoryRows, getAdminOverview } from "@/lib/admin/queries";
 import { getAdminPageConfig } from "@/lib/admin/platform";
 
 export const dynamic = "force-dynamic";
@@ -40,17 +41,11 @@ export async function POST(request: Request) {
   if ("error" in auth) return auth.error;
 
   const body = await request.json().catch(() => ({}));
-  const result = await recordAdminAction({
+  const result = await applyAdminMutation({
+    endpoint,
     adminId: auth.adminUser.id,
-    actionType: typeof body.action === "string" ? body.action : `${endpoint}.note`,
-    targetType: String(body.target_type ?? endpoint),
-    targetId: typeof body.target_id === "string" ? body.target_id : null,
-    reason: typeof body.reason === "string" ? body.reason : null,
-    beforeState: (body.before_state && typeof body.before_state === "object") ? body.before_state : null,
-    afterState: (body.after_state && typeof body.after_state === "object") ? body.after_state : null,
-    metadata: { endpoint, role: auth.role, payload: body.metadata ?? {} }
+    body
   });
-
-  if (result.error) return NextResponse.json({ error: result.error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, action: result.data });
+  if ("response" in result && result.response) return result.response;
+  return NextResponse.json({ ok: true, action: result.action, record: result.record });
 }
