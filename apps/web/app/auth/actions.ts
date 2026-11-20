@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEV_AUTH_BYPASS_COOKIE, devBypassCookieSecure, isDevAuthBypassEnabled } from "@/lib/auth/dev-bypass";
 import { publicEnv } from "@/lib/env";
+import { countOpenOrders, openOrdersDeletionMessage } from "@/lib/account/deletion";
 import { authSchema, memberDisplayName, profileSettingsSchema, signupSchema } from "@/lib/validations/auth";
 
 export type AuthActionState = {
@@ -226,11 +227,21 @@ export async function deleteAccountAction(formData: FormData) {
   if (!user) redirect("/login?next=/account/settings");
 
   const admin = createAdminClient();
+  const openOrders = await countOpenOrders(admin, user.id);
+  if (openOrders === null) {
+    redirect(`/account/settings?deleteError=${encodeURIComponent("We could not check your orders. Please try again.")}`);
+  }
+  if (openOrders > 0) {
+    redirect(`/account/settings?deleteError=${encodeURIComponent(openOrdersDeletionMessage(openOrders))}`);
+  }
   const { error: anonymizeError } = await (admin as any).rpc("anonymize_marketplace_account", {
     target_user_id: user.id
   });
   if (anonymizeError) {
-    redirect(`/account/settings?deleteError=${encodeURIComponent("Unable to anonymize the account. Please contact support.")}`);
+    const message = String(anonymizeError.message ?? "").includes("account_has_open_orders")
+      ? openOrdersDeletionMessage(1)
+      : "Unable to anonymize the account. Please contact support.";
+    redirect(`/account/settings?deleteError=${encodeURIComponent(message)}`);
   }
 
   const { error } = await admin.auth.admin.deleteUser(user.id, true);
