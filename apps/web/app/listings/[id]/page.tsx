@@ -33,7 +33,7 @@ import { createMediaViewerItem, MediaViewer, type MediaViewerItem } from "@/comp
 import { createClient } from "@/lib/supabase/server";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { ShareListingButton } from "@/components/listings/share-listing-button";
-import { CheckoutCard } from "@/components/payments/checkout-card";
+import { CheckoutCard, SampleCheckoutPreview } from "@/components/payments/checkout-card";
 import { quoteCheckoutAmounts } from "@/lib/payments/quote";
 import { StartConversationCard } from "@/components/messaging/start-conversation-card";
 import { PriceDisplay, TrustBadge } from "@/components/marketplace-design-system";
@@ -375,8 +375,8 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
               <Card className="border-primary/20 bg-primary/5">
                 <CardHeader><CardTitle className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-primary" aria-hidden="true" /> Protected checkout</CardTitle></CardHeader>
                 <CardContent>
-                  <Button size="lg" disabled className="w-full">Checkout is available on live listings</Button>
-                  <p className="mt-3 text-xs leading-5 text-muted-foreground">This sample listing shows the page experience. Live listings can authorize payment before funds are captured.</p>
+                  <SampleCheckoutPreview listingId={listing.id} />
+                  <p className="mt-3 text-xs leading-5 text-muted-foreground">This sample listing stays in test mode. The preview calls the checkout API and does not charge a card.</p>
                 </CardContent>
               </Card>
             )}

@@ -2,12 +2,19 @@ import {
   ListingForm,
   type ListingCategoryOption,
 } from "@/components/listings/listing-form";
+import { isLiveDatabaseConfigured } from "@/lib/marketplace/demo-mode";
 import { LISTING_CATEGORIES } from "@/lib/listings/validation";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 async function getCategoryOptions(): Promise<ListingCategoryOption[]> {
+  if (!isLiveDatabaseConfigured()) {
+    return LISTING_CATEGORIES.map((slug) => ({
+      slug,
+      name: slug.split("-").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ")
+    }));
+  }
   try {
     const supabase = await createClient();
     const { data } = await supabase

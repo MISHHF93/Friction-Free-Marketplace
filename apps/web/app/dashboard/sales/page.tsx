@@ -5,6 +5,7 @@ import { DashboardActionCard, DashboardListItem, DashboardShell, DashboardStatCa
 import { EscrowActions } from "@/components/payments/escrow-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getMarketplaceSession } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/i18n/format";
 
@@ -59,10 +60,9 @@ async function getSellerSales(userId: string) {
 }
 
 export default async function SalesPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/dashboard/sales");
-  const sales = await getSellerSales(user.id);
+  const session = await getMarketplaceSession();
+  if (!session) redirect("/login?next=/dashboard/sales");
+  const sales = session.source === "supabase" ? await getSellerSales(session.id) : [];
   const active = sales.filter((sale) => !["completed", "cancelled", "refunded"].includes(sale.status));
   const pendingPayout = sales.reduce((sum, sale) => sale.payout?.status === "pending" ? sum + Number(sale.payout.amount) : sum, 0);
   const completed = sales.filter((sale) => sale.status === "completed").length;

@@ -77,7 +77,7 @@ export function BrandLogo({
   const titleColor =
     tone === "onDark" || tone === "inverse" ? "text-white" : "text-foreground";
   const taglineColor =
-    tone === "onDark" || tone === "inverse" ? "text-sky-300" : "text-primary";
+    tone === "onDark" || tone === "inverse" ? "text-sky-100" : "text-foreground";
 
   const content = (
     <span
@@ -115,11 +115,7 @@ export function BrandLogo({
   }
 
   return (
-    <Link
-      href={href}
-      className="brand-focus rounded-xl"
-      aria-label={`${brandProfile.legalName} home`}
-    >
+    <Link href={href} className="brand-focus rounded-xl">
       {content}
     </Link>
   );

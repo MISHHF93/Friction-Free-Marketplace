@@ -4,11 +4,23 @@ import { AccountSettingsForm } from "@/components/forms/account-settings-form";
 import { NotificationPreferencesForm } from "@/components/notifications/notification-preferences-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { getMarketplaceSession } from "@/lib/auth/session";
 import { getNotificationPreferences } from "@/lib/notifications/service";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AccountSettingsPage({ searchParams }: { searchParams?: Promise<{ deleteError?: string }> }) {
   const query = await searchParams;
+  const session = await getMarketplaceSession();
+  if (!session) redirect("/login?next=/account/settings");
+  if (session.source !== "supabase") {
+    return (
+      <section className="mx-auto grid max-w-4xl gap-6 px-4 py-10 sm:px-6 lg:px-8">
+        <h1 className="text-3xl font-bold tracking-tight">Account settings</h1>
+        <AccountSettingsForm email={session.email} profile={{ display_name: session.displayName, username: null, bio: null, location_label: null, website_url: null }} />
+        <p className="text-sm text-muted-foreground">{session.email}</p>
+      </section>
+    );
+  }
   const supabase = await createClient();
   const {
     data: { user },

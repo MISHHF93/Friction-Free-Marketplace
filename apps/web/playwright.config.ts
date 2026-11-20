@@ -16,7 +16,8 @@ export default defineConfig({
         reuseExistingServer: !process.env.CI,
         env: {
           ...process.env,
-          FFM_E2E_AUTH: "true"
+          FFM_E2E_AUTH: "true",
+          MARKETPLACE_DEMO_MODE: "true"
         },
         timeout: 120_000
       },
