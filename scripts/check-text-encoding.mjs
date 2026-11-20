@@ -4,7 +4,7 @@ import { extname, join, relative } from "node:path";
 const root = process.cwd();
 const roots = ["apps", "docs", "packages", "scripts"];
 const extensions = new Set([".css", ".html", ".js", ".json", ".md", ".mjs", ".ts", ".tsx", ".yml", ".yaml"]);
-const ignoredDirectories = new Set([".git", ".next", "coverage", "dist", "node_modules", "playwright-report", "test-results"]);
+const ignoredDirectories = new Set([".git", ".next", ".next-playwright", ".next-smoke", "coverage", "dist", "node_modules", "playwright-report", "test-results"]);
 const suspicious = [
   { label: "double-encoded punctuation", pattern: /(?:Â[©®·]|â(?:€|™|€¦|€¢|€“|€”|€™))/u },
   { label: "replacement character", pattern: /\uFFFD/u },
