@@ -8,11 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { adminLinks } from "@/lib/admin/navigation";
 import { can, permissionLabels, requireAdminPagePermission, rolePermissions, type AdminRole } from "@/lib/admin/permissions";
 import { adminMutationsFor } from "@/lib/admin/mutations";
-import { getAdminPageConfig, type AdminPageConfig } from "@/lib/admin/platform";
+import { getLiveAdminPage } from "@/lib/admin/live-pages";
+import type { AdminPageConfig } from "@/lib/admin/platform";
 import { cn } from "@/lib/utils";
 
 export async function AuthorizedAdminFeaturePage({ slug }: { slug: string }) {
-  const config = getAdminPageConfig(slug);
+  const config = await getLiveAdminPage(slug);
   if (!config) notFound();
 
   const auth = await requireAdminPagePermission(config.permission, {
@@ -40,7 +41,7 @@ export function AdminFeaturePage({ config, adminRole }: { config: AdminPageConfi
           <span className="rounded-3xl bg-white/10 p-4 text-emerald-300"><Icon className="h-8 w-8" /></span>
         </div>
         <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
-          <Button variant="trust" type="button" disabled title={adminMutationsFor(config.slug).length ? "Choose a live record from the API. Sample rows on this page are not mutable." : "This queue has no record mutation."}>{config.primaryAction}</Button>
+          <Button variant="trust" type="button" disabled title={adminMutationsFor(config.slug).length ? "Choose a live record id from the admin API." : "This queue has no record mutation."}>{config.primaryAction}</Button>
           {can(adminRole ?? null, "fraud.review") ? <Button asChild variant="surface"><Link href="/admin/review-queue">Open review queue <ArrowRight className="ml-2 h-4 w-4" /></Link></Button> : null}
         </div>
       </section>
@@ -103,6 +104,11 @@ export function AdminFeaturePage({ config, adminRole }: { config: AdminPageConfi
                 </tr>
               </thead>
               <tbody>
+                {config.rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={config.columns.length + 2} className="px-4 py-8 text-sm text-muted-foreground">No records in this queue.</td>
+                  </tr>
+                ) : null}
                 {config.rows.map((row, index) => (
                   <tr key={`${row.subject}-${index}`}>
                     {config.columns.map((column) => (
@@ -110,7 +116,7 @@ export function AdminFeaturePage({ config, adminRole }: { config: AdminPageConfi
                         {column.key === "subject" ? <SeverityBadge severity={row.severity} value={row[column.key]} /> : column.key === "status" ? <StatusBadge value={row[column.key]} severity={row.severity} /> : <span className="text-muted-foreground">{row[column.key]}</span>}
                       </td>
                     ))}
-                    <td className="align-top"><RiskScoreIndicator severity={row.severity} seed={index} /></td>
+                    <td className="align-top"><RiskScoreIndicator severity={row.severity} seed={index} score={row.score || row.trust} /></td>
                     <td className="align-top"><AdminRowActionMenu subject={row.subject} primaryAction={row.action ?? config.primaryAction} mutable={adminMutationsFor(config.slug).length > 0} /></td>
                   </tr>
                 ))}
@@ -197,8 +203,9 @@ function StatusBadge({ value, severity }: { value: string; severity?: string }) 
   return <Badge variant={variant}>{value}</Badge>;
 }
 
-function RiskScoreIndicator({ severity, seed }: { severity?: string; seed: number }) {
-  const value = severity === "critical" ? 96 : severity === "high" ? 82 : severity === "medium" ? 58 : severity === "positive" ? 16 : 34 + seed * 8;
+function RiskScoreIndicator({ severity, seed, score }: { severity?: string; seed: number; score?: string }) {
+  const parsed = Number(score);
+  const value = Number.isFinite(parsed) && score ? parsed : severity === "critical" ? 90 : severity === "high" ? 75 : severity === "medium" ? 50 : severity === "positive" ? 20 : 10 + seed;
   const color = value >= 85 ? "bg-safety-risk" : value >= 70 ? "bg-safety-warning" : value >= 45 ? "bg-ai" : "bg-trust";
   return (
     <div className="min-w-28">
@@ -210,7 +217,7 @@ function RiskScoreIndicator({ severity, seed }: { severity?: string; seed: numbe
 
 function AdminRowActionMenu({ subject, primaryAction, mutable }: { subject: string; primaryAction: string; mutable: boolean }) {
   const reason = mutable
-    ? "Sample rows are not live records. Call the admin API with a real id."
+    ? "Use the admin API with the live record id. This menu does not invent a target."
     : "This queue does not change marketplace records.";
   return (
     <details className="relative">

@@ -23,7 +23,7 @@ describe("marketplace AI read tools", () => {
     expect(result.ok).toBe(true);
     const payload = result.result as { listings: unknown[]; source: string };
     expect(payload.listings.length).toBeLessThanOrEqual(8);
-    expect(["demo", "database", "meilisearch"]).toContain(payload.source);
+    expect(["demo", "database", "meilisearch", "unavailable"]).toContain(payload.source);
   });
 
   it("labels pricing context as active-listing evidence, not an appraisal", async () => {

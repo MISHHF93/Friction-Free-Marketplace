@@ -3,7 +3,7 @@ import { listings as demoListings } from "@/lib/marketplace-data";
 import { configureDiscoveryIndex, deleteDiscoveryDocuments, isSearchConfigured, searchDiscoveryIndex, upsertDiscoveryDocuments, waitForMeiliTask } from "@/lib/search/meilisearch";
 import { enrichSearchParamsWithClassification } from "@/lib/search/item-classifier";
 import { recordReliabilityEvent } from "@/lib/observability/reliability";
-import { isDemoMarketplaceDataEnabled } from "@/lib/marketplace/demo-mode";
+import { isDemoMarketplaceDataEnabled, isLiveDatabaseConfigured } from "@/lib/marketplace/demo-mode";
 import type { DiscoveryDocument, DiscoverySearchParams } from "@/lib/search/schema";
 
 export type DiscoveryResult = {
@@ -216,6 +216,10 @@ export async function searchMarketplace(params: DiscoverySearchParams): Promise<
     const filtered = sortFallback(demoDocuments().filter((doc) => matchesFallback(doc, resolvedParams)), resolvedParams);
     const fallbackFacets = buildFallbackFacets(filtered);
     return { listings: filtered.slice(0, resolvedParams.limit ?? 24), total: filtered.length, ...fallbackFacets, source: "demo" };
+  }
+
+  if (!isLiveDatabaseConfigured()) {
+    return { listings: [], total: 0, facets: {}, facetStats: {}, source: "unavailable" };
   }
 
   try {

@@ -44,10 +44,3 @@ export const listings = [
     highlights: ["Serial verified", "Fraud screened", "Fast responder", "Warranty docs"]
   }
 ];
-
-export const dashboardStats = [
-  { label: "Active offers", value: "12" },
-  { label: "Escrow balance", value: "$4.8k" },
-  { label: "Trust score", value: "96" },
-  { label: "Open messages", value: "7" }
-];

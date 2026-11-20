@@ -20,12 +20,28 @@ import {
   Wallet,
   Zap
 } from "lucide-react";
-import { DashboardActionCard, DashboardListItem, DashboardProgressCard, DashboardSectionCard, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
+import { DashboardActionCard, DashboardEmptyState, DashboardListItem, DashboardSectionCard, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+async function activityFor(userId: string) {
+  try {
+    const supabase = await createClient();
+    const [{ data: notifications }, { data: trust }] = await Promise.all([
+      supabase.from("notifications").select("id,title,body,status,action_url").eq("user_id", userId).order("created_at", { ascending: false }).limit(5),
+      supabase.from("trust_scores").select("score").eq("user_id", userId).maybeSingle()
+    ]);
+    return {
+      notifications: (notifications ?? []) as Array<{ id: string; title: string; body: string | null; status: string; action_url: string | null }>,
+      trustScore: trust?.score == null ? null : Math.round(Number(trust.score))
+    };
+  } catch {
+    return { notifications: [], trustScore: null };
+  }
+}
 
 async function countsFor(userId: string) {
   try {
@@ -47,31 +63,11 @@ async function countsFor(userId: string) {
   }
 }
 
-const activityFeed = [
-  { title: "Counteroffer received", detail: "Vintage Herman Miller chair needs a response before 6 PM.", status: "Offer", href: "/dashboard/offers" },
-  { title: "Payment authorized", detail: "Fuji X100VI purchase is ready for seller confirmation.", status: "Payment", href: "/dashboard/purchases" },
-  { title: "Saved search matched", detail: "4 new road bikes under $1,500 matched your buyer filters.", status: "Search", href: "/dashboard/saved-searches" },
-  { title: "Verification available", detail: "Completing ID verification can raise your protected transaction limit.", status: "Trust", href: "/dashboard/verification" }
-];
-
 const quickActions = [
   { title: "Create listing", detail: "Publish with clear copy, pricing context, and photos.", href: "/dashboard/listings/create", icon: Tags },
   { title: "Open inbox", detail: "Reply to buyer and seller conversations.", href: "/dashboard/messages", icon: MessageSquare },
   { title: "Review offers", detail: "Accept, counter, or decline negotiations.", href: "/dashboard/offers", icon: Wallet },
   { title: "Set up payments", detail: "Configure protected checkout and payouts.", href: "/dashboard/payments", icon: CreditCard }
-];
-
-const aiSuggestions = [
-  "Add two detail photos to make your top listing easier to evaluate.",
-  "Counter the camera offer at 94% of ask; buyer trust and intent are strong.",
-  "Turn on alerts for electronics under $900 near your saved location.",
-  "Complete payout verification before your next high-value sale closes."
-];
-
-const notificationItems = [
-  { title: "New buyer message", detail: "A verified buyer asked about pickup timing.", status: "Unread" },
-  { title: "Offer expires today", detail: "One counteroffer needs a response.", status: "Urgent" },
-  { title: "Saved search alert", detail: "Fresh inventory matched your road bike filter.", status: "New" }
 ];
 
 const recommendedActions = [
@@ -84,6 +80,8 @@ export default async function DashboardPage() {
   const session = await getMarketplaceSession();
   if (!session) redirect("/login?next=/dashboard");
   const counts = session.source === "supabase" ? await countsFor(session.id) : isolatedPreviewCounts(session.id);
+  const activity = session.source === "supabase" ? await activityFor(session.id) : { notifications: [], trustScore: null };
+  const unread = activity.notifications.filter((item) => item.status !== "read").length;
   const stats = [
     { label: "Your listings", value: String(counts.listings), detail: "Listings owned by this signed-in account.", icon: Tags },
     { label: "Your offers", value: String(counts.offers), detail: "Offers where you are the buyer or seller.", icon: Wallet },
@@ -107,41 +105,30 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
-        <DashboardSectionCard icon={TrendingUp} title="Activity feed" description="Recent activity that may need your attention." badge="Live">
-          {activityFeed.map((item, index) => (
-            <DashboardListItem
-              key={item.title}
-              title={item.title}
-              detail={item.detail}
-              status={item.status}
-              leading={<span className="flex h-8 w-8 items-center justify-center rounded-xl bg-trust text-xs font-black text-trust-foreground">{index + 1}</span>}
-            >
-              <Button asChild size="sm" variant="outline"><Link href={item.href}>Open</Link></Button>
+        <DashboardSectionCard icon={TrendingUp} title="Activity feed" description="Notifications stored for this account." badge={unread ? `${unread} unread` : "None"}>
+          {activity.notifications.length === 0 ? (
+            <DashboardEmptyState title="No activity yet" description="Offers, messages, and order updates for this account will show up here." />
+          ) : activity.notifications.map((item) => (
+            <DashboardListItem key={item.id} title={item.title} detail={item.body ?? "No extra detail."} status={item.status}>
+              {item.action_url?.startsWith("/") && !item.action_url.startsWith("//") ? <Button asChild size="sm" variant="outline"><Link href={item.action_url}>Open</Link></Button> : null}
             </DashboardListItem>
           ))}
         </DashboardSectionCard>
         <div className="grid gap-5">
-          <DashboardProgressCard icon={ShieldCheck} label="Trust score" value={86} detail="Strong account health. Complete verification and respond faster to improve it." />
-          <DashboardSectionCard icon={Bell} title="Notification center" description="Important marketplace alerts that need attention." badge="3 unread">
-            {notificationItems.map((item) => (
-              <DashboardListItem key={item.title} title={item.title} detail={item.detail} status={item.status} className="bg-secondary/70" />
-            ))}
+          <DashboardSectionCard icon={ShieldCheck} title="Trust score" description="Calculated from this account's reviews, orders, and risk signals.">
+            <p className="text-4xl font-black">{activity.trustScore ?? "—"}</p>
+            <p className="text-sm text-muted-foreground">{activity.trustScore == null ? "This account has not been scored yet." : "Current stored trust score."}</p>
+          </DashboardSectionCard>
+          <DashboardSectionCard icon={Bell} title="Notification center" description="Alerts that belong to this signed-in account." badge={String(activity.notifications.length)}>
+            {activity.notifications.length === 0 ? <DashboardEmptyState title="No notifications" description="This account has no stored notifications." /> : null}
             <Button asChild variant="outline" className="w-full"><Link href="/dashboard/settings">Notification settings</Link></Button>
           </DashboardSectionCard>
         </div>
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
-        <DashboardSectionCard icon={Bot} title="Assistant suggestions" description="Practical recommendations to improve listings and move deals forward." badge="Assistant">
-          {aiSuggestions.map((suggestion) => (
-            <DashboardListItem
-              key={suggestion}
-              title={suggestion}
-              leading={<span className="rounded-2xl bg-ai-soft p-2 text-ai"><Sparkles className="h-4 w-4" /></span>}
-              className="bg-ai-soft/40"
-            />
-          ))}
-          <Button asChild variant="ai" className="w-full"><Link href="/dashboard/ai-listing-creator">Open assistant</Link></Button>
+        <DashboardSectionCard icon={Bot} title="Assistant" description="Open the listing assistant for this account. It does not invent offers or inventory." badge="Assistant">
+          <DashboardEmptyState title="No generated suggestions" description="Suggestions appear only after you run the assistant on your own listing." action={<Button asChild variant="ai"><Link href="/dashboard/ai-listing-creator">Open assistant</Link></Button>} />
         </DashboardSectionCard>
 
         <DashboardSectionCard icon={Zap} title="Quick actions" description="Common buyer and seller tasks in one place." badge="Shortcuts">

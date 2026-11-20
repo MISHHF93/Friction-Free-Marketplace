@@ -54,16 +54,12 @@ export const adminPageConfigs: AdminPageConfig[] = [
     icon: Users,
     primaryAction: "Open user profile",
     metrics: [
-      { label: "Active users", value: "24.8k", detail: "96% verified email or phone", trend: "+8.2%" },
-      { label: "Suspended", value: "143", detail: "42 temporary commerce holds", trend: "-3.1%" },
-      { label: "Ban appeals", value: "18", detail: "5 critical SLA cases", trend: "+4" }
+      { label: "Active users", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Suspended", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Ban appeals", value: "0", detail: "Loaded from the database for this admin role." }
     ],
     columns: [{ label: "User", key: "subject" }, { label: "Role", key: "role" }, { label: "Status", key: "status" }, { label: "Trust", key: "trust" }, { label: "Action", key: "action" }],
-    rows: [
-      { subject: "Maya Chen", role: "seller", status: "active", trust: "91", action: "Verify payout", severity: "positive" },
-      { subject: "devon@example.com", role: "buyer", status: "suspended", trust: "38", action: "Review appeal", severity: "high" },
-      { subject: "Northstar Camera", role: "seller", status: "active", trust: "67", action: "Request ID", severity: "medium" }
-    ],
+    rows: [],
     workflows: [
       { title: "Identify account", description: "Combine profile, login, report, payment, listing, and device signals into one support view.", owner: "Support", automation: "Identity and duplicate-account matching" },
       { title: "Apply restriction", description: "Use a permissioned status action: warn, suspend buying, suspend selling, ban, or reinstate.", owner: "Risk admin", automation: "Reason-code templates and notification drafts" },
@@ -80,16 +76,12 @@ export const adminPageConfigs: AdminPageConfig[] = [
     icon: ListChecks,
     primaryAction: "Moderate selected",
     metrics: [
-      { label: "Pending review", value: "86", detail: "21 high-value items", trend: "+12" },
-      { label: "AI flagged", value: "34", detail: "Duplicate images and risky pricing", trend: "41%" },
-      { label: "Appeals", value: "7", detail: "Rejected listing appeals", trend: "2 due" }
+      { label: "Pending review", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "AI flagged", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Appeals", value: "0", detail: "Loaded from the database for this admin role." }
     ],
     columns: [{ label: "Listing", key: "subject" }, { label: "Seller", key: "seller" }, { label: "Risk", key: "risk" }, { label: "Status", key: "status" }, { label: "Decision", key: "action" }],
-    rows: [
-      { subject: "Rolex Submariner", seller: "Vault Finds", risk: "98 duplicate image", status: "held", action: "Request proof", severity: "critical" },
-      { subject: "Canon R5 kit", seller: "Local Photo", risk: "76 price anomaly", status: "needs_review", action: "Escalate", severity: "high" },
-      { subject: "Vintage desk", seller: "Ari Home", risk: "18 clean", status: "pending", action: "Approve", severity: "low" }
-    ],
+    rows: [],
     workflows: sharedWorkflow,
     queries: ["admin_listing_moderation_queue", "admin_listing_media_signals", "admin_policy_decisions"],
     actions: ["Approve", "Reject", "Request changes", "Hold listing", "Bulk assign"]
@@ -102,16 +94,12 @@ export const adminPageConfigs: AdminPageConfig[] = [
     icon: ShieldAlert,
     primaryAction: "Triage alert",
     metrics: [
-      { label: "Open alerts", value: "42", detail: "9 critical clusters", trend: "+6" },
-      { label: "Contained", value: "17", detail: "Auto-held this week", trend: "+22%" },
-      { label: "False positive", value: "8.4%", detail: "30-day analyst disposition", trend: "-1.1%" }
+      { label: "Open alerts", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Contained", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "False positive", value: "0", detail: "Loaded from the database for this admin role." }
     ],
     columns: [{ label: "Alert", key: "subject" }, { label: "Entity", key: "entity" }, { label: "Score", key: "score" }, { label: "Source", key: "source" }, { label: "Action", key: "action" }],
-    rows: [
-      { subject: "Synthetic seller cluster", entity: "4 users", score: "99", source: "graph", action: "Freeze accounts", severity: "critical" },
-      { subject: "Off-platform payment script", entity: "Conversation", score: "91", source: "AI moderation", action: "Block message", severity: "critical" },
-      { subject: "Chargeback velocity", entity: "Transaction", score: "78", source: "Stripe", action: "Hold payout", severity: "high" }
-    ],
+    rows: [],
     workflows: sharedWorkflow,
     queries: ["admin_fraud_alert_queue", "admin_entity_graph_edges", "admin_alert_dispositions"],
     actions: ["Confirm fraud", "Suppress false positive", "Freeze", "Create rule", "Escalate cluster"]
@@ -124,16 +112,12 @@ export const adminPageConfigs: AdminPageConfig[] = [
     icon: FileSearch,
     primaryAction: "Resolve report",
     metrics: [
-      { label: "Open reports", value: "118", detail: "32 unassigned", trend: "+15" },
-      { label: "Median first touch", value: "28m", detail: "SLA target 1h", trend: "-9m" },
-      { label: "Action rate", value: "37%", detail: "Last 7 days", trend: "+3%" }
+      { label: "Open reports", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Median first touch", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Action rate", value: "0", detail: "Loaded from the database for this admin role." }
     ],
     columns: [{ label: "Report", key: "subject" }, { label: "Reporter", key: "reporter" }, { label: "Reason", key: "reason" }, { label: "SLA", key: "sla" }, { label: "Action", key: "action" }],
-    rows: [
-      { subject: "Counterfeit claim", reporter: "Buyer", reason: "Authenticity", sla: "45m", action: "Review listing", severity: "high" },
-      { subject: "Harassment message", reporter: "Seller", reason: "Safety", sla: "1h", action: "Block user", severity: "critical" },
-      { subject: "Duplicate report", reporter: "Buyer", reason: "Spam", sla: "Tomorrow", action: "Merge", severity: "medium" }
-    ],
+    rows: [],
     workflows: sharedWorkflow,
     queries: ["admin_report_queue", "admin_report_evidence", "admin_duplicate_reports"],
     actions: ["Assign", "Merge", "Investigate", "Resolve", "Escalate"]
@@ -146,16 +130,12 @@ export const adminPageConfigs: AdminPageConfig[] = [
     icon: Gavel,
     primaryAction: "Draft decision",
     metrics: [
-      { label: "Open disputes", value: "29", detail: "11 awaiting evidence", trend: "+4" },
-      { label: "Value at risk", value: "$18.4k", detail: "Funds currently held", trend: "+$2.1k" },
-      { label: "SLA risk", value: "6", detail: "Due in 24 hours", trend: "Urgent" }
+      { label: "Open disputes", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Value at risk", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "SLA risk", value: "0", detail: "Loaded from the database for this admin role." }
     ],
     columns: [{ label: "Case", key: "subject" }, { label: "Buyer", key: "buyer" }, { label: "Seller", key: "seller" }, { label: "Amount", key: "amount" }, { label: "Action", key: "action" }],
-    rows: [
-      { subject: "Item not as described", buyer: "Mika", seller: "Urban Gear", amount: "$640", action: "Request seller evidence", severity: "high" },
-      { subject: "No delivery", buyer: "Chris", seller: "Part Depot", amount: "$120", action: "Refund buyer", severity: "medium" },
-      { subject: "Authenticity dispute", buyer: "Lina", seller: "Vault Finds", amount: "$4,200", action: "Escalate legal", severity: "critical" }
-    ],
+    rows: [],
     workflows: sharedWorkflow,
     queries: ["admin_dispute_queue", "admin_dispute_evidence", "admin_dispute_settlement_ledger"],
     actions: ["Request evidence", "Message parties", "Refund", "Release", "Close"]
@@ -168,16 +148,12 @@ export const adminPageConfigs: AdminPageConfig[] = [
     icon: ReceiptText,
     primaryAction: "Export ledger",
     metrics: [
-      { label: "GMV today", value: "$42.7k", detail: "812 orders", trend: "+11%" },
-      { label: "Held funds", value: "$96.2k", detail: "434 active holds", trend: "+7%" },
-      { label: "Mismatches", value: "5", detail: "Need finance review", trend: "2 new" }
+      { label: "GMV today", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Held funds", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Mismatches", value: "0", detail: "Loaded from the database for this admin role." }
     ],
     columns: [{ label: "Transaction", key: "subject" }, { label: "Buyer", key: "buyer" }, { label: "Seller", key: "seller" }, { label: "Status", key: "status" }, { label: "Action", key: "action" }],
-    rows: [
-      { subject: "TX-9F21", buyer: "Maya", seller: "Ari Home", status: "held", action: "Release eligible", severity: "positive" },
-      { subject: "TX-8A11", buyer: "Devon", seller: "Vault Finds", status: "disputed", action: "Open case", severity: "high" },
-      { subject: "TX-7C04", buyer: "Sam", seller: "Parts Depot", status: "paid", action: "Capture", severity: "medium" }
-    ],
+    rows: [],
     workflows: sharedWorkflow,
     queries: ["admin_transaction_monitor", "admin_transaction_ledger", "admin_reconciliation_exceptions"],
     actions: ["Hold", "Release", "Refund", "Open dispute", "Add note"]
@@ -190,16 +166,12 @@ export const adminPageConfigs: AdminPageConfig[] = [
     icon: BadgeDollarSign,
     primaryAction: "Review payout",
     metrics: [
-      { label: "Authorized", value: "$33.1k", detail: "Capture windows watched", trend: "+5%" },
-      { label: "Payout failures", value: "4", detail: "Restricted accounts", trend: "Needs action" },
-      { label: "Webhook lag", value: "12s", detail: "p95 delivery delay", trend: "Healthy" }
+      { label: "Authorized", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Payout failures", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Webhook lag", value: "0", detail: "Loaded from the database for this admin role." }
     ],
     columns: [{ label: "Payment", key: "subject" }, { label: "Provider", key: "provider" }, { label: "Status", key: "status" }, { label: "Amount", key: "amount" }, { label: "Action", key: "action" }],
-    rows: [
-      { subject: "pi_3Qr...", provider: "Stripe", status: "held", amount: "$840", action: "Release when delivered", severity: "medium" },
-      { subject: "po_1Ab...", provider: "Stripe", status: "failed", amount: "$212", action: "Review seller account", severity: "high" },
-      { subject: "dp_4Zx...", provider: "Stripe", status: "chargeback", amount: "$1,220", action: "Submit evidence", severity: "critical" }
-    ],
+    rows: [],
     workflows: sharedWorkflow,
     queries: ["admin_payment_monitor", "admin_payout_monitor", "admin_webhook_health"],
     actions: ["Capture", "Refund", "Hold payout", "Release payout", "Sync Stripe"]
@@ -212,16 +184,12 @@ export const adminPageConfigs: AdminPageConfig[] = [
     icon: Bot,
     primaryAction: "Retry task",
     metrics: [
-      { label: "AI calls", value: "8.7k", detail: "Last 24 hours across assistant tasks", trend: "+9%" },
-      { label: "Failures", value: "11", detail: "Mostly image parsing and vendor timeouts", trend: "-18%" },
-      { label: "Estimated cost", value: "$214", detail: "Daily token and vision spend", trend: "+$18" }
+      { label: "AI calls", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Failures", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Estimated cost", value: "0", detail: "Loaded from the database for this admin role." }
     ],
     columns: [{ label: "Usage event", key: "subject" }, { label: "Tool", key: "agent" }, { label: "Status", key: "status" }, { label: "Latency", key: "latency" }, { label: "Action", key: "action" }],
-    rows: [
-      { subject: "listing-copy", agent: "Seller assistant", status: "succeeded", latency: "3.2s", action: "Inspect", severity: "positive" },
-      { subject: "image-moderation", agent: "Safety check", status: "failed", latency: "timeout", action: "Retry", severity: "high" },
-      { subject: "search-intent", agent: "Search assistant", status: "running", latency: "8.1s", action: "Trace", severity: "medium" }
-    ],
+    rows: [],
     workflows: sharedWorkflow,
     queries: ["admin_ai_task_monitor", "admin_agent_health", "admin_ai_cost_summary"],
     actions: ["Retry", "Cancel", "Pause tool", "Inspect input", "Create incident"]
@@ -234,16 +202,12 @@ export const adminPageConfigs: AdminPageConfig[] = [
     icon: Search,
     primaryAction: "Export search terms",
     metrics: [
-      { label: "Searches", value: "58.2k", detail: "Last 7 days", trend: "+14%" },
-      { label: "Zero result", value: "7.8%", detail: "Needs category supply", trend: "-0.6%" },
-      { label: "CTR", value: "31.4%", detail: "Result to listing view", trend: "+2.3%" }
+      { label: "Searches", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Zero result", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "CTR", value: "0", detail: "Loaded from the database for this admin role." }
     ],
     columns: [{ label: "Query", key: "subject" }, { label: "Searches", key: "searches" }, { label: "Results", key: "results" }, { label: "CTR", key: "ctr" }, { label: "Action", key: "action" }],
-    rows: [
-      { subject: "standing desk", searches: "1,240", results: "84 avg", ctr: "39%", action: "Boost supply", severity: "positive" },
-      { subject: "electric scooter", searches: "940", results: "0 avg", ctr: "0%", action: "Create demand alert", severity: "high" },
-      { subject: "sony a7iv", searches: "722", results: "12 avg", ctr: "44%", action: "Watch fraud", severity: "medium" }
-    ],
+    rows: [],
     workflows: sharedWorkflow,
     queries: ["admin_search_terms", "admin_zero_result_searches", "admin_search_conversion"],
     actions: ["Export", "Create supply alert", "Annotate ranking", "Open segment"]
@@ -256,16 +220,12 @@ export const adminPageConfigs: AdminPageConfig[] = [
     icon: LineChart,
     primaryAction: "Schedule report",
     metrics: [
-      { label: "GMV", value: "$1.28M", detail: "30-day rolling", trend: "+18%" },
-      { label: "Net revenue", value: "$96.4k", detail: "Fees minus refunds", trend: "+12%" },
-      { label: "Take rate", value: "7.5%", detail: "Blended marketplace fee", trend: "Stable" }
+      { label: "GMV", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Net revenue", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Take rate", value: "0", detail: "Loaded from the database for this admin role." }
     ],
     columns: [{ label: "Segment", key: "subject" }, { label: "GMV", key: "gmv" }, { label: "Fees", key: "fees" }, { label: "Refunds", key: "refunds" }, { label: "Action", key: "action" }],
-    rows: [
-      { subject: "Electronics", gmv: "$412k", fees: "$31k", refunds: "$8.2k", action: "Open category", severity: "positive" },
-      { subject: "Luxury", gmv: "$221k", fees: "$19k", refunds: "$14k", action: "Review trust", severity: "high" },
-      { subject: "Home", gmv: "$188k", fees: "$11k", refunds: "$2.1k", action: "Grow supply", severity: "positive" }
-    ],
+    rows: [],
     workflows: sharedWorkflow,
     queries: ["admin_revenue_metrics", "admin_category_revenue", "admin_refund_chargeback_summary"],
     actions: ["Compare period", "Export CSV", "Schedule", "Annotate"]
@@ -278,16 +238,12 @@ export const adminPageConfigs: AdminPageConfig[] = [
     icon: SlidersHorizontal,
     primaryAction: "Create override",
     metrics: [
-      { label: "Active overrides", value: "31", detail: "12 expire this week", trend: "+3" },
-      { label: "Pending approval", value: "6", detail: "Requires risk lead", trend: "2 urgent" },
-      { label: "Avg adjustment", value: "+4.2", detail: "Weighted trust impact", trend: "Controlled" }
+      { label: "Active overrides", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Pending approval", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Avg adjustment", value: "0", detail: "Loaded from the database for this admin role." }
     ],
     columns: [{ label: "User", key: "subject" }, { label: "Adjustment", key: "adjustment" }, { label: "Reason", key: "reason" }, { label: "Expires", key: "expires" }, { label: "Action", key: "action" }],
-    rows: [
-      { subject: "Vault Finds", adjustment: "-18", reason: "Counterfeit review", expires: "7 days", action: "Approve", severity: "high" },
-      { subject: "Ari Home", adjustment: "+5", reason: "Manual verification", expires: "30 days", action: "Monitor", severity: "positive" },
-      { subject: "devon@example.com", adjustment: "-40", reason: "Confirmed abuse", expires: "Permanent", action: "Ban user", severity: "critical" }
-    ],
+    rows: [],
     workflows: sharedWorkflow,
     queries: ["admin_trust_override_queue", "admin_trust_score_history", "admin_trust_override_audit"],
     actions: ["Create", "Approve", "Expire", "Recalculate", "Audit"]
@@ -300,16 +256,12 @@ export const adminPageConfigs: AdminPageConfig[] = [
     icon: Activity,
     primaryAction: "Export logs",
     metrics: [
-      { label: "Events today", value: "9.4k", detail: "Admin, system, and AI", trend: "+4%" },
-      { label: "Sensitive actions", value: "64", detail: "Ban, refund, trust override", trend: "8 reviewed" },
-      { label: "Retention", value: "365d", detail: "Policy enforced", trend: "Compliant" }
+      { label: "Events today", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Sensitive actions", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Retention", value: "0", detail: "Loaded from the database for this admin role." }
     ],
     columns: [{ label: "Event", key: "subject" }, { label: "Actor", key: "actor" }, { label: "Target", key: "target" }, { label: "When", key: "when" }, { label: "Action", key: "action" }],
-    rows: [
-      { subject: "user.suspend", actor: "risk@ffm", target: "devon@example.com", when: "4m ago", action: "Inspect", severity: "high" },
-      { subject: "listing.approve", actor: "moderator@ffm", target: "Vintage desk", when: "12m ago", action: "Open listing", severity: "low" },
-      { subject: "trust.override", actor: "lead@ffm", target: "Vault Finds", when: "22m ago", action: "Review", severity: "critical" }
-    ],
+    rows: [],
     workflows: [
       { title: "Capture", description: "Every admin mutation, AI moderation decision, and payment event writes before/after state.", owner: "Platform", automation: "Database functions and API middleware" },
       { title: "Review", description: "Filter by actor, permission, target, severity, IP hash, user agent, and time range.", owner: "Security", automation: "Sensitive-action saved searches" },
@@ -326,16 +278,12 @@ export const adminPageConfigs: AdminPageConfig[] = [
     icon: Settings,
     primaryAction: "Update policy",
     metrics: [
-      { label: "Active policies", value: "24", detail: "Moderation, fraud, payment, and support workflows", trend: "Current" },
-      { label: "Approval gates", value: "9", detail: "Sensitive actions require second review", trend: "+2" },
-      { label: "Queue automations", value: "17", detail: "Routing, SLA, escalation, and notifications", trend: "Healthy" }
+      { label: "Active policies", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Approval gates", value: "0", detail: "Loaded from the database for this admin role." },
+      { label: "Queue automations", value: "0", detail: "Loaded from the database for this admin role." }
     ],
     columns: [{ label: "Setting", key: "subject" }, { label: "Area", key: "area" }, { label: "Status", key: "status" }, { label: "Owner", key: "owner" }, { label: "Action", key: "action" }],
-    rows: [
-      { subject: "High-risk listing hold", area: "Moderation", status: "enabled", owner: "Risk", action: "Edit threshold", severity: "positive" },
-      { subject: "Refund approval gate", area: "Payments", status: "requires lead", owner: "Finance", action: "Review policy", severity: "medium" },
-      { subject: "Fraud cluster escalation", area: "Fraud", status: "enabled", owner: "Trust", action: "Test routing", severity: "high" }
-    ],
+    rows: [],
     workflows: [
       { title: "Propose policy", description: "Draft policy changes with owner, expected impact, rollout window, and rollback plan.", owner: "Ops lead", automation: "Policy diff and impact checklist" },
       { title: "Approve rollout", description: "Require role-gated approval for sensitive queues, fraud thresholds, payment gates, and admin permissions.", owner: "Super admin", automation: "Approval gate and audit event" },
@@ -347,10 +295,10 @@ export const adminPageConfigs: AdminPageConfig[] = [
 ];
 
 export const overviewCards = [
-  { title: "Risk queue", value: "187", detail: "Listings, reports, disputes, and fraud signals awaiting action", icon: ShieldCheck },
-  { title: "Users needing action", value: "61", detail: "Suspensions, appeals, verification, and high-risk sellers", icon: Ban },
-  { title: "Payments monitored", value: "$96.2k", detail: "Escrow, payout, chargeback, and refund exposure", icon: Scale },
-  { title: "Analytics health", value: "99.8%", detail: "Search, revenue, audit, and AI event pipelines", icon: AlertTriangle }
+  { title: "Risk queue", value: "0", detail: "Loaded from the database for this admin role.", icon: ShieldCheck },
+  { title: "Users needing action", value: "0", detail: "Loaded from the database for this admin role.", icon: Ban },
+  { title: "Payments monitored", value: "0", detail: "Loaded from the database for this admin role.", icon: Scale },
+  { title: "Analytics health", value: "0", detail: "Loaded from the database for this admin role.", icon: AlertTriangle }
 ];
 
 const primaryAdminSlugs = [
