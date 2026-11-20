@@ -247,7 +247,7 @@ export async function getSellerProfile(id: string): Promise<{ seller: SellerProf
   try {
     const supabase = createAdminClient();
     const [{ data: profile, error: profileError }, { data: trust, error: trustError }, { data: listingRows, error: listingsError }] = await Promise.all([
-      (supabase as any).from("profiles").select("user_id, display_name, username, bio, avatar_url, banner_url, location_label, seller_headline, response_time_minutes").eq("user_id", id).maybeSingle(),
+      (supabase as any).from("public_profiles").select("user_id, display_name, username, bio, avatar_url, banner_url, location_label, seller_headline, response_time_minutes").eq("user_id", id).maybeSingle(),
       (supabase as any).from("trust_scores").select("score, seller_score, completed_transactions, review_count, fraud_risk_level").eq("user_id", id).maybeSingle(),
       (supabase as any).from("listing_search_documents").select("*").eq("seller_id", id).eq("status", "active").order("published_at", { ascending: false }).limit(12)
     ]);
