@@ -24,7 +24,7 @@ export default defineConfig({
       },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "pixel-7", use: { ...devices["Pixel 7"] }, testMatch: /mobile-layout\.spec\.ts|core-flows\.spec\.ts|a11y\.spec\.ts|money-actions\.spec\.ts/ },
+    { name: "pixel-7", use: { ...devices["Pixel 7"], deviceScaleFactor: 2 }, testMatch: /mobile-layout\.spec\.ts|core-flows\.spec\.ts|a11y\.spec\.ts|money-actions\.spec\.ts/ },
     {
       name: "iphone-14",
       use: { ...devices["iPhone 14"], browserName: "chromium", defaultBrowserType: "chromium" },
