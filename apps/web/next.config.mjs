@@ -56,6 +56,7 @@ const nextConfig = {
   // Playwright starts `next dev` after `next build`. A separate directory keeps
   // the production webpack graph from being served as a dev module map.
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  ...(process.env.FFM_HIDE_DEV_INDICATOR === "true" ? { devIndicators: false } : {}),
   allowedDevOrigins: ["127.0.0.1"],
   async headers() {
     return [
