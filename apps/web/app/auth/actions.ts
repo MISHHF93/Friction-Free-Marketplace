@@ -66,7 +66,7 @@ export async function loginAction(_previousState: AuthActionState, formData: For
     return { status: "error", message: formatValidationError(parsed.error) };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
@@ -90,7 +90,7 @@ export async function signupAction(_previousState: AuthActionState, formData: Fo
     return { status: "error", message: formatValidationError(parsed.error) };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const redirectTo = new URL(`/auth/callback?next=${encodeURIComponent(next)}`, publicEnv.NEXT_PUBLIC_APP_URL).toString();
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
@@ -142,7 +142,7 @@ export async function oauthSignInAction(formData: FormData) {
     redirect(`/login?next=${encodeURIComponent(next)}&authError=${encodeURIComponent("Unsupported sign-on provider.")}`);
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const redirectTo = new URL(`/auth/callback?next=${encodeURIComponent(next)}`, publicEnv.NEXT_PUBLIC_APP_URL).toString();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: provider.data,
@@ -162,7 +162,7 @@ export async function devBypassAction(formData: FormData) {
 }
 
 export async function logoutAction() {
-  const supabase = createClient();
+  const supabase = await createClient();
   await supabase.auth.signOut();
   const cookieStore = await cookies();
   cookieStore.delete(DEV_AUTH_BYPASS_COOKIE);
@@ -183,7 +183,7 @@ export async function updateAccountAction(_previousState: AuthActionState, formD
     return { status: "error", message: formatValidationError(parsed.error) };
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
     error: userError
@@ -221,7 +221,7 @@ export async function deleteAccountAction(formData: FormData) {
     redirect("/account/settings?deleteError=Type%20DELETE%20to%20confirm");
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/account/settings");
 

@@ -9,8 +9,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { ToastCenter } from "@/components/ui/toast-center";
 import { GlobalAssistant } from "@/components/ai/global-assistant";
 import { brandProfile } from "@/lib/brand-profile";
-import { getDevBypassSession } from "@/lib/auth/dev-bypass-session";
-import { createClient } from "@/lib/supabase/server";
+import { getMarketplaceSession } from "@/lib/auth/session";
 import { MenuDisclosure } from "@/components/menu-disclosure";
 import { cn } from "@/lib/utils";
 
@@ -75,14 +74,9 @@ const footerSections = [
 ];
 
 async function AuthNav() {
-  const supabase = createClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  const localUser = (await getDevBypassSession()).user;
-  const signedIn = Boolean(user || localUser);
+  const session = await getMarketplaceSession();
 
-  if (!signedIn) {
+  if (!session) {
     return (
       <>
         <Link href="/login" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "hidden sm:inline-flex")}>
@@ -108,7 +102,7 @@ async function AuthNav() {
         summary={
           <>
           <UserRound className="h-4 w-4" />
-          <span className="hidden max-w-28 truncate sm:inline">{user?.email ?? localUser?.email ?? "Local user"}</span>
+          <span className="hidden max-w-28 truncate sm:inline">{session.displayName}</span>
           <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
           </>
         }
@@ -285,7 +279,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
                 <h2 className="font-bold text-white">{section.title}</h2>
                 <ul className="mt-4 space-y-3 text-sm text-slate-300">
                   {section.links.map((link) => (
-                    <li key={link.href}>
+                    <li key={`${section.title}-${link.label}`}>
                       <Link href={link.href} className="hover:text-white">{link.label}</Link>
                     </li>
                   ))}

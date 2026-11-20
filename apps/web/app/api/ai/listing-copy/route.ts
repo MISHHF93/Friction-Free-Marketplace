@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   if (!isTrustedMutationOrigin(request)) {
     return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   }
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return NextResponse.json({ error: "Sign in to generate AI listing copy." }, { status: 401 });
   let rateLimit;

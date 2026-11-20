@@ -7,7 +7,7 @@ export function paymentAccountEligibility(user: { status: string | null } | null
 }
 
 export async function requireUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
 
   if (error || !data.user) {

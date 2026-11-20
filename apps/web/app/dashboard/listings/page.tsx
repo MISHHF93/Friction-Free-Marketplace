@@ -30,7 +30,7 @@ type ListingRow = {
 
 async function getListings() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();

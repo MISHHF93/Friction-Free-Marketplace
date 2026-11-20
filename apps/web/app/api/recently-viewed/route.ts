@@ -6,7 +6,7 @@ import { searchMarketplace } from "@/lib/search/discovery";
 
 export async function GET() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ listings: [] });
 
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
   const { listingId } = (await request.json()) as { listingId?: string };
   if (!listingId) return NextResponse.json({ error: "listingId is required." }, { status: 400 });
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ ok: true, anonymous: true });
 

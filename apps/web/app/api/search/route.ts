@@ -12,7 +12,7 @@ function validationError(error: unknown) {
 }
 
 async function getSearchUserId() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   return user?.id ?? null;
 }

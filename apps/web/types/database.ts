@@ -37,6 +37,7 @@ export type Database = {
           seller_headline: string | null;
           response_time_minutes: number | null;
           preferences: Json;
+          locale: string;
           created_at: string;
           updated_at: string;
         };

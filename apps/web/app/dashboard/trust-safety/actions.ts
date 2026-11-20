@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createTrustSafetyReport, submitVerificationCheck } from "@/lib/trust-safety/service";
 
 async function requireUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error("Authentication required.");
   return { supabase, user };

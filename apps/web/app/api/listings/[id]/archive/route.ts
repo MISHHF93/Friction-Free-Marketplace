@@ -7,7 +7,7 @@ import { setListingStatus } from "@/lib/listings/persistence";
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: listingId } = await params;
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: "Sign in to archive this listing." }, { status: 401 });
 

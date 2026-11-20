@@ -26,7 +26,7 @@ function assuranceLabel(assurance: string) {
 }
 
 export default async function VerificationPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const summary = user ? await getUserTrustSafetySummary(supabase as any, user.id) : null;
   const checks = summary?.verification ?? [];

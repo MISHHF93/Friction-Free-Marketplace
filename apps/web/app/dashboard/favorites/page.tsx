@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getFavoritesDashboard } from "@/lib/saves/user-saves";
 
 export default async function FavoritesPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { favorites, stats, source } = user
     ? await getFavoritesDashboard(user.id)

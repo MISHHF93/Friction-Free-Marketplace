@@ -2,6 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { updateAccountAction, type AuthActionState } from "@/app/auth/actions";
+import { accountCopy } from "@/lib/i18n/account-copy";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,7 +41,7 @@ export function AccountSettingsForm({ email, profile }: AccountSettingsFormProps
         <p className="text-xs text-muted-foreground">Email changes should go through Supabase Auth verification before they are applied.</p>
       </div>
       <div className="grid gap-2">
-        <Label htmlFor="displayName">Display name</Label>
+        <Label htmlFor="displayName">{accountCopy.displayName}</Label>
         <Input id="displayName" name="displayName" defaultValue={profile?.display_name ?? "Marketplace member"} required minLength={2} maxLength={80} />
       </div>
       <div className="grid gap-2">

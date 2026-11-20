@@ -13,7 +13,7 @@ import { getUserTrustSafetySummary } from "@/lib/trust-safety/service";
 import { createTrustSafetyReportAction } from "@/app/dashboard/trust-safety/actions";
 
 export default async function TrustSafetyCenterPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const summary = user ? await getUserTrustSafetySummary(supabase as any, user.id) : null;
 

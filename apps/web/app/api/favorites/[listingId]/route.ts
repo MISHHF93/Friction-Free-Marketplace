@@ -5,7 +5,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
 async function requireUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { supabase, user: null, response: NextResponse.json({ error: "Sign in to manage favorites." }, { status: 401 }) };
   return { supabase, user, response: null };

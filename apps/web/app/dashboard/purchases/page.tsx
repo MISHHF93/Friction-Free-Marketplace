@@ -36,7 +36,7 @@ function purchaseMilestone(transaction: TransactionRow) {
 }
 
 async function getBuyerPurchases(userId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await (supabase as any)
     .from("transactions")
     .select("id,listing_id,status,total_amount,currency,created_at,updated_at,paid_at,delivered_at,completed_at")
@@ -53,7 +53,7 @@ async function getBuyerPurchases(userId: string) {
 }
 
 export default async function PurchasesPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/dashboard/purchases");
   const purchases = await getBuyerPurchases(user.id);

@@ -8,7 +8,7 @@ type Row = Record<string, any>;
 async function getPersonalizationSeed(userId: string | null) {
   if (!userId) return {};
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const [{ data: views }, { data: favorites }, { data: savedSearches }] = await Promise.all([
       (supabase as any).from("recently_viewed_listings").select("listing_id").eq("user_id", userId).order("viewed_at", { ascending: false }).limit(8),
       (supabase as any).from("favorites").select("listing_id").eq("user_id", userId).order("created_at", { ascending: false }).limit(8),
@@ -33,7 +33,7 @@ async function getPersonalizationSeed(userId: string | null) {
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const seed = await getPersonalizationSeed(user?.id ?? null);
   const params = parseDiscoverySearchParamsFromUrl(url);

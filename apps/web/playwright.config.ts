@@ -14,6 +14,10 @@ export default defineConfig({
         command: "npm run dev",
         url: "http://127.0.0.1:3001",
         reuseExistingServer: !process.env.CI,
+        env: {
+          ...process.env,
+          FFM_E2E_AUTH: "true"
+        },
         timeout: 120_000
       },
   projects: [

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { DEV_AUTH_BYPASS_COOKIE, isDevAuthBypassCookieValue, isDevBypassBlockedPath } from "@/lib/auth/dev-bypass";
+import { E2E_USER_COOKIE, e2eUserFromCookie } from "@/lib/auth/e2e-session";
 import { isTrustedMutationOrigin } from "@/lib/security/request-origin";
 
 type SupabaseUser = { id: string };
@@ -195,6 +196,13 @@ export async function proxy(request: NextRequest) {
   }
 
   const host = request.headers.get("host") ?? request.nextUrl.host;
+  const e2eUser = e2eUserFromCookie(request.cookies.get(E2E_USER_COOKIE)?.value, host);
+  if (e2eUser && !pathname.startsWith("/admin")) {
+    if (isAuthRoute(pathname)) {
+      return NextResponse.redirect(getAuthenticatedRedirectUrl(request));
+    }
+    if (isProtectedRoute(pathname)) return NextResponse.next();
+  }
   const bypassCookie = request.cookies.get(DEV_AUTH_BYPASS_COOKIE)?.value;
   if (isDevAuthBypassCookieValue(bypassCookie, host) && !isDevBypassBlockedPath(pathname)) {
     if (isAuthRoute(pathname)) {

@@ -103,7 +103,7 @@ function currentSearchString(params: DiscoverySearchParams, overrides: Partial<R
 
 export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchParams: SearchParams; mode?: "browse" | "search" }) {
   const params = parseDiscoveryParamsFromRecord(searchParams, { sort: mode === "browse" ? "recommended" : "newest", limit: discoveryPageSize });
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const [results, recommended, trending, broadRecommendations, favoriteIds] = await Promise.all([
     searchMarketplace(params),
