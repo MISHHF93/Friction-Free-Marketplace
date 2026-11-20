@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { canRestrictUser } from "@/lib/admin/permissions";
+import { settleDispute } from "@/lib/payments/settlement";
 import { recordAdminAction } from "@/lib/admin/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { syncListingToSearch } from "@/lib/search/discovery";
@@ -49,7 +50,8 @@ export async function applyAdminMutation(input: {
   const parsed = z.object({
     action: z.string(),
     target_id: uuidSchema,
-    reason: z.string().trim().min(3).max(2000).optional()
+    reason: z.string().trim().min(3).max(2000).optional(),
+    outcome: z.enum(["refund_buyer", "release_seller", "split"]).optional()
   }).safeParse(input.body);
   if (!parsed.success || !actions.includes(parsed.data.action as never)) {
     return {
@@ -62,7 +64,7 @@ export async function applyAdminMutation(input: {
   }
 
   const supabase = createAdminClient() as any;
-  const { action, target_id: targetId, reason } = parsed.data;
+  const { action, target_id: targetId, reason, outcome } = parsed.data;
   let update;
 
   switch (input.endpoint) {
@@ -101,14 +103,20 @@ export async function applyAdminMutation(input: {
         assigned_admin_id: input.adminId
       }).eq("id", targetId).select("id,status").maybeSingle();
       break;
-    case "disputes":
+    case "disputes": {
+      if (action === "close") {
+        if (!reason || !outcome) return { response: NextResponse.json({ error: "Closing a dispute requires a reason and an outcome." }, { status: 400 }) };
+        const settled = await settleDispute(supabase, { disputeId: targetId, outcome, actorId: input.adminId, reason });
+        if ("error" in settled && settled.error) return { response: NextResponse.json({ error: settled.error }, { status: settled.statusCode ?? 409 }) };
+      }
       update = await supabase.from("disputes").update({
         status: action === "review" ? "under_review" : "closed",
-        resolution: reason ?? null,
+        resolution: action === "close" ? `${outcome}: ${reason}` : reason ?? null,
         assigned_admin_id: input.adminId,
         resolved_at: action === "close" ? new Date().toISOString() : null
       }).eq("id", targetId).select("id,status").maybeSingle();
       break;
+    }
     case "fraud-alerts": {
       const signal = await supabase.from("fraud_signals").select("id,user_id,listing_id,payload").eq("id", targetId).maybeSingle();
       update = await supabase.from("fraud_signals").update({

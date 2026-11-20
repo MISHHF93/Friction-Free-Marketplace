@@ -32,6 +32,11 @@ async function postAction(path: string, body?: Record<string, unknown>) {
 export function EscrowActions({ transactionId, role, status, amount, currency = "USD" }: EscrowActionsProps) {
   const router = useRouter();
   const refundDialog = useRef<HTMLDialogElement>(null);
+  const releaseDialog = useRef<HTMLDialogElement>(null);
+  const shipDialog = useRef<HTMLDialogElement>(null);
+  const deliverDialog = useRef<HTMLDialogElement>(null);
+  const [carrier, setCarrier] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const base = `/api/stripe/transactions/${transactionId}`;
@@ -52,11 +57,13 @@ export function EscrowActions({ transactionId, role, status, amount, currency = 
   }
 
   const canCapture = role === "seller" && status === "paid";
-  const canRelease = role === "buyer" && status === "escrowed";
-  const canRefund = role === "seller" && ["paid", "escrowed", "disputed"].includes(status);
-  const canDispute = role === "buyer" && ["paid", "escrowed"].includes(status);
+  const canShip = role === "seller" && status === "escrowed";
+  const canDeliver = role === "buyer" && status === "shipped";
+  const canRelease = role === "buyer" && ["escrowed", "shipped", "delivered"].includes(status);
+  const canRefund = role === "seller" && ["paid", "escrowed", "shipped", "delivered", "disputed"].includes(status);
+  const canDispute = role === "buyer" && ["paid", "escrowed", "shipped", "delivered"].includes(status);
 
-  if (!canCapture && !canRelease && !canRefund && !canDispute) return null;
+  if (!canCapture && !canShip && !canDeliver && !canRelease && !canRefund && !canDispute) return null;
 
   return (
     <div className="grid gap-2">
@@ -65,10 +72,51 @@ export function EscrowActions({ transactionId, role, status, amount, currency = 
           {pending === "Capture" ? "Capturing…" : "Capture payment"}
         </Button>
       ) : null}
+      {canShip ? (
+        <>
+          <Button type="button" size="sm" disabled={pending !== null} onClick={() => shipDialog.current?.showModal()}>Mark shipped</Button>
+          <dialog ref={shipDialog} className="w-[min(100%,28rem)] rounded-2xl border border-border bg-background p-5 text-foreground">
+            <h2 className="text-lg font-bold">Mark this order shipped?</h2>
+            <label className="mt-3 grid gap-1 text-sm font-semibold">Carrier
+              <input className="min-h-11 rounded-xl border border-border px-3" value={carrier} onChange={(event) => setCarrier(event.target.value)} />
+            </label>
+            <label className="mt-3 grid gap-1 text-sm font-semibold">Tracking number
+              <input className="min-h-11 rounded-xl border border-border px-3" value={trackingNumber} onChange={(event) => setTrackingNumber(event.target.value)} />
+            </label>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button type="button" size="sm" disabled={pending !== null || carrier.trim().length < 2 || trackingNumber.trim().length < 4} onClick={() => { shipDialog.current?.close(); void run("Ship", `${base}/ship`, { carrier: carrier.trim(), trackingNumber: trackingNumber.trim() }); }}>Confirm shipment</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => shipDialog.current?.close()}>Cancel</Button>
+            </div>
+          </dialog>
+        </>
+      ) : null}
+      {canDeliver ? (
+        <>
+          <Button type="button" size="sm" disabled={pending !== null} onClick={() => deliverDialog.current?.showModal()}>Confirm delivery</Button>
+          <dialog ref={deliverDialog} className="w-[min(100%,28rem)] rounded-2xl border border-border bg-background p-5 text-foreground">
+            <h2 className="text-lg font-bold">Confirm delivery?</h2>
+            <p className="mt-2 text-sm">This tells the seller the order arrived. You can release the held funds separately.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button type="button" size="sm" disabled={pending !== null} onClick={() => { deliverDialog.current?.close(); void run("Delivery", `${base}/delivered`); }}>Confirm delivery</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => deliverDialog.current?.close()}>Cancel</Button>
+            </div>
+          </dialog>
+        </>
+      ) : null}
       {canRelease ? (
-        <Button type="button" size="sm" disabled={pending !== null} onClick={() => run("Release", `${base}/release`)}>
-          {pending === "Release" ? "Releasing…" : "Confirm receipt and release"}
-        </Button>
+        <>
+          <Button type="button" size="sm" disabled={pending !== null} onClick={() => releaseDialog.current?.showModal()}>
+            {pending === "Release" ? "Releasing…" : "Confirm delivery / Release"}
+          </Button>
+          <dialog ref={releaseDialog} className="w-[min(100%,28rem)] rounded-2xl border border-border bg-background p-5 text-foreground">
+            <h2 className="text-lg font-bold">Release {refundLabel} to the seller?</h2>
+            <p className="mt-2 text-sm">This pays the seller from the held funds. It cannot be undone from this screen.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button type="button" size="sm" disabled={pending !== null} onClick={() => { releaseDialog.current?.close(); void run("Release", `${base}/release`); }}>Confirm release</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => releaseDialog.current?.close()}>Cancel</Button>
+            </div>
+          </dialog>
+        </>
       ) : null}
       {canRefund ? (
         <>
