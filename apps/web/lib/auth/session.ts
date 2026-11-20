@@ -15,7 +15,8 @@ export async function getMarketplaceSession(): Promise<MarketplaceSession | null
   const headerStore = await headers();
   const cookieStore = await cookies();
   const host = headerStore.get("host");
-  const e2eUser = e2eUserFromCookie(cookieStore.get("ffm-e2e-user")?.value, host);
+  const remoteAddress = headerStore.get("x-real-ip") || headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+  const e2eUser = e2eUserFromCookie(cookieStore.get("ffm-e2e-user")?.value, host, remoteAddress);
   if (e2eUser) return { ...e2eUser, source: "e2e" };
 
   const supabase = await createClient();

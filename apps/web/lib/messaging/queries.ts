@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ConversationSummary, MessagingUser } from "./types";
+import { assertConversationParticipant } from "@/lib/messaging/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type EmbeddedUser = {
@@ -71,7 +72,7 @@ export async function getConversationSummaries(supabase: SupabaseClient<any>, us
   return Promise.all(((data ?? []) as Array<ConversationSummary & { buyer: EmbeddedUser; seller: EmbeddedUser }>).map(normalizeConversation));
 }
 
-export async function getConversationSummaryById(supabase: SupabaseClient<any>, conversationId: string) {
+export async function getConversationSummaryById(supabase: SupabaseClient<any>, conversationId: string, userId: string) {
   const { data, error } = await (supabase as any)
     .from("conversations")
     .select(conversationSummarySelect)
@@ -80,5 +81,7 @@ export async function getConversationSummaryById(supabase: SupabaseClient<any>, 
     .single();
 
   if (error) throw error;
-  return normalizeConversation(data as ConversationSummary & { buyer: EmbeddedUser; seller: EmbeddedUser });
+  const summary = await normalizeConversation(data as ConversationSummary & { buyer: EmbeddedUser; seller: EmbeddedUser });
+  assertConversationParticipant(summary, userId);
+  return summary;
 }

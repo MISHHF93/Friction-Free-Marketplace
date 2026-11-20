@@ -16,10 +16,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Sign in to view this conversation." }, { status: 401 });
-    const conversation = await getConversationSummaryById(supabase, id);
-    if (![conversation.buyer_id, conversation.seller_id].includes(user.id)) {
-      return NextResponse.json({ error: "Conversation not found." }, { status: 404 });
-    }
+    const conversation = await getConversationSummaryById(supabase, id, user.id);
     return NextResponse.json({ conversation });
   } catch (error) {
     return errorResponse(error);

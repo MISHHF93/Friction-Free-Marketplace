@@ -1,13 +1,12 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEV_AUTH_BYPASS_COOKIE, devBypassCookieSecure, isDevAuthBypassEnabled } from "@/lib/auth/dev-bypass";
-import { getRequestHost } from "@/lib/auth/dev-bypass-session";
 import { publicEnv } from "@/lib/env";
 import { authSchema, profileSettingsSchema, signupSchema } from "@/lib/validations/auth";
 
@@ -37,8 +36,10 @@ function formatValidationError(error: z.ZodError) {
 }
 
 async function establishLocalAuthSession(next: string): Promise<never> {
-  const host = await getRequestHost();
-  if (!isDevAuthBypassEnabled(host)) {
+  const headerStore = await headers();
+  const host = headerStore.get("host");
+  const remoteAddress = headerStore.get("x-real-ip") || headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
+  if (!isDevAuthBypassEnabled(host, remoteAddress)) {
     redirect(`/login?next=${encodeURIComponent(next)}&authError=${encodeURIComponent("Developer bypass is not available in this environment.")}`);
   }
 

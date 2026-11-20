@@ -10,11 +10,15 @@ describe("marketplace demo-data policy", () => {
     })).toBe(false);
   });
 
-  it("requires an explicit production override", () => {
+  it("ignores the demo flag in production and unknown environments", () => {
     expect(isDemoMarketplaceDataEnabled({
       NODE_ENV: "production",
       MARKETPLACE_DEMO_MODE: "true",
-    })).toBe(true);
+    })).toBe(false);
+    expect(isDemoMarketplaceDataEnabled({
+      NODE_ENV: "staging",
+      MARKETPLACE_DEMO_MODE: "true",
+    })).toBe(false);
   });
 
   it("does not invent inventory when the database is not configured", () => {

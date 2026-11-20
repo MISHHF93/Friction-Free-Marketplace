@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { DEV_AUTH_BYPASS_COOKIE, isDevAuthBypassCookieValue, isDevBypassBlockedPath } from "@/lib/auth/dev-bypass";
 import { E2E_USER_COOKIE, e2eUserFromCookie } from "@/lib/auth/e2e-session";
+import { isAuthRoute, isProtectedRoute } from "@/lib/auth/protected-routes";
+import { contentSecurityPolicy } from "@/lib/security/csp";
 import { isTrustedMutationOrigin } from "@/lib/security/request-origin";
 
 type SupabaseUser = { id: string };
@@ -11,8 +13,6 @@ type PublicMiddlewareEnv = {
 };
 
 const BASE64_PREFIX = "base64-";
-const protectedRoutePrefixes = ["/dashboard", "/admin", "/account"] as const;
-const authRoutePaths = ["/login", "/signup"] as const;
 const serverMutationPrefixes = [
   "/api/stripe/webhooks",
   "/api/stripe/connect/webhook",
@@ -41,12 +41,22 @@ function getPublicMiddlewareEnv(): PublicMiddlewareEnv | null {
   };
 }
 
-export function isProtectedRoute(pathname: string) {
-  return protectedRoutePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+export { isAuthRoute, isProtectedRoute };
+
+function requestRemoteAddress(request: NextRequest) {
+  return request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
 }
 
-export function isAuthRoute(pathname: string) {
-  return authRoutePaths.some((route) => pathname === route);
+function continueRequest(request: NextRequest) {
+  if (process.env.NODE_ENV !== "production") return NextResponse.next();
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const policy = contentSecurityPolicy({ development: false, nonce });
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", policy);
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("Content-Security-Policy", policy);
+  return response;
 }
 
 export function getSafeRedirectPath(value: string | null, fallback = "/dashboard") {
@@ -187,34 +197,35 @@ export async function proxy(request: NextRequest) {
     if (mutationMethods.has(request.method) && !serverMutation && !isTrustedMutationOrigin(request)) {
       return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
     }
-    return NextResponse.next();
+    return continueRequest(request);
   }
   const needsAuthState = isProtectedRoute(pathname) || isAuthRoute(pathname);
 
   if (!needsAuthState) {
-    return NextResponse.next();
+    return continueRequest(request);
   }
 
   const host = request.headers.get("host") ?? request.nextUrl.host;
-  const e2eUser = e2eUserFromCookie(request.cookies.get(E2E_USER_COOKIE)?.value, host);
+  const remoteAddress = requestRemoteAddress(request);
+  const e2eUser = e2eUserFromCookie(request.cookies.get(E2E_USER_COOKIE)?.value, host, remoteAddress);
   if (e2eUser && !pathname.startsWith("/admin")) {
     if (isAuthRoute(pathname)) {
       return NextResponse.redirect(getAuthenticatedRedirectUrl(request));
     }
-    if (isProtectedRoute(pathname)) return NextResponse.next();
+    if (isProtectedRoute(pathname)) return continueRequest(request);
   }
   const bypassCookie = request.cookies.get(DEV_AUTH_BYPASS_COOKIE)?.value;
-  if (isDevAuthBypassCookieValue(bypassCookie, host) && !isDevBypassBlockedPath(pathname)) {
+  if (isDevAuthBypassCookieValue(bypassCookie, host, remoteAddress) && !isDevBypassBlockedPath(pathname)) {
     if (isAuthRoute(pathname)) {
       return NextResponse.redirect(getAuthenticatedRedirectUrl(request));
     }
-    return NextResponse.next();
+    return continueRequest(request);
   }
 
   const env = getPublicMiddlewareEnv();
 
   if (!env) {
-    return isProtectedRoute(pathname) ? NextResponse.redirect(getLoginRedirectUrl(request)) : NextResponse.next();
+    return isProtectedRoute(pathname) ? NextResponse.redirect(getLoginRedirectUrl(request)) : continueRequest(request);
   }
 
   const { user, accessToken } = await getAuthenticatedUser(request, env);
@@ -238,7 +249,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  return continueRequest(request);
 }
 
 export const config = {

@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { connection } from "next/server";
+import { headers } from "next/headers";
+import { getMarketplaceSession } from "@/lib/auth/session";
+import { documentLocale } from "@/lib/i18n/document-locale";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { SiteShell } from "@/components/site-shell";
@@ -75,8 +78,11 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   await connection();
+  const headerStore = await headers();
+  const session = await getMarketplaceSession().catch(() => null);
+  const locale = documentLocale(session?.locale, headerStore.get("accept-language"));
   return (
-    <html lang="en" dir="ltr">
+    <html lang={locale.lang} dir={locale.dir}>
       <body>
         <SiteShell>{children}</SiteShell>
         <PwaRegistrar />

@@ -27,19 +27,55 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+type ActivityItem = { id: string; title: string; detail: string; status: string; href: string | null };
+
 async function activityFor(userId: string) {
+  const empty = { items: [] as ActivityItem[], trustScore: null as number | null };
   try {
     const supabase = await createClient();
-    const [{ data: notifications }, { data: trust }] = await Promise.all([
-      supabase.from("notifications").select("id,title,body,status,action_url").eq("user_id", userId).order("created_at", { ascending: false }).limit(5),
+    const [offers, payments, conversations, searches, trust] = await Promise.all([
+      supabase.from("offers").select("id,status,amount,currency").or(`buyer_id.eq.${userId},seller_id.eq.${userId}`).order("updated_at", { ascending: false }).limit(4),
+      supabase.from("transactions").select("id,status,total_amount,currency").or(`buyer_id.eq.${userId},seller_id.eq.${userId}`).order("updated_at", { ascending: false }).limit(4),
+      supabase.from("conversations").select("id,status,last_message_at").or(`buyer_id.eq.${userId},seller_id.eq.${userId}`).order("updated_at", { ascending: false }).limit(4),
+      supabase.from("saved_searches").select("id,name,query").eq("user_id", userId).order("updated_at", { ascending: false }).limit(4),
       supabase.from("trust_scores").select("score").eq("user_id", userId).maybeSingle()
     ]);
+    const items: ActivityItem[] = [
+      ...((offers.data ?? []) as Array<{ id: string; status: string; amount: number; currency: string }>).map((offer) => ({
+        id: `offer-${offer.id}`,
+        title: "Your offer",
+        detail: `${offer.amount} ${offer.currency}`,
+        status: offer.status,
+        href: "/dashboard/offers"
+      })),
+      ...((payments.data ?? []) as Array<{ id: string; status: string; total_amount: number; currency: string }>).map((payment) => ({
+        id: `payment-${payment.id}`,
+        title: "Your payment",
+        detail: `${payment.total_amount} ${payment.currency}`,
+        status: payment.status,
+        href: "/dashboard/purchases"
+      })),
+      ...((conversations.data ?? []) as Array<{ id: string; status: string }>).map((conversation) => ({
+        id: `message-${conversation.id}`,
+        title: "Your conversation",
+        detail: "A message thread that includes this account.",
+        status: conversation.status,
+        href: `/dashboard/messages?conversation=${conversation.id}`
+      })),
+      ...((searches.data ?? []) as Array<{ id: string; name: string; query: string | null }>).map((search) => ({
+        id: `search-${search.id}`,
+        title: search.name,
+        detail: search.query || "Saved search for this account.",
+        status: "Saved",
+        href: "/dashboard/saved-searches"
+      }))
+    ];
     return {
-      notifications: (notifications ?? []) as Array<{ id: string; title: string; body: string | null; status: string; action_url: string | null }>,
-      trustScore: trust?.score == null ? null : Math.round(Number(trust.score))
+      items,
+      trustScore: trust.data?.score == null ? null : Math.round(Number(trust.data.score))
     };
   } catch {
-    return { notifications: [], trustScore: null };
+    return empty;
   }
 }
 
@@ -80,8 +116,7 @@ export default async function DashboardPage() {
   const session = await getMarketplaceSession();
   if (!session) redirect("/login?next=/dashboard");
   const counts = session.source === "supabase" ? await countsFor(session.id) : isolatedPreviewCounts(session.id);
-  const activity = session.source === "supabase" ? await activityFor(session.id) : { notifications: [], trustScore: null };
-  const unread = activity.notifications.filter((item) => item.status !== "read").length;
+  const activity = session.source === "supabase" ? await activityFor(session.id) : { items: [], trustScore: null };
   const stats = [
     { label: "Your listings", value: String(counts.listings), detail: "Listings owned by this signed-in account.", icon: Tags },
     { label: "Your offers", value: String(counts.offers), detail: "Offers where you are the buyer or seller.", icon: Wallet },
@@ -105,12 +140,12 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
-        <DashboardSectionCard icon={TrendingUp} title="Activity feed" description="Notifications stored for this account." badge={unread ? `${unread} unread` : "None"}>
-          {activity.notifications.length === 0 ? (
-            <DashboardEmptyState title="No activity yet" description="Offers, messages, and order updates for this account will show up here." />
-          ) : activity.notifications.map((item) => (
-            <DashboardListItem key={item.id} title={item.title} detail={item.body ?? "No extra detail."} status={item.status}>
-              {item.action_url?.startsWith("/") && !item.action_url.startsWith("//") ? <Button asChild size="sm" variant="outline"><Link href={item.action_url}>Open</Link></Button> : null}
+        <DashboardSectionCard icon={TrendingUp} title="Activity feed" description="Offers, payments, messages, and saved searches for this account." badge={String(activity.items.length)}>
+          {activity.items.length === 0 ? (
+            <DashboardEmptyState title="No activity yet" description="Offers, payments, messages, and saved searches for this account will show up here." />
+          ) : activity.items.map((item) => (
+            <DashboardListItem key={item.id} title={item.title} detail={item.detail} status={item.status}>
+              {item.href ? <Button asChild size="sm" variant="outline"><Link href={item.href}>Open</Link></Button> : null}
             </DashboardListItem>
           ))}
         </DashboardSectionCard>
@@ -119,8 +154,8 @@ export default async function DashboardPage() {
             <p className="text-4xl font-black">{activity.trustScore ?? "—"}</p>
             <p className="text-sm text-muted-foreground">{activity.trustScore == null ? "This account has not been scored yet." : "Current stored trust score."}</p>
           </DashboardSectionCard>
-          <DashboardSectionCard icon={Bell} title="Notification center" description="Alerts that belong to this signed-in account." badge={String(activity.notifications.length)}>
-            {activity.notifications.length === 0 ? <DashboardEmptyState title="No notifications" description="This account has no stored notifications." /> : null}
+          <DashboardSectionCard icon={Bell} title="Notification center" description="Alerts that belong to this signed-in account." badge={activity.items.length ? "From your records" : "None"}>
+            {activity.items.length === 0 ? <DashboardEmptyState title="No notifications" description="This account has no offers, payments, messages, or saved searches yet." /> : null}
             <Button asChild variant="outline" className="w-full"><Link href="/dashboard/settings">Notification settings</Link></Button>
           </DashboardSectionCard>
         </div>

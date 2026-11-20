@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/payments/auth";
 import { recordTransactionEvent } from "@/lib/payments/audit";
 import { centsToDollars, normalizeCurrency } from "@/lib/payments/money";
+import { openCheckoutStatuses } from "@/lib/payments/open-checkout";
 import { clientChargesMatchQuote, quoteCheckoutAmounts } from "@/lib/payments/quote";
 import { checkoutStripeIdempotencyKey, parseIdempotencyKey } from "@/lib/payments/idempotency";
 import { enqueueTemplateNotification } from "@/lib/notifications/service";
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
     .from("transactions")
     .select("id,buyer_id,idempotency_key")
     .eq("listing_id", listing.id)
-    .in("status", ["pending_payment", "paid", "escrowed"])
+    .in("status", [...openCheckoutStatuses])
     .limit(1)
     .maybeSingle();
   if (openSaleError) return NextResponse.json({ error: "Could not check listing availability." }, { status: 500 });

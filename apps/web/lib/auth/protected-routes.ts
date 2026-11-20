@@ -1,9 +1,10 @@
 import type { NextRequest } from "next/server";
 
-export const protectedRoutePrefixes = ["/dashboard", "/seller", "/admin", "/account"] as const;
+export const protectedRoutePrefixes = ["/dashboard", "/seller", "/assistant", "/admin", "/account"] as const;
 export const authRoutePaths = ["/login", "/signup"] as const;
 
 export function isProtectedRoute(pathname: string) {
+  if (pathname === "/sellers" || pathname.startsWith("/sellers/")) return false;
   return protectedRoutePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 }
 

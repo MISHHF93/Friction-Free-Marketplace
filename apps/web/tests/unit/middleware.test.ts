@@ -33,6 +33,9 @@ describe("middleware route helpers", () => {
   it("identifies protected and auth routes", () => {
     expect(isProtectedRoute("/dashboard")).toBe(true);
     expect(isProtectedRoute("/dashboard/listings")).toBe(true);
+    expect(isProtectedRoute("/seller")).toBe(true);
+    expect(isProtectedRoute("/assistant")).toBe(true);
+    expect(isProtectedRoute("/sellers/verified-road-bike")).toBe(false);
     expect(isProtectedRoute("/browse")).toBe(false);
     expect(isAuthRoute("/login")).toBe(true);
     expect(isAuthRoute("/signup")).toBe(true);

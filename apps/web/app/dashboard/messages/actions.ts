@@ -26,8 +26,8 @@ async function requireUser() {
 
 export async function getConversationSummaryAction(input: unknown) {
   const payload = z.object({ conversationId: uuidSchema }).parse(input);
-  const { supabase } = await requireUser();
-  return getConversationSummaryById(supabase, payload.conversationId);
+  const { supabase, user } = await requireUser();
+  return getConversationSummaryById(supabase, payload.conversationId, user.id);
 }
 
 export async function createConversationAction(input: unknown) {

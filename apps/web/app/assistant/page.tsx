@@ -1,8 +1,21 @@
+import Link from "next/link";
 import { Bot, Database, ShieldCheck } from "lucide-react";
 import { AssistantConsole } from "@/components/ai/assistant-console";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { getMarketplaceSession } from "@/lib/auth/session";
 
-export default function AssistantPage() {
+export default async function AssistantPage() {
+  const session = await getMarketplaceSession();
+  if (!session) {
+    return (
+      <section className="mx-auto max-w-3xl px-4 py-16 text-center">
+        <h1 className="text-4xl font-black tracking-tight">Sign in to use the assistant</h1>
+        <p className="mt-4 text-lg text-muted-foreground">The assistant runs against your account. Sign in before asking it to search, draft, or review marketplace activity.</p>
+        <Button asChild className="mt-6"><Link href="/login?next=/assistant">Sign in</Link></Button>
+      </section>
+    );
+  }
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="mb-8 max-w-3xl">

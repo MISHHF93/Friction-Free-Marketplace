@@ -6,6 +6,8 @@ export function isDemoMarketplaceDataEnabled(
     NEXT_PUBLIC_SUPABASE_URL?: string;
   } = process.env,
 ) {
+  if (input.NODE_ENV === "production") return false;
+  if (input.NODE_ENV !== "development" && input.NODE_ENV !== "test") return false;
   return input.MARKETPLACE_DEMO_MODE === "true";
 }
 
