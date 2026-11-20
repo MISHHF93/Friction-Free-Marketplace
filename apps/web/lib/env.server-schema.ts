@@ -8,6 +8,7 @@ export const serverEnvSchema = publicEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: requiredString("SUPABASE_SERVICE_ROLE_KEY"),
   STRIPE_SECRET_KEY: requiredString("STRIPE_SECRET_KEY"),
   STRIPE_WEBHOOK_SECRET: requiredString("STRIPE_WEBHOOK_SECRET"),
+  STRIPE_CONNECT_WEBHOOK_SECRET: z.string().trim().min(1).optional(),
   OPENAI_API_KEY: z.string().trim().min(1).optional(),
   MEILISEARCH_HOST: z.string().trim().url().optional(),
   MEILISEARCH_API_KEY: z.string().trim().min(1).optional(),

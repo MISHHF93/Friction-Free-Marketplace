@@ -1,130 +1,12 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
 import { env } from "@/lib/env.server";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { recordTransactionEvent } from "@/lib/payments/audit";
-import { centsToDollars } from "@/lib/payments/money";
-import { upsertSellerAccountFromStripe } from "@/lib/payments/connect";
-import { buildCaptureJournal, buildDisputeHoldJournal, postLedgerJournal } from "@/lib/financial/ledger";
+import { ingestStripeEvent } from "@/lib/payments/stripe-events";
+import { stripeSecretIsLive } from "@/lib/payments/stripe-mode";
 import { getStripe } from "@/lib/stripe/server";
-import { canApplyTransactionStatus, stripeSecretIsLive } from "@/lib/payments/stripe-mode";
 
 export const dynamic = "force-dynamic";
 
 const MAX_WEBHOOK_BYTES = 1_000_000;
-
-async function updateSellerAccount(account: Stripe.Account) {
-  const supabase = createAdminClient() as any;
-  await upsertSellerAccountFromStripe(supabase, account);
-}
-
-async function updatePaymentIntent(intent: Stripe.PaymentIntent) {
-  const transactionId = intent.metadata?.transaction_id;
-  if (!transactionId) return;
-  const supabase = createAdminClient() as any;
-  const { data: transaction } = await supabase.from("transactions").select("*").eq("id", transactionId).maybeSingle();
-  const { data: payment } = await supabase.from("escrow_payments").select("*").eq("provider_payment_id", intent.id).maybeSingle();
-  const chargeId = typeof intent.latest_charge === "string" ? intent.latest_charge : intent.latest_charge?.id ?? null;
-
-  if (intent.status === "requires_capture" && canApplyTransactionStatus(transaction?.status, "paid")) {
-    const paymentUpdate = await supabase.from("escrow_payments").update({ status: "authorized", authorized_at: new Date().toISOString(), provider_charge_id: chargeId }).eq("provider_payment_id", intent.id);
-    if (paymentUpdate.error) throw new Error(paymentUpdate.error.message);
-    const transactionUpdate = await supabase.from("transactions").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", transactionId);
-    if (transactionUpdate.error) throw new Error(transactionUpdate.error.message);
-    await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "payment_authorized", from_status: transaction?.status, to_status: "paid", provider_object_id: intent.id, amount: centsToDollars(intent.amount), currency: intent.currency, message: "Payment authorized; awaiting manual capture." });
-  }
-
-  if (intent.status === "succeeded") {
-    await supabase.from("escrow_payments").update({ status: "held", captured_at: new Date().toISOString(), held_at: new Date().toISOString(), provider_charge_id: chargeId }).eq("provider_payment_id", intent.id);
-    await supabase.from("transactions").update({ status: "escrowed", paid_at: new Date().toISOString() }).eq("id", transactionId);
-    if (transaction && payment) {
-      await postLedgerJournal(supabase, buildCaptureJournal({
-        transactionId,
-        totalAmount: Number(payment.amount),
-        sellerNetAmount: Number(payment.seller_net_amount),
-        platformFeeAmount: Number(payment.platform_fee_amount),
-        currency: payment.currency,
-        buyerId: transaction.buyer_id,
-        sellerId: transaction.seller_id,
-        providerPaymentId: intent.id,
-        providerChargeId: chargeId,
-      }));
-      await supabase.from("transaction_receipts").upsert({
-        transaction_id: transactionId,
-        buyer_id: transaction.buyer_id,
-        seller_id: transaction.seller_id,
-        provider: "stripe",
-        provider_payment_id: intent.id,
-        provider_charge_id: chargeId,
-        subtotal_amount: transaction.item_amount,
-        shipping_amount: transaction.shipping_amount,
-        tax_amount: transaction.tax_amount,
-        platform_fee_amount: payment.platform_fee_amount,
-        seller_net_amount: payment.seller_net_amount,
-        total_amount: payment.amount,
-        currency: payment.currency,
-        metadata: { payment_intent_status: intent.status }
-      });
-    }
-    await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "escrow_held", from_status: transaction?.status, to_status: "escrowed", provider_object_id: intent.id, amount: centsToDollars(intent.amount_received), currency: intent.currency, message: "Payment captured and held pending seller release." });
-  }
-
-  if (intent.status === "requires_payment_method") {
-    const paymentUpdate = await supabase.from("escrow_payments").update({ failure_code: intent.last_payment_error?.code ?? null }).eq("provider_payment_id", intent.id);
-    if (paymentUpdate.error) throw new Error(paymentUpdate.error.message);
-    await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "failed", from_status: transaction?.status, to_status: transaction?.status, provider_object_id: intent.id, message: intent.last_payment_error?.message ?? "Payment needs a new method. The order was not cancelled." });
-    return;
-  }
-
-  if (intent.status === "canceled" && canApplyTransactionStatus(transaction?.status, "cancelled")) {
-    const paymentUpdate = await supabase.from("escrow_payments").update({ status: "cancelled", failure_code: intent.last_payment_error?.code ?? null }).eq("provider_payment_id", intent.id);
-    if (paymentUpdate.error) throw new Error(paymentUpdate.error.message);
-    const transactionUpdate = await supabase.from("transactions").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", transactionId);
-    if (transactionUpdate.error) throw new Error(transactionUpdate.error.message);
-    await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "failed", from_status: transaction?.status, to_status: "cancelled", provider_object_id: intent.id, message: intent.last_payment_error?.message ?? "Payment was canceled." });
-  }
-}
-
-async function upsertStripeDispute(dispute: Stripe.Dispute) {
-  const chargeId = typeof dispute.charge === "string" ? dispute.charge : dispute.charge?.id;
-  if (!chargeId) return;
-  const charge = await getStripe().charges.retrieve(chargeId);
-  const paymentIntentId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
-  if (!paymentIntentId) return;
-  const supabase = createAdminClient() as any;
-  const { data: payment } = await supabase.from("escrow_payments").select("*").eq("provider_payment_id", paymentIntentId).maybeSingle();
-  if (!payment?.transaction_id) return;
-  const { data: transaction } = await supabase.from("transactions").select("buyer_id,seller_id,status").eq("id", payment.transaction_id).single();
-  if (!transaction) return;
-  await supabase.from("disputes").upsert({
-    transaction_id: payment.transaction_id,
-    opened_by_id: transaction.buyer_id,
-    respondent_id: transaction.seller_id,
-    provider_dispute_id: dispute.id,
-    provider_payment_id: paymentIntentId,
-    status: dispute.status === "won" || dispute.status === "lost" ? "closed" : "under_review",
-    reason: dispute.reason,
-    evidence: dispute.evidence as unknown as Record<string, unknown>,
-    metadata: { stripe_status: dispute.status, amount: dispute.amount, currency: dispute.currency }
-  }, { onConflict: "provider_dispute_id" });
-  await supabase.from("transactions").update({ status: "disputed" }).eq("id", payment.transaction_id);
-  if (payment.status === "held") {
-    await postLedgerJournal(supabase, buildDisputeHoldJournal({
-      transactionId: payment.transaction_id,
-      totalAmount: Number(payment.amount),
-      sellerNetAmount: Number(payment.seller_net_amount),
-      platformFeeAmount: Number(payment.platform_fee_amount),
-      disputedAmount: centsToDollars(dispute.amount),
-      currency: payment.currency,
-      buyerId: transaction.buyer_id,
-      sellerId: transaction.seller_id,
-      providerPaymentId: payment.provider_payment_id,
-      providerChargeId: payment.provider_charge_id,
-      providerDisputeId: dispute.id,
-    }));
-  }
-  await recordTransactionEvent(supabase, { transaction_id: payment.transaction_id, type: dispute.status === "won" || dispute.status === "lost" ? "dispute_closed" : "dispute_opened", from_status: transaction.status, to_status: "disputed", provider_object_id: dispute.id, amount: centsToDollars(dispute.amount), currency: dispute.currency, message: `Stripe dispute ${dispute.status}: ${dispute.reason}` });
-}
 
 export async function POST(request: Request) {
   const signature = request.headers.get("stripe-signature");
@@ -134,7 +16,7 @@ export async function POST(request: Request) {
 
   const body = await request.text();
   if (body.length > MAX_WEBHOOK_BYTES) return NextResponse.json({ error: "Stripe webhook payload is too large." }, { status: 413 });
-  let event: Stripe.Event;
+  let event;
   try {
     event = getStripe().webhooks.constructEvent(body, signature, env.STRIPE_WEBHOOK_SECRET);
   } catch (error) {
@@ -142,42 +24,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid Stripe webhook signature." }, { status: 400 });
   }
 
-  const expectedLivemode = stripeSecretIsLive(env.STRIPE_SECRET_KEY);
-  if (event.livemode !== expectedLivemode) {
+  if (event.livemode !== stripeSecretIsLive(env.STRIPE_SECRET_KEY)) {
     return NextResponse.json({ error: "Stripe webhook livemode does not match configured Stripe key." }, { status: 400 });
   }
 
-  const supabase = createAdminClient() as any;
-  const { data: existing } = await supabase.from("stripe_webhook_events").select("id,processed_at").eq("id", event.id).maybeSingle();
-  if (existing?.processed_at) return NextResponse.json({ received: true, duplicate: true });
-
-  await supabase.from("stripe_webhook_events").upsert({ id: event.id, type: event.type, api_version: event.api_version, livemode: event.livemode, payload: event as unknown as Record<string, unknown> });
-
   try {
-    switch (event.type) {
-      case "account.updated":
-        await updateSellerAccount(event.data.object as Stripe.Account);
-        break;
-      case "payment_intent.amount_capturable_updated":
-      case "payment_intent.succeeded":
-      case "payment_intent.canceled":
-      case "payment_intent.payment_failed":
-        await updatePaymentIntent(event.data.object as Stripe.PaymentIntent);
-        break;
-      case "charge.dispute.created":
-      case "charge.dispute.updated":
-      case "charge.dispute.closed":
-        await upsertStripeDispute(event.data.object as Stripe.Dispute);
-        break;
-      default:
-        break;
-    }
-    const processed = await supabase.from("stripe_webhook_events").update({ processed_at: new Date().toISOString(), processing_error: null }).eq("id", event.id);
-    if (processed.error) throw new Error(processed.error.message);
+    const result = await ingestStripeEvent(event, "platform");
+    return NextResponse.json(result.body, { status: result.status });
   } catch (error) {
-    await supabase.from("stripe_webhook_events").update({ processing_error: error instanceof Error ? error.message : "Unknown webhook error" }).eq("id", event.id);
+    console.error("Stripe webhook processing failed", error);
     return NextResponse.json({ error: "Webhook processing failed." }, { status: 500 });
   }
-
-  return NextResponse.json({ received: true });
 }
