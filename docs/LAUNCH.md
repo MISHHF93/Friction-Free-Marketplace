@@ -155,3 +155,11 @@ Checked on this branch before the pull request. The host still runs the suite ag
 - `npx vitest run` in `apps/web`: 35 files, 148 tests passed
 - `npm run build --workspace apps/web` with `NEXT_DIST_DIR=.next-build`: Next.js 16.4.6 compiled successfully
 - `npm audit --omit=dev` after the non-breaking upgrades: 2 high (zod 3 and openai 4, which needs zod 3). Zod 4 is a breaking upgrade and was not applied. Dev-only Vitest 5, Vite, esbuild, tinypool, and the minimatch copy inside typescript-eslint also remain because their fixes are major bumps.
+
+## r10 lifecycle changes (local, not yet deployed)
+
+- New cron `/api/payments/expire-checkouts` (every 30 min) cancels unpaid checkouts older than 45 minutes so the listing frees up. It uses the same `CRON_SECRET` / `SCHEDULED_JOB_SECRET`.
+- `/api/offers/expire` also closes offers on listings that are no longer available and lifts timed suspensions that have ended.
+- Two new migrations: `20261120000000_r10_account_deletion_open_order_guard.sql` (deletion refused while orders are open) and `20261120010000_r10_moderation_and_member_enforcement.sql` (admin holds sellers cannot undo, suspended or banned members cannot write, open orders block sold/archive, offers close with the listing, one admin listing-decision path). Apply with `supabase db push` after a backup.
+- Database checks for these guards: `supabase/tests/r10_lifecycle.sql` (local database only; it rolls back).
+- Sellers must have payouts active before a listing can be published.

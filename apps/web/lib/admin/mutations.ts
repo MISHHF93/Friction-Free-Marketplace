@@ -6,6 +6,7 @@ import { getStripe } from "@/lib/stripe/server";
 import { recordAdminAction } from "@/lib/admin/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyTransactionParties } from "@/lib/notifications/transaction-events";
+import { friendlyGuardMessage } from "@/lib/auth/member-status";
 import { syncListingToSearch } from "@/lib/search/discovery";
 
 const uuidSchema = z.string().uuid();
@@ -32,8 +33,7 @@ async function restrictMarketplaceUser(supabase: any, userId: string) {
   } catch {
     // Session revoke is best-effort when auth admin is unavailable.
   }
-  const paused = await supabase.from("listings").update({ status: "paused" }).eq("seller_id", userId).eq("status", "active").select("id");
-  await Promise.all((paused.data ?? []).map((listing: { id: string }) => syncListingToSearch(listing.id).catch(() => null)));
+  // admin_set_user_status already paused the seller's listings with paused_by = admin_restriction.
 }
 
 export const adminMutationActions = {
@@ -108,12 +108,23 @@ export async function applyAdminMutation(input: {
       await Promise.all((touched.data ?? []).map((listing: { id: string }) => syncListingToSearch(listing.id).catch(() => null)));
       break;
     }
-    case "listings":
-      update = await supabase.from("listings").update({
-        status: action === "approve" ? "active" : action === "reject" ? "removed" : "paused"
-      }).eq("id", targetId).select("id,status").maybeSingle();
+    case "listings": {
+      // One decision path with state checks: approve clears holds, hold pauses with a
+      // hold the seller cannot lift, reject removes (refused while an order is open).
+      const decided = await supabase.rpc("admin_record_listing_decision", {
+        p_admin_id: input.adminId,
+        p_listing_id: targetId,
+        p_decision: action,
+        p_reason: reason ?? null,
+        p_metadata: { source: "admin_row_action" }
+      });
+      if (decided.error) {
+        return { response: NextResponse.json({ error: friendlyGuardMessage(decided.error) ?? decided.error.message }, { status: 409 }) };
+      }
+      update = await supabase.from("listings").select("id,status").eq("id", targetId).maybeSingle();
       if (!update.error && update.data) await syncListingToSearch(targetId).catch(() => null);
       break;
+    }
     case "reports":
       update = await supabase.from("reports").update({
         status: action === "investigate" ? "investigating" : "closed",

@@ -17,13 +17,15 @@ export type ListingPermissionRecord = {
   pickup_available: boolean | null;
   ships_to: string[] | null;
   deleted_at: string | null;
+  metadata?: Record<string, unknown> | null;
   listing_images?: Array<{ id: string; status: string | null }>;
 };
 
 const allowedActionsByStatus: Record<string, ListingLifecycleAction[]> = {
   draft: ["edit", "delete", "publish", "archive"],
   active: ["edit", "delete", "archive", "mark_sold"],
-  reserved: ["edit", "archive", "mark_sold"],
+  // A reserved listing is in an open order; the order flow marks it sold or frees it.
+  reserved: ["edit"],
   paused: ["edit", "delete", "publish", "archive"],
   archived: ["edit", "delete", "publish"],
   expired: ["edit", "delete", "publish", "archive"],
@@ -44,7 +46,7 @@ export class ListingPermissionError extends Error {
 export async function getListingForPermission(supabase: Db, listingId: string) {
   const { data, error } = await supabase
     .from("listings")
-    .select("id,seller_id,title,description,status,price_amount,quantity,category_id,location_city,location_region,pickup_available,ships_to,deleted_at,listing_images(id,status)")
+    .select("id,seller_id,title,description,status,price_amount,quantity,category_id,location_city,location_region,pickup_available,ships_to,deleted_at,metadata,listing_images(id,status)")
     .eq("id", listingId)
     .maybeSingle();
 
@@ -75,6 +77,9 @@ export function assertListingLifecyclePermission(
   }
 
   if (action === "publish") {
+    if (listingModerationHold(listing)) {
+      throw new ListingPermissionError("This listing is on hold for review, so it can't be published. Our team will follow up.", 409);
+    }
     assertListingPublishReady(listing);
   }
 }
@@ -97,4 +102,11 @@ export function assertListingPublishReady(listing: ListingPermissionRecord) {
   if (failures.length) {
     throw new ListingPermissionError(`Listing is not ready to publish. Missing: ${failures.join(", ")}.`, 422);
   }
+}
+
+/** Admin holds, fraud blocks and account-restriction pauses that only staff can lift. */
+export function listingModerationHold(listing: { metadata?: Record<string, unknown> | null } | null | undefined) {
+  const metadata = listing?.metadata ?? {};
+  const hold = metadata.moderation_hold ?? metadata.paused_by;
+  return typeof hold === "string" && hold.length > 0 ? hold : null;
 }

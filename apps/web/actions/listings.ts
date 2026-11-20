@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createListing, deleteListing, setListingStatus, updateListing } from "@/lib/listings/persistence";
 import { captureServerEvent } from "@/lib/analytics/posthog";
+import { assertMemberCanWrite, friendlyGuardMessage } from "@/lib/auth/member-status";
 import { generateAiListing, type AiListingGeneration } from "@/lib/ai/listing-generation";
 
 const LISTING_IMAGE_BUCKET = "listing-images";
@@ -31,7 +32,7 @@ async function requireAuthUser() {
 }
 
 function actionError(error: unknown, fallback = "Unable to manage listing.") {
-  return { ok: false, error: error instanceof Error ? error.message : fallback } as const;
+  return { ok: false, error: friendlyGuardMessage(error) ?? (error instanceof Error ? error.message : fallback) } as const;
 }
 
 async function ensureListingOwner(supabase: Awaited<ReturnType<typeof createClient>>, listingId: string, sellerId: string) {
@@ -68,6 +69,7 @@ export async function generateAiListingAction(input: unknown): Promise<ListingAc
 export async function createListingAction(input: unknown): Promise<ListingActionResult<{ id: string; status: string }>> {
   try {
     const { supabase, user } = await requireAuthUser();
+    await assertMemberCanWrite(supabase, user.id);
     const listing = await createListing(supabase as any, user.id, input);
     await captureServerEvent({ distinctId: user.id, event: "listing_created", properties: { listing_id: listing.id, status: listing.status } });
     revalidateListingViews(listing.id);
@@ -80,6 +82,7 @@ export async function createListingAction(input: unknown): Promise<ListingAction
 export async function updateListingAction(listingId: string, input: unknown): Promise<ListingActionResult<{ id: string; status: string }>> {
   try {
     const { supabase, user } = await requireAuthUser();
+    await assertMemberCanWrite(supabase, user.id);
     await ensureListingOwner(supabase, listingId, user.id);
     const listing = await updateListing(supabase as any, listingId, input, user.id);
     await captureServerEvent({ distinctId: user.id, event: "listing_updated", properties: { listing_id: listing.id, status: listing.status } });
@@ -93,6 +96,7 @@ export async function updateListingAction(listingId: string, input: unknown): Pr
 export async function deleteListingAction(listingId: string): Promise<ListingActionResult<{ id: string }>> {
   try {
     const { supabase, user } = await requireAuthUser();
+    await assertMemberCanWrite(supabase, user.id);
     await deleteListing(supabase as any, listingId, user.id);
     await captureServerEvent({ distinctId: user.id, event: "listing_deleted", properties: { listing_id: listingId } });
     revalidateListingViews(listingId);
@@ -105,6 +109,7 @@ export async function deleteListingAction(listingId: string): Promise<ListingAct
 export async function changeListingStatusAction(listingId: string, status: unknown): Promise<ListingActionResult<{ id: string; status: string }>> {
   try {
     const { supabase, user } = await requireAuthUser();
+    await assertMemberCanWrite(supabase, user.id);
     await ensureListingOwner(supabase, listingId, user.id);
     const listing = await setListingStatus(supabase as any, listingId, status, user.id);
     await captureServerEvent({ distinctId: user.id, event: "listing_status_changed", properties: { listing_id: listing.id, status: listing.status } });

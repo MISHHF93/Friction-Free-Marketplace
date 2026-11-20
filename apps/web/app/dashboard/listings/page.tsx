@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
 import { PayoutSetupPrompt } from "@/components/payments/payout-setup-prompt";
+import { listingModerationHold } from "@/lib/listings/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -126,9 +127,10 @@ export default async function ListingsDashboardPage() {
 
       <div className="grid gap-4">
         {listings.map((listing) => {
-          const canPublish = ["draft", "paused", "archived", "expired"].includes(listing.status);
-          const canMarkSold = ["active", "reserved"].includes(listing.status);
-          const canArchive = ["draft", "active", "reserved", "paused", "expired", "sold"].includes(listing.status);
+          const onHold = listingModerationHold(listing) !== null;
+          const canPublish = !onHold && ["draft", "paused", "archived", "expired"].includes(listing.status);
+          const canMarkSold = listing.status === "active";
+          const canArchive = ["draft", "active", "paused", "expired", "sold"].includes(listing.status);
           const canDelete = ["draft", "active", "paused", "archived", "expired"].includes(listing.status);
           const moderationStatus =
             typeof listing.metadata?.moderation_status === "string"
@@ -168,8 +170,8 @@ export default async function ListingsDashboardPage() {
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <Badge>{listing.status}</Badge>
-                      <Badge variant={moderationStatus === "approved" ? "trust" : "default"}>
-                        {moderationStatus === "approved" ? "Review approved" : "Review pending"}
+                      <Badge variant={moderationStatus === "approved" && !onHold ? "trust" : "default"}>
+                        {onHold ? "On hold for review" : moderationStatus === "approved" ? "Review approved" : "Review pending"}
                       </Badge>
                       {fraudScore !== null && (
                         <Badge>

@@ -8,6 +8,7 @@ import { evaluateMessageFraud, evaluateMessageReportRate } from "@/lib/fraud/det
 import { getConversationSummaryById } from "@/lib/messaging/queries";
 import { assertCanUseConversation, getOtherParticipantId } from "@/lib/messaging/permissions";
 import { enqueueTemplateNotification } from "@/lib/notifications/service";
+import { assertMemberCanWrite } from "@/lib/auth/member-status";
 import { recipientForOfferAction } from "@/lib/offers/state-machine";
 
 const uuidSchema = z.string().uuid();
@@ -23,6 +24,13 @@ async function requireUser() {
   return { supabase, user };
 }
 
+/** Writes (messages, offers, pickups) are refused for suspended or banned members. */
+async function requireWritingUser() {
+  const context = await requireUser();
+  await assertMemberCanWrite(context.supabase, context.user.id);
+  return context;
+}
+
 
 export async function getConversationSummaryAction(input: unknown) {
   const payload = z.object({ conversationId: uuidSchema }).parse(input);
@@ -32,7 +40,7 @@ export async function getConversationSummaryAction(input: unknown) {
 
 export async function createConversationAction(input: unknown) {
   const payload = z.object({ listingId: uuidSchema, openingMessage: z.string().trim().max(10000).optional() }).parse(input);
-  const { supabase, user } = await requireUser();
+  const { supabase, user } = await requireWritingUser();
   const { data: listing, error: listingError } = await (supabase as any)
     .from("listings")
     .select("id,seller_id,title,price_amount,currency")
@@ -122,7 +130,7 @@ export async function sendMessageAction(input: unknown) {
 
   if (!payload.body && payload.attachments.length === 0) throw new Error("Write a message or attach a file.");
 
-  const { supabase, user } = await requireUser();
+  const { supabase, user } = await requireWritingUser();
   const conversation = await assertCanUseConversation(supabase as any, payload.conversationId, user.id, { requireOpen: true });
   const { data: message, error } = await (supabase as any)
     .from("messages")
@@ -174,7 +182,7 @@ export async function sendMessageAction(input: unknown) {
 export async function uploadMessageAttachmentsAction(formData: FormData) {
   const conversationId = String(formData.get("conversationId") ?? "");
   const parsedConversationId = uuidSchema.parse(conversationId);
-  const { supabase, user } = await requireUser();
+  const { supabase, user } = await requireWritingUser();
   await assertCanUseConversation(supabase as any, parsedConversationId, user.id, { requireOpen: true });
 
   const files = formData.getAll("files").filter((value): value is File => value instanceof File);
@@ -249,7 +257,7 @@ export async function makeOfferAction(input: unknown) {
     expiresAt: z.string().datetime().optional().or(z.literal(""))
   }).parse(input);
 
-  const { supabase, user } = await requireUser();
+  const { supabase, user } = await requireWritingUser();
   await assertCanUseConversation(supabase as any, payload.conversationId, user.id, { requireOpen: true });
   const { data, error } = await (supabase as any).rpc("create_negotiation_offer", {
     p_conversation_id: payload.conversationId,
@@ -284,7 +292,7 @@ export async function makeOfferAction(input: unknown) {
 
 export async function respondToOfferAction(input: unknown) {
   const payload = z.object({ offerId: uuidSchema, status: z.enum(["accepted", "declined", "withdrawn", "expired"]), message: z.string().max(1000).optional() }).parse(input);
-  const { supabase } = await requireUser();
+  const { supabase } = await requireWritingUser();
   const { data, error } = await (supabase as any).rpc("respond_to_negotiation_offer", {
     p_offer_id: payload.offerId,
     p_status: payload.status,
@@ -320,7 +328,7 @@ export async function schedulePickupAction(input: unknown) {
     safetyNotes: z.string().max(1000).optional()
   }).parse(input);
 
-  const { supabase, user } = await requireUser();
+  const { supabase, user } = await requireWritingUser();
   const conversation = await assertCanUseConversation(supabase as any, payload.conversationId, user.id, { requireOpen: true });
   const { data, error } = await (supabase as any).from("pickup_schedules").insert({
     conversation_id: conversation.id,

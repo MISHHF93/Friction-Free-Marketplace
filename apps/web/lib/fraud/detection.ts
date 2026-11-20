@@ -509,7 +509,7 @@ async function applyListingDecision(listing: ListingRow, decision: ListingRiskDe
   } satisfies Json;
 
   if (decision.blocked) {
-    await db.from("listings").update({ status: "draft", published_at: null, metadata: nextMetadata }).eq("id", listing.id);
+    await db.from("listings").update({ status: "draft", published_at: null, metadata: { ...nextMetadata, moderation_hold: "fraud_block" } }).eq("id", listing.id);
   } else {
     await db.from("listings").update({ metadata: nextMetadata }).eq("id", listing.id);
   }
