@@ -9,8 +9,9 @@ async function openPath(page: Page, path: string) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       await page.goto(path, { waitUntil: "domcontentloaded" });
-      await page.waitForLoadState("load");
-      await page.getByRole("heading").first().waitFor({ timeout: 10_000 });
+      await page.waitForLoadState("load").catch(() => undefined);
+      await page.locator("[data-ffm-route-loading='true']").waitFor({ state: "detached", timeout: 10_000 }).catch(() => undefined);
+      await page.locator("h1, h2, h3, h4, h5, h6").first().waitFor({ state: "visible", timeout: 10_000 });
       await page.waitForLoadState("networkidle").catch(() => undefined);
       return;
     } catch (error) {
