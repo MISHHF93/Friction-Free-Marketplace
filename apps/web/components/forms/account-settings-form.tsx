@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
 import { updateAccountAction, type AuthActionState } from "@/app/auth/actions";
 import { accountCopy } from "@/lib/i18n/account-copy";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ function SubmitButton() {
 }
 
 export function AccountSettingsForm({ email, profile }: AccountSettingsFormProps) {
-  const [state, formAction] = useFormState(updateAccountAction, initialState);
+  const [state, formAction] = useActionState(updateAccountAction, initialState);
 
   return (
     <form className="grid gap-5" action={formAction}>

@@ -74,7 +74,7 @@ export function DashboardSidebar({
           <div className="mt-4 rounded-2xl bg-white/10 p-3 text-sm">
             <p className="truncate font-bold">{user.name}</p>
             <p className="truncate text-xs text-slate-300">{user.email}</p>
-            <p className="mt-1 truncate text-xs text-slate-400">{user.location}</p>
+            <p className="mt-1 truncate text-xs text-slate-100">{user.location}</p>
           </div>
         ) : null}
       </div>

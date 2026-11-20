@@ -128,7 +128,7 @@ export function GlobalAssistant() {
 
   return (
     <>
-      <button ref={launcherRef} type="button" className="ai-launcher" onClick={() => setOpen(true)} aria-label="Open marketplace AI assistant" aria-expanded={open}>
+      <button ref={launcherRef} type="button" className="ai-launcher text-foreground" onClick={() => setOpen(true)} aria-label="Ask AI. Open marketplace assistant" aria-expanded={open}>
         <span className="ai-launcher-glow" aria-hidden="true" />
         <Sparkles className="relative h-5 w-5" aria-hidden="true" />
         <span className="relative hidden sm:inline">Ask AI</span>

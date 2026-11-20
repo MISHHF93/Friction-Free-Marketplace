@@ -2,6 +2,7 @@ import { MessageSquare, ShieldCheck, Zap } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { CommunicationHub } from "@/components/messaging/communication-hub";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getMarketplaceSession } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { getConversationSummaries } from "@/lib/messaging/queries";
 import type { ConversationSummary } from "@/lib/messaging/types";
@@ -13,11 +14,13 @@ export default async function MessagesPage({ searchParams }: { searchParams?: Pr
   let setupError: string | null = null;
 
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      userId = user.id;
-      conversations = await getConversationSummaries(supabase, user.id);
+    const session = await getMarketplaceSession();
+    if (session?.source === "e2e") {
+      userId = session.id;
+    } else if (session?.source === "supabase") {
+      const supabase = await createClient();
+      userId = session.id;
+      conversations = await getConversationSummaries(supabase, session.id);
     }
   } catch (error) {
     setupError = error instanceof Error ? error.message : "Messages could not be loaded right now.";

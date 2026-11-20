@@ -5,6 +5,8 @@ import { DashboardActionCard, DashboardListItem, DashboardShell, DashboardStatCa
 import { EscrowActions } from "@/components/payments/escrow-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { OrderFollowUpForms } from "@/components/orders/order-actions";
+import { getMarketplaceSession } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, formatMoney } from "@/lib/i18n/format";
 
@@ -53,10 +55,9 @@ async function getBuyerPurchases(userId: string) {
 }
 
 export default async function PurchasesPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/dashboard/purchases");
-  const purchases = await getBuyerPurchases(user.id);
+  const session = await getMarketplaceSession();
+  if (!session) redirect("/login?next=/dashboard/purchases");
+  const purchases = session.source === "supabase" ? await getBuyerPurchases(session.id) : [];
   const active = purchases.filter((purchase) => !["completed", "cancelled", "refunded"].includes(purchase.status));
   const completed = purchases.filter((purchase) => purchase.status === "completed");
   const support = purchases.filter((purchase) => ["disputed", "refunded"].includes(purchase.status));
@@ -83,6 +84,7 @@ export default async function PurchasesPage() {
           )}
         </CardContent>
       </Card>
+      <OrderFollowUpForms />
       <DashboardActionCard icon={LifeBuoy} title="Buyer protection" description="Open support cases, request returns, report unsafe meetup behavior, and keep every protected payment event in one ledger.">
         <Button asChild variant="outline"><Link href="/contact">Contact support</Link></Button>
       </DashboardActionCard>

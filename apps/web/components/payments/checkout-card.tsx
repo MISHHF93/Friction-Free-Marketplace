@@ -139,3 +139,34 @@ export function CheckoutCard({ listingId, priceAmount, currency, shippingCents =
     </Card>
   );
 }
+
+export function SampleCheckoutPreview({ listingId }: { listingId: string }) {
+  const [status, setStatus] = useState("Stripe test mode only. No card is charged.");
+  const [pending, setPending] = useState(false);
+
+  async function preview() {
+    setPending(true);
+    try {
+      const response = await fetch("/api/stripe/payment-intents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId, shippingCents: 0, taxCents: 0, preview: true })
+      });
+      const payment = await response.json();
+      setStatus(response.ok ? `Test authorization ${payment.transactionId ?? "ready"} is ready. No charge was made.` : String(payment.error ?? "Checkout preview did not start."));
+    } catch {
+      setStatus("Checkout preview did not start.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="grid gap-3">
+      <Button size="lg" className="w-full" type="button" onClick={preview} disabled={pending}>
+        {pending ? "Preparing test authorization…" : "Preview test authorization"}
+      </Button>
+      <p className="text-sm text-muted-foreground" role="status">{status}</p>
+    </div>
+  );
+}

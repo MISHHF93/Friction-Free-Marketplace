@@ -97,7 +97,7 @@ async function AuthNav() {
       <NotificationBell />
       <MenuDisclosure
         className="group relative"
-        label="Open user menu"
+        label={`Open user menu for ${session.displayName}`}
         summaryClassName="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden"
         summary={
           <>
@@ -141,7 +141,7 @@ function LocationSelector() {
   return (
     <MenuDisclosure
       className="group relative"
-      label="Choose marketplace location"
+      label="Nearby. Choose marketplace location"
       summaryClassName="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden"
       summary={
         <>

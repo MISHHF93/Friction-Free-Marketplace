@@ -26,21 +26,21 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 28% 8%;
 
-    --commerce: 209 86% 48%;
+    --commerce: 209 78% 32%;
     --commerce-foreground: 0 0% 100%;
     --commerce-soft: 209 100% 96%;
     --commerce-border: 209 55% 78%;
     --commerce-dark: 215 42% 18%;
 
-    --primary: 209 86% 48%;
+    --primary: 209 78% 32%;
     --primary-foreground: 0 0% 100%;
 
-    --trust: 209 86% 48%;
+    --trust: 209 72% 26%;
     --trust-foreground: 0 0% 100%;
     --trust-soft: 209 100% 96%;
     --trust-border: 209 55% 78%;
 
-    --ai: 205 78% 44%;
+    --ai: 205 72% 28%;
     --ai-foreground: 0 0% 100%;
     --ai-soft: 205 90% 95%;
     --ai-border: 205 48% 74%;
@@ -71,10 +71,10 @@
     --secondary: 210 35% 94%;
     --secondary-foreground: 220 28% 8%;
     --muted: 210 35% 94%;
-    --muted-foreground: 215 12% 42%;
+    --muted-foreground: 215 18% 27%;
     --accent: 209 100% 96%;
     --accent-foreground: 215 42% 22%;
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 38%;
     --destructive-foreground: 0 0% 100%;
     --border: 214 22% 88%;
     --input: 214 20% 84%;
@@ -375,6 +375,13 @@
 
   .ui-button-trust {
     @apply border-trust bg-trust text-trust-foreground shadow-trust hover:bg-commerce-dark hover:shadow-card-hover;
+  }
+
+  .ui-button-primary,
+  .ui-button-trust {
+    background-color: #0e4b7a;
+    border-color: #0e4b7a;
+    color: #ffffff;
   }
 
   .ui-button-surface {
