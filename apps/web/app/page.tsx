@@ -61,6 +61,7 @@ export default async function HomePage() {
           <div className="mt-7">
             <SearchBar
               action="/search"
+              placeholder="Search listings"
               suggestions={[
                 { label: "verified camera kit", href: "/search?q=verified%20camera%20kit" },
                 { label: "sofa with delivery", href: "/search?q=sofa%20with%20delivery" },

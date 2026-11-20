@@ -53,7 +53,13 @@ where transaction_row.id in (
     '55555555-5555-4555-8555-555555555555',
     '66666666-6666-4666-8666-666666666666'
   )
-   or coalesce(transaction_row.metadata->>'is_demo', '') = 'true'
+   or (
+     coalesce(transaction_row.metadata->>'is_demo', '') = 'true'
+     and (
+       transaction_row.buyer_id in (select id from seed_user_ids)
+       or transaction_row.seller_id in (select id from seed_user_ids)
+     )
+   )
    or (
      transaction_row.buyer_id in (select id from seed_user_ids)
      and transaction_row.seller_id in (select id from seed_user_ids)
@@ -96,9 +102,11 @@ begin
   end if;
 end $$;
 
-delete from storage.objects
-where bucket_id in ('listing-images', 'message-attachments')
-  and (storage.foldername(name))[1] in (select id::text from seed_user_ids);
+-- Do not delete storage.objects in SQL. Removing the catalog row does not
+-- remove the stored bytes, so the bucket keeps orphaned files. After this
+-- script, delete each seed user's objects through the Storage API:
+--   listing-images/<user-id>/
+--   message-attachments/<user-id>/
 
 delete from public.financial_ledger_entries
 where transaction_id in (select id from demo_transaction_ids)
@@ -120,8 +128,7 @@ delete from public.transactions
 where id in (select id from demo_transaction_ids);
 
 delete from public.listings
-where seller_id in (select id from seed_user_ids)
-   or coalesce(metadata->>'is_demo', '') = 'true';
+where seller_id in (select id from seed_user_ids);
 
 delete from public.admin_actions
 where admin_id in (select id from seed_user_ids);

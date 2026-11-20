@@ -20,7 +20,7 @@ async function reconcile(request: Request) {
   const cutoff = new Date(Date.now() - STUCK_MS).toISOString();
   const { data: rows, error } = await supabase
     .from("escrow_payments")
-    .select("id,status,provider_payment_id,provider_charge_id,transaction_id,amount,seller_net_amount,platform_fee_amount,currency,metadata")
+    .select("id,status,provider_payment_id,provider_charge_id,transaction_id,amount,seller_net_amount,platform_fee_amount,refunded_amount,currency,metadata")
     .in("status", ["capturing", "releasing", "refunding"])
     .lt("updated_at", cutoff)
     .limit(50);
@@ -30,7 +30,7 @@ async function reconcile(request: Request) {
   let repaired = 0;
   for (const row of rows ?? []) {
     if (!row.provider_payment_id) continue;
-    const intent = await stripe.paymentIntents.retrieve(row.provider_payment_id, { expand: ["latest_charge"] });
+    const intent = await stripe.paymentIntents.retrieve(row.provider_payment_id, { expand: ["latest_charge.refunds"] });
     const charge = typeof intent.latest_charge === "string" ? null : intent.latest_charge;
     const transfers = row.status === "releasing"
       ? await stripe.transfers.list({ transfer_group: `transaction_${row.transaction_id}`, limit: 10 })

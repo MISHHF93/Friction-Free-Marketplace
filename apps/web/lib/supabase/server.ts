@@ -14,7 +14,8 @@ export async function createClient() {
         try {
           cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
         } catch {
-          // Server Components cannot set cookies; the proxy refreshes auth sessions.
+          // Server Components cannot write cookies. proxy.ts calls auth.getUser()
+          // and copies refreshed auth cookies onto the same NextResponse.
         }
       }
     }

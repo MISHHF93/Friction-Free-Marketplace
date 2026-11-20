@@ -16,8 +16,9 @@ sql_paths = ["../database/seeds/categories.sql"]
 [studio]
 enabled = false
 
-[inbucket]
+[local_smtp]
 enabled = false
+port = 54325
 
 [analytics]
 enabled = false

@@ -83,7 +83,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const locale = documentLocale(session?.locale, headerStore.get("accept-language"));
   return (
     <html lang={locale.lang} dir={locale.dir} suppressHydrationWarning>
-      <body suppressHydrationWarning>
+      <body>
         <SiteShell>{children}</SiteShell>
         <PwaRegistrar />
         <NativeBridge />

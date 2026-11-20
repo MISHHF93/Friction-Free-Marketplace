@@ -299,62 +299,15 @@ export default async function ListingDetailPage({ params, searchParams }: { para
           <ArrowRight className="h-4 w-4 rotate-180" aria-hidden="true" />
           Back to marketplace
         </Link>
-        <div className="flex flex-wrap gap-2">
+        <div className="hidden flex-wrap gap-2 sm:flex">
           <Badge variant="trust"><ShieldCheck className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Protected checkout eligible</Badge>
           <Badge variant="ai"><Sparkles className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Listing signals reviewed</Badge>
         </div>
       </div>
 
       <section className="grid min-w-0 max-w-full grid-cols-1 gap-6 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(19rem,24rem)] lg:items-start xl:grid-cols-[minmax(0,1fr)_26rem] xl:gap-8" aria-labelledby="listing-title">
-        <div className="min-w-0 max-w-full space-y-6">
-          <ListingGallery title={listing.title} images={images} />
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <DetailMetric icon={<Store className="h-4 w-4" aria-hidden="true" />} label="Category" value={listing.category_name} />
-            <DetailMetric icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />} label="Published" value={formatDate(listing.published_at)} />
-            <DetailMetric icon={<Eye className="h-4 w-4" aria-hidden="true" />} label="Views" value={listing.view_count.toLocaleString()} />
-            <DetailMetric icon={<Heart className="h-4 w-4" aria-hidden="true" />} label="Saves" value={listing.saved_count.toLocaleString()} />
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Description</CardTitle>
-              <CardDescription>Seller details with marketplace signals to help you review the listing.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <p className="text-base leading-8 text-muted-foreground">{listing.description}</p>
-              <div className="flex flex-wrap gap-2">
-                {[...new Set([listing.condition, ...listing.seo_tags, ...listing.attributes].filter(Boolean))].slice(0, 12).map((tag) => <Badge key={tag}>{tag}</Badge>)}
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-4 xl:grid-cols-2">
-            <AiInsightsCard insights={aiInsights} fraudScore={fraudScore} />
-            <SafetyWarningsCard warnings={safetyWarnings} />
-          </div>
-
-          <div className="grid gap-4 xl:grid-cols-2">
-            <PaymentProtectionCard />
-            <SafePickupCard pickupAvailable={listing.pickup_available} shipsTo={listing.ships_to} location={listing.location_label} />
-          </div>
-
-          {recommendations.length ? (
-            <section className="space-y-5" aria-labelledby="similar-listings-title">
-              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
-                <div>
-                  <p className="brand-kicker">Similar listings</p>
-                  <h2 id="similar-listings-title" className="mt-2 text-3xl font-black tracking-tight">Compare before you decide.</h2>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Review nearby alternatives and category matches with the same seller and payment signals.</p>
-                </div>
-                <Button asChild variant="outline"><Link href={`/categories/${listing.category_slug}`}>View category</Link></Button>
-              </div>
-              <PublicListingGrid listings={recommendations} />
-            </section>
-          ) : null}
-        </div>
-
-        <aside className="space-y-4">
+        <ListingGallery title={listing.title} images={images} />
+        <aside className="space-y-4 lg:col-start-2 lg:row-span-2 lg:row-start-1">
           <Card className="shadow-soft">
             <CardHeader className="space-y-4">
               <div className="flex flex-wrap gap-2">
@@ -363,7 +316,7 @@ export default async function ListingDetailPage({ params, searchParams }: { para
                 <Badge variant={moderationStatus === "active" || moderationStatus === "approved" ? "trust" : "warning"}>{moderationStatus === "active" || moderationStatus === "approved" ? "Marketplace reviewed" : "Review pending"}</Badge>
               </div>
               <div className="space-y-3">
-                <h1 id="listing-title" className="text-3xl font-black tracking-tight sm:text-4xl">{listing.title}</h1>
+                <h1 id="listing-title" className="text-2xl font-black tracking-tight sm:text-4xl">{listing.title}</h1>
                 <p className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
                   <MapPin className="h-4 w-4 text-primary" aria-hidden="true" />
                   {listing.location_label || "Location after contact"}
@@ -427,6 +380,51 @@ export default async function ListingDetailPage({ params, searchParams }: { para
             </CardContent>
           </Card>
         </aside>
+        <div className="min-w-0 max-w-full space-y-6 lg:col-start-1">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <DetailMetric icon={<Store className="h-4 w-4" aria-hidden="true" />} label="Category" value={listing.category_name} />
+            <DetailMetric icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />} label="Published" value={formatDate(listing.published_at)} />
+            <DetailMetric icon={<Eye className="h-4 w-4" aria-hidden="true" />} label="Views" value={listing.view_count.toLocaleString()} />
+            <DetailMetric icon={<Heart className="h-4 w-4" aria-hidden="true" />} label="Saves" value={listing.saved_count.toLocaleString()} />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Description</CardTitle>
+              <CardDescription>Seller details with marketplace signals to help you review the listing.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <p className="text-base leading-8 text-muted-foreground">{listing.description}</p>
+              <div className="flex flex-wrap gap-2">
+                {[...new Set([listing.condition, ...listing.seo_tags, ...listing.attributes].filter(Boolean))].slice(0, 12).map((tag) => <Badge key={tag}>{tag}</Badge>)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            <AiInsightsCard insights={aiInsights} fraudScore={fraudScore} />
+            <SafetyWarningsCard warnings={safetyWarnings} />
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-2">
+            <PaymentProtectionCard />
+            <SafePickupCard pickupAvailable={listing.pickup_available} shipsTo={listing.ships_to} location={listing.location_label} />
+          </div>
+
+          {recommendations.length ? (
+            <section className="space-y-5" aria-labelledby="similar-listings-title">
+              <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+                <div>
+                  <p className="brand-kicker">Similar listings</p>
+                  <h2 id="similar-listings-title" className="mt-2 text-3xl font-black tracking-tight">Compare before you decide.</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Review nearby alternatives and category matches with the same seller and payment signals.</p>
+                </div>
+                <Button asChild variant="outline"><Link href={`/categories/${listing.category_slug}`}>View category</Link></Button>
+              </div>
+              <PublicListingGrid listings={recommendations} />
+            </section>
+          ) : null}
+        </div>
       </section>
     </main>
   );
@@ -461,14 +459,13 @@ function ListingGallery({ title, images }: { title: string; images: Array<{ src:
           {primary ? (
             <MediaViewer items={mediaItems} initialIndex={0} mode="gallery" surface="listingGallery" triggerLabel={`Open ${title} media gallery`} thumbnailClassName="h-72 w-full object-cover sm:h-96 lg:h-[30rem] xl:h-[32.5rem]" />
           ) : (
-            <div className="flex h-72 w-full flex-col items-center justify-center gap-3 p-4 text-muted-foreground sm:h-96 lg:h-[30rem] xl:h-[32.5rem]">
-            <ImagePlus className="h-16 w-16 text-primary" aria-hidden="true" />
-              <p className="font-bold">Photos are not available yet</p>
-              <p className="max-w-sm text-center text-sm">Ask the seller for recent photos, serial numbers, receipts, or close-ups before making an offer.</p>
+            <div className="flex h-16 w-full items-center justify-center gap-3 px-4 text-muted-foreground">
+              <ImagePlus className="h-6 w-6 text-primary" aria-hidden="true" />
+              <p className="text-sm font-bold">Photos are not available yet</p>
             </div>
           )}
         </div>
-        <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-1">
+        {primary ? <div className="grid min-w-0 grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-1">
           {thumbnailSlots.map((image, index) => (
             <div className="overflow-hidden rounded-2xl border border-border bg-secondary" key={image ? image.src : index}>
               {image ? (
@@ -481,7 +478,7 @@ function ListingGallery({ title, images }: { title: string; images: Array<{ src:
               )}
             </div>
           ))}
-        </div>
+        </div> : null}
       </div>
     </section>
   );

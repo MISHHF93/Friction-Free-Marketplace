@@ -52,7 +52,7 @@ export async function recordReconciledPayment(supabase: any, input: {
           providerChargeId: payment.provider_charge_id,
           providerRefundId: input.refundId
         }),
-        idempotencyKey: `ledger:refund:${input.refundId ?? payment.id}:${incrementalCents}`
+        idempotencyKey: input.refundId ? `ledger:refund:${input.refundId}` : `ledger:refund:${payment.id}`
       });
     }
   }

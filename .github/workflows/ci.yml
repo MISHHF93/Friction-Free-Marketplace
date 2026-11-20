@@ -18,7 +18,7 @@ jobs:
           version: latest
       - name: Validate canonical migrations from an empty database
         run: |
-          supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor
+          supabase start -x studio,imgproxy,local_smtp,edge-runtime,logflare,vector,supavisor
           supabase db reset
       - name: Stop local Supabase
         if: always()

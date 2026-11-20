@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { openPath } from "./navigation";
 
 test.describe("core marketplace flows", () => {
   test("signup form and account profile stay on the signed-in user", async ({ browser, page }) => {
@@ -38,13 +39,13 @@ test.describe("core marketplace flows", () => {
     const context = await browser.newContext();
     await context.addCookies([{ name: "ffm-e2e-user", value: "alice", url: "http://127.0.0.1:3001" }]);
     const page = await context.newPage();
-    await page.goto("/dashboard/messages");
+    await openPath(page, "/dashboard/messages");
     await expect(page.getByText(/sign in to open conversations/i)).toHaveCount(0);
-    await page.goto("/dashboard/offers");
+    await openPath(page, "/dashboard/offers");
     await expect(page.getByRole("heading", { name: /offers/i }).first()).toBeVisible();
-    await page.goto("/dashboard/sales");
+    await openPath(page, "/dashboard/sales");
     await expect(page.getByText(/no sales yet/i)).toBeVisible();
-    await page.goto("/dashboard/purchases");
+    await openPath(page, "/dashboard/purchases");
     await expect(page.getByRole("heading", { name: /write a review/i })).toBeVisible();
     await expect(page.getByRole("heading", { name: /open a dispute/i })).toBeVisible();
     await context.close();

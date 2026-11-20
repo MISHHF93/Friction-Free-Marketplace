@@ -286,7 +286,7 @@ export function SearchBar({
 }: SearchBarProps) {
   const [internalValue, setInternalValue] = React.useState(value ?? "");
   const inputValue = value ?? internalValue;
-  const inputId = React.useId();
+  const inputId = props.id ? `${props.id}-input` : "marketplace-search-input";
 
   return (
     <form
@@ -310,7 +310,7 @@ export function SearchBar({
           name={name}
           value={inputValue}
           placeholder={placeholder}
-          className="min-h-10 border-0 bg-transparent pl-9 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="min-h-10 min-w-0 flex-1 border-0 bg-transparent pl-9 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
           onChange={(event) => {
             setInternalValue(event.target.value);
             onValueChange?.(event.target.value);
