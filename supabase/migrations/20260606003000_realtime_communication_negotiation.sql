@@ -64,6 +64,33 @@ end $$;
 -- Conversation and message extensions
 -- -----------------------------------------------------------------------------
 
+-- 000000 created conversations.status as text with an inline CHECK and a
+-- partial unique index (`where status = 'open'`). Those block the enum
+-- conversion below. Drop them if they still exist, convert the column, then
+-- recreate the equivalent enum-based unique index. Already-converted
+-- databases (status is already conversation_status) keep the same end state.
+
+do $$
+declare
+  rec record;
+begin
+  for rec in
+    select c.conname
+    from pg_constraint c
+    join pg_class t on t.oid = c.conrelid
+    join pg_namespace n on n.oid = t.relnamespace
+    where n.nspname = 'public'
+      and t.relname = 'conversations'
+      and c.contype = 'c'
+      and pg_get_constraintdef(c.oid) ilike '%status%'
+      and c.conname <> 'conversations_distinct_participants'
+  loop
+    execute format('alter table public.conversations drop constraint if exists %I', rec.conname);
+  end loop;
+end $$;
+
+drop index if exists public.conversations_unique_open_listing_pair_idx;
+
 alter table public.conversations
   alter column status drop default;
 
@@ -72,6 +99,10 @@ alter table public.conversations
 
 alter table public.conversations
   alter column status set default 'open'::public.conversation_status;
+
+create unique index if not exists conversations_unique_open_listing_pair_idx
+  on public.conversations(listing_id, buyer_id, seller_id)
+  where status = 'open'::public.conversation_status;
 
 alter table public.conversations
   add column if not exists muted_by uuid[] not null default '{}'::uuid[],
