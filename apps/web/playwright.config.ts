@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: "tests/e2e",
   timeout: 30_000,
   retries: process.env.CI ? 2 : 0,
+  workers: Number(process.env.PLAYWRIGHT_WORKERS ?? 2),
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3001",
     trace: "on-first-retry"
@@ -11,9 +12,9 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_SKIP_WEB_SERVER
     ? undefined
     : {
-        command: "npm run dev",
+        command: process.env.PLAYWRIGHT_USE_PROD === "true" ? "npx next start --hostname 127.0.0.1 -p 3001" : "npm run dev",
         url: "http://127.0.0.1:3001",
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: !process.env.CI && process.env.PLAYWRIGHT_USE_PROD !== "true",
         env: {
           ...process.env,
           FFM_E2E_AUTH: "true",
