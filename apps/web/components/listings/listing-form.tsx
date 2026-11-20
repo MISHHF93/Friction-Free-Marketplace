@@ -626,7 +626,7 @@ export function ListingForm({
           {["Photos", "Details", "Price", "Fulfilment", "Review"].map((label, index) => {
             const stepHasError = firstStepWithError(errors) === index && Object.keys(errors).length > 0;
             return (
-            <button key={label} type="button" className={cn("min-h-11 rounded-xl px-1 text-xs font-bold", sellStep === index ? "bg-[#0c3f66] text-white" : stepHasError ? "bg-destructive/15 text-destructive" : "bg-secondary text-foreground")} aria-current={sellStep === index ? "step" : undefined} aria-invalid={stepHasError || undefined} onClick={() => setSellStep(index)}>{label}{stepHasError ? " !" : ""}</button>
+            <button key={label} type="button" className={cn("min-h-11 rounded-xl px-1 text-xs font-bold", sellStep === index ? "bg-[#0c3f66] text-white" : stepHasError ? "bg-destructive/15 text-destructive" : "bg-secondary text-foreground")} aria-current={sellStep === index ? "step" : undefined} onClick={() => setSellStep(index)}>{label}{stepHasError ? " !" : ""}</button>
             );
           })}
         </div>

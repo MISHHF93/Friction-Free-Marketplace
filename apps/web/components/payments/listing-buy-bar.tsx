@@ -1,20 +1,58 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useSyncExternalStore, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/i18n/format";
 
 export const OPEN_CHECKOUT_EVENT = "ffm:open-checkout";
 
-export function openCheckoutSheet() {
-  if (typeof window === "undefined") return;
-  window.dispatchEvent(new Event(OPEN_CHECKOUT_EVENT));
+let checkoutForcedOpen = false;
+const checkoutListeners = new Set<() => void>();
+
+function emitCheckoutChange() {
+  checkoutListeners.forEach((listener) => listener());
 }
 
-function shouldOpenCheckout() {
+function checkoutUrlWantsOpen() {
   if (typeof window === "undefined") return false;
   const url = new URL(window.location.href);
   return url.hash === "#protected-checkout" || url.searchParams.has("offer");
+}
+
+function subscribeToCheckoutOpen(listener: () => void) {
+  checkoutListeners.add(listener);
+  window.addEventListener(OPEN_CHECKOUT_EVENT, listener);
+  window.addEventListener("hashchange", listener);
+  window.addEventListener("popstate", listener);
+  return () => {
+    checkoutListeners.delete(listener);
+    window.removeEventListener(OPEN_CHECKOUT_EVENT, listener);
+    window.removeEventListener("hashchange", listener);
+    window.removeEventListener("popstate", listener);
+  };
+}
+
+function getCheckoutOpenSnapshot() {
+  return checkoutForcedOpen || checkoutUrlWantsOpen();
+}
+
+export function openCheckoutSheet() {
+  checkoutForcedOpen = true;
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(OPEN_CHECKOUT_EVENT));
+  emitCheckoutChange();
+}
+
+export function closeCheckoutSheet() {
+  checkoutForcedOpen = false;
+  if (typeof window !== "undefined") {
+    const url = new URL(window.location.href);
+    if (url.hash === "#protected-checkout") {
+      url.hash = "";
+      window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+    }
+  }
+  emitCheckoutChange();
 }
 
 export function OpenCheckoutButton({
@@ -46,19 +84,8 @@ export function ListingBuyBar({
   label: string;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    const openIfNeeded = () => setOpen(true);
-    if (shouldOpenCheckout()) setOpen(true);
-    window.addEventListener(OPEN_CHECKOUT_EVENT, openIfNeeded);
-    window.addEventListener("hashchange", () => {
-      if (shouldOpenCheckout()) setOpen(true);
-    });
-    return () => {
-      window.removeEventListener(OPEN_CHECKOUT_EVENT, openIfNeeded);
-    };
-  }, []);
+  const open = useSyncExternalStore(subscribeToCheckoutOpen, getCheckoutOpenSnapshot, () => false);
+  const close = useCallback(() => closeCheckoutSheet(), []);
 
   return (
     <>
@@ -69,13 +96,13 @@ export function ListingBuyBar({
         </div>
         <div className="flex gap-2">
           <Button asChild type="button" variant="outline" className="min-h-11"><a href="#message-seller">Message</a></Button>
-          <Button type="button" className="min-h-11" onClick={() => setOpen(true)}>{label === "Accepted offer" ? "Pay offer" : "Buy"}</Button>
+          <Button type="button" className="min-h-11" onClick={() => openCheckoutSheet()}>{label === "Accepted offer" ? "Pay offer" : "Buy"}</Button>
         </div>
       </div>
       {open ? (
         <div className="fixed inset-0 z-40 bg-black/40">
           <div id="protected-checkout" role="dialog" aria-modal="true" aria-label="Protected checkout" className="absolute inset-x-0 bottom-0 mx-auto max-h-[85vh] w-full max-w-[480px] overflow-y-auto rounded-t-3xl bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-            <Button type="button" variant="outline" className="mb-3 min-h-11" onClick={() => setOpen(false)}>Close checkout</Button>
+            <Button type="button" variant="outline" className="mb-3 min-h-11" onClick={close}>Close checkout</Button>
             {children}
           </div>
         </div>
