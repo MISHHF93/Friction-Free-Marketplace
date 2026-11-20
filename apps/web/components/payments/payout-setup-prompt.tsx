@@ -7,20 +7,23 @@ import { createClient } from "@/lib/supabase/server";
 
 /** Shown to sellers who cannot publish yet because payouts are not set up. Hidden when the check cannot run. */
 export async function PayoutSetupPrompt() {
-  if (!isLiveDatabaseConfigured()) return null;
+  return (await sellerNeedsPayoutSetup()) ? <PayoutSetupNotice /> : null;
+}
+
+async function sellerNeedsPayoutSetup() {
+  if (!isLiveDatabaseConfigured()) return false;
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+    if (!user) return false;
     const { data, error } = await (supabase as any)
       .from("seller_payment_accounts")
       .select("status,charges_enabled")
       .eq("seller_id", user.id)
       .maybeSingle();
-    if (error || sellerPayoutsReady(data)) return null;
-    return <PayoutSetupNotice />;
+    return !error && !sellerPayoutsReady(data);
   } catch {
-    return null;
+    return false;
   }
 }
 
