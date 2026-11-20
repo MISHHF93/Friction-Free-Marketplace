@@ -1,9 +1,22 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeft, Home, MessageSquare, Plus, Search, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+export function PhoneFrame({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const wide = pathname.startsWith("/admin");
+  return (
+    <div className="app-backdrop min-h-screen">
+      <div className={cn("app-shell relative mx-auto min-h-screen w-full bg-background shadow-[0_0_48px_rgba(16,21,28,0.08)]", wide ? "max-w-[760px]" : "max-w-[480px]")}>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 const tabs = [
   { href: "/", label: "Home", icon: Home },
@@ -19,7 +32,7 @@ export function MobileBackBar() {
   const pathname = usePathname();
   if (rootPaths.has(pathname)) return null;
   return (
-    <Link href="/" className="inline-flex h-11 min-w-11 items-center gap-1 rounded-xl px-2 text-sm font-bold md:hidden" aria-label="Back to home">
+    <Link href="/" className="inline-flex h-11 min-w-11 items-center gap-1 rounded-xl px-2 text-sm font-bold" aria-label="Back to home">
       <ArrowLeft className="h-5 w-5" aria-hidden="true" />
       Back
     </Link>
@@ -28,13 +41,14 @@ export function MobileBackBar() {
 
 export function MobileTabBar() {
   const pathname = usePathname();
+  const wide = pathname.startsWith("/admin");
   return (
     <nav
       aria-label="App sections"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur md:hidden"
+      className={cn("app-tabs fixed bottom-0 left-1/2 z-40 w-full -translate-x-1/2 border-t border-border bg-background/95 backdrop-blur", wide ? "max-w-[760px]" : "max-w-[480px]")}
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ul className="grid grid-cols-5">
+      <ul className="keep-grid grid grid-cols-5">
         {tabs.map((tab) => {
           const active = tab.href === "/" ? pathname === "/" : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           const Icon = tab.icon;

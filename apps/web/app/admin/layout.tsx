@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Activity, AlertTriangle, FileSearch, ShieldCheck, UserRound } from "lucide-react";
-import { DashboardMobileNavigation, DashboardSidebar } from "@/components/dashboard-navigation";
+import { DashboardMobileNavigation } from "@/components/dashboard-navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getAdminLinksForRole } from "@/lib/admin/navigation";
@@ -21,21 +21,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   ].filter((link) => can(auth.role, link.permission));
 
   return (
-    <section className="app-container-wide grid gap-5 py-6 sm:gap-6 sm:py-8 lg:grid-cols-[minmax(16rem,18rem)_minmax(0,1fr)]" aria-label="Admin dashboard">
+    <section className="grid gap-5 py-4" aria-label="Admin dashboard">
       <a className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-background focus:px-4 focus:py-2 focus:shadow" href="#admin-content">
         Skip to admin content
       </a>
-      <DashboardSidebar
-        links={navigationLinks}
-        eyebrow="Admin dashboard"
-        title="Marketplace operations"
-        description="Moderate marketplace activity, investigate risk, monitor commerce, and audit sensitive actions."
-        user={{
-          name: `${roleLabel} access`,
-          email: auth.adminUser.email ?? auth.authUser.email ?? "Admin account",
-          location: "Role-based admin workspace"
-        }}
-      />
       <div className="min-w-0 space-y-6">
         <DashboardMobileNavigation links={navigationLinks} />
         <div className="overflow-hidden rounded-[1.75rem] border border-slate-900/10 bg-premium-dark p-4 text-white shadow-admin sm:rounded-[2rem] sm:p-6">

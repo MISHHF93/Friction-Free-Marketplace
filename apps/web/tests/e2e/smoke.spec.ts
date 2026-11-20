@@ -27,9 +27,12 @@ test.describe("public route smoke", () => {
     await expect(page.getByRole("heading", { name: /log in/i })).toBeVisible();
   });
 
-  test("desktop header names its primary navigation", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "chromium", "Desktop navigation check.");
+  test("a wide viewport still uses the phone shell", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/");
-    await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "App sections" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(0);
+    const width = await page.locator(".app-shell").evaluate((element) => element.getBoundingClientRect().width);
+    expect(width).toBeLessThanOrEqual(480);
   });
 });

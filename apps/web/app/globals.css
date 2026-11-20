@@ -587,6 +587,14 @@
     @apply border-premium-border bg-premium-soft text-premium-foreground;
   }
 
+  .app-backdrop {
+    background: #d7e0ea;
+  }
+
+  .app-shell .grid:not(.keep-grid) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
   .app-container {
     @apply mx-auto box-border w-full max-w-7xl px-4 sm:px-6 lg:px-8;
   }

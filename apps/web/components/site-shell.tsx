@@ -10,16 +10,9 @@ import { ToastCenter } from "@/components/ui/toast-center";
 import { GlobalAssistant } from "@/components/ai/global-assistant";
 import { brandProfile } from "@/lib/brand-profile";
 import { getMarketplaceSession } from "@/lib/auth/session";
-import { MobileBackBar, MobileTabBar } from "@/components/mobile/mobile-chrome";
+import { MobileBackBar, MobileTabBar, PhoneFrame } from "@/components/mobile/mobile-chrome";
 import { MenuDisclosure } from "@/components/menu-disclosure";
 import { cn } from "@/lib/utils";
-
-const navLinks = [
-  { href: "/browse", label: "Browse" },
-  { href: "/how-it-works", label: "How it works" },
-  { href: "/safety", label: "Safety" },
-  { href: "/pricing", label: "Pricing" }
-];
 
 const categoryLinks = [
   { href: "/categories/vehicles", label: "Vehicles" },
@@ -108,7 +101,7 @@ async function AuthNav() {
           </>
         }
       >
-        <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border border-border bg-card p-2 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-soft md:absolute md:inset-x-auto md:bottom-auto md:right-0 md:mt-3 md:w-64 md:rounded-2xl md:pb-2">
+        <div className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border border-border bg-card p-2 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-soft">
           <Link href="/dashboard" className="block rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Dashboard</Link>
           <Link href="/account/settings" className="block rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Account settings</Link>
           <Link href="/dashboard/messages" className="block rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Messages</Link>
@@ -152,7 +145,7 @@ function LocationSelector() {
         </>
       }
     >
-      <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-soft md:absolute md:inset-x-auto md:bottom-auto md:left-0 md:mt-3 md:w-72 md:rounded-2xl md:pb-4">
+      <div className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-soft">
         <p className="font-bold">Shop near you</p>
         <p className="mt-1 text-sm text-muted-foreground">Use location, pickup, shipping, and radius filters to narrow results.</p>
         <div className="mt-4 grid gap-2">
@@ -181,7 +174,7 @@ function CategoriesMenu() {
         </>
       }
     >
-      <div className="fixed left-4 right-4 top-32 z-50 grid gap-2 rounded-2xl border border-border bg-card p-3 shadow-soft motion-dropdown sm:grid-cols-3 md:absolute md:left-0 md:right-auto md:top-auto md:mt-3 md:w-[min(42rem,calc(100vw-2rem))]">
+      <div className="fixed bottom-0 left-1/2 z-50 grid max-h-[70vh] w-full max-w-[480px] -translate-x-1/2 gap-2 overflow-y-auto rounded-t-3xl border border-border bg-card p-3 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-soft">
         {categoryLinks.map((category) => (
           <Link href={category.href} className="rounded-xl px-3 py-2 text-sm font-bold hover:bg-secondary" key={category.href}>
             {category.label}
@@ -194,45 +187,32 @@ function CategoriesMenu() {
 
 export function SiteShell({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen">
+    <PhoneFrame>
       <a href="#main-content" className="skip-link">Skip to main content</a>
       <ToastCenter />
       <header className="sticky top-0 z-50 border-b border-border bg-background shadow-xs">
-        <div className="app-container flex flex-col gap-3 py-3">
-          <div className="flex items-center justify-between gap-3 pt-[env(safe-area-inset-top)]">
+        <div className="flex flex-col gap-3 px-3 py-3">
+          <div className="flex items-center justify-between gap-2 pt-[env(safe-area-inset-top)]">
             <div className="flex min-w-0 items-center gap-1">
               <MobileBackBar />
-              <BrandLogo href="/" size="md" showTagline className="min-w-0" />
+              <BrandLogo href="/" size="sm" showTagline={false} className="min-w-0" />
             </div>
-            <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
-              {navLinks.map((link) => (
-                <Link key={link.href} href={link.href} className="rounded-xl px-2 py-2 text-sm font-bold text-muted-foreground hover:text-foreground">
-                  {link.label}
-                </Link>
-              ))}
-              <LocationSelector />
-              <CategoriesMenu />
-            </nav>
-            <div className="hidden min-w-[12rem] flex-1 md:block xl:max-w-2xl">
-              <HeaderSearch />
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1.5">
               <GlobalAssistant />
-              <Button asChild className="hidden shadow-trust sm:inline-flex" variant="trust">
-                <Link href="/dashboard/listings/create">Sell</Link>
-              </Button>
               <AuthNav />
             </div>
           </div>
-          <div className="md:hidden">
-            <HeaderSearch id="global-marketplace-search-mobile" placeholder="Search listings" />
+          <HeaderSearch id="global-marketplace-search" placeholder="Search listings" />
+          <div className="flex gap-2">
+            <LocationSelector />
+            <CategoriesMenu />
           </div>
         </div>
       </header>
-      <main id="main-content" className="pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:pb-0" tabIndex={-1}>{children}</main>
+      <main id="main-content" className="px-3 pb-[calc(7rem+env(safe-area-inset-bottom))]" tabIndex={-1}>{children}</main>
       <MobileTabBar />
-      <footer className="hidden border-t border-border bg-premium-dark text-white md:block">
-        <div className="app-container grid gap-10 py-10 sm:py-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)]">
+      <footer className="border-t border-border bg-premium-dark px-4 pb-28 pt-8 text-white">
+        <div className="grid gap-8">
           <div className="space-y-5">
             <BrandLogo href="/" size="lg" tone="onDark" showTagline />
             <p className="max-w-md text-sm leading-6 text-slate-300">
@@ -245,7 +225,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
               </Button>
             </div>
           </div>
-          <nav className="grid gap-7 sm:grid-cols-2 xl:grid-cols-4" aria-label="Footer navigation">
+          <nav className="grid gap-7" aria-label="Footer navigation">
             {footerSections.map((section) => (
               <div key={section.title}>
                 <h2 className="font-bold text-white">{section.title}</h2>
@@ -261,7 +241,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </nav>
         </div>
         <div className="border-t border-white/10">
-          <div className="app-container flex flex-col gap-3 py-5 text-sm text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 py-5 text-sm text-slate-200">
             <p>© {new Date().getFullYear()} Friction-Free Marketplace. Built for safer local buying and selling.</p>
             <div className="flex flex-wrap gap-4">
               <Link href="/safety" className="hover:text-white">Safety</Link>
@@ -272,6 +252,6 @@ export function SiteShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </footer>
-    </div>
+    </PhoneFrame>
   );
 }
