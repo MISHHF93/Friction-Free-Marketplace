@@ -5,9 +5,9 @@ import { DashboardShell } from "@/components/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { adminLinks } from "@/lib/admin/navigation";
 import { can, permissionLabels, requireAdminPagePermission, rolePermissions, type AdminRole } from "@/lib/admin/permissions";
+import { adminMutationsFor } from "@/lib/admin/mutations";
 import { getAdminPageConfig, type AdminPageConfig } from "@/lib/admin/platform";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +40,7 @@ export function AdminFeaturePage({ config, adminRole }: { config: AdminPageConfi
           <span className="rounded-3xl bg-white/10 p-4 text-emerald-300"><Icon className="h-8 w-8" /></span>
         </div>
         <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
-          <Button variant="trust">{config.primaryAction}</Button>
+          <Button variant="trust" type="button" disabled title={adminMutationsFor(config.slug).length ? "Choose a live record from the API. Sample rows on this page are not mutable." : "This queue has no record mutation."}>{config.primaryAction}</Button>
           {can(adminRole ?? null, "fraud.review") ? <Button asChild variant="surface"><Link href="/admin/review-queue">Open review queue <ArrowRight className="ml-2 h-4 w-4" /></Link></Button> : null}
         </div>
       </section>
@@ -111,7 +111,7 @@ export function AdminFeaturePage({ config, adminRole }: { config: AdminPageConfi
                       </td>
                     ))}
                     <td className="align-top"><RiskScoreIndicator severity={row.severity} seed={index} /></td>
-                    <td className="align-top"><AdminRowActionMenu subject={row.subject} primaryAction={row.action ?? config.primaryAction} /></td>
+                    <td className="align-top"><AdminRowActionMenu subject={row.subject} primaryAction={row.action ?? config.primaryAction} mutable={adminMutationsFor(config.slug).length > 0} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -208,22 +208,20 @@ function RiskScoreIndicator({ severity, seed }: { severity?: string; seed: numbe
   );
 }
 
-function AdminRowActionMenu({ subject, primaryAction }: { subject: string; primaryAction: string }) {
+function AdminRowActionMenu({ subject, primaryAction, mutable }: { subject: string; primaryAction: string; mutable: boolean }) {
+  const reason = mutable
+    ? "Sample rows are not live records. Call the admin API with a real id."
+    : "This queue does not change marketplace records.";
   return (
     <details className="relative">
       <summary className="inline-flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-xl border border-border bg-card shadow-xs hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label={`Open actions for ${subject}`}>
         <MoreHorizontal className="h-4 w-4" />
       </summary>
       <div className="absolute right-0 z-30 mt-2 w-64 rounded-2xl border border-border bg-card p-2 shadow-soft">
-        <Button type="button" variant="ghost" size="sm" className="w-full justify-start">Assign owner</Button>
-        <Button type="button" variant="ghost" size="sm" className="w-full justify-start">Add internal note</Button>
-        <ConfirmationDialog
-          trigger={<Button type="button" variant="ghost" size="sm" className="w-full justify-start">{primaryAction}</Button>}
-          title={`Confirm ${primaryAction}`}
-          description={`This action affects ${subject}. Add a reason code and keep an audit record before proceeding.`}
-          confirmLabel="Confirm action"
-          tone="danger"
-        />
+        <Button type="button" variant="ghost" size="sm" className="w-full justify-start" disabled>Assign owner</Button>
+        <Button type="button" variant="ghost" size="sm" className="w-full justify-start" disabled>Add internal note</Button>
+        <Button type="button" variant="ghost" size="sm" className="w-full justify-start" disabled title={reason}>{primaryAction}</Button>
+        <p className="px-3 py-2 text-xs leading-5 text-muted-foreground">{reason}</p>
       </div>
     </details>
   );
