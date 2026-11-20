@@ -146,7 +146,7 @@ npm run platform:sync   # Verify and sync Capacitor Android/iOS projects
 
 `vercel.json` lives at the repository root and runs `npm ci` and `npm run web:build` from that root. Set the Vercel project's Root Directory to the repository root, not `apps/web`. A root of `apps/web` would not see this file, and the old `cd ../..` commands only made sense if the file itself lived in `apps/web`.
 
-Scheduled routes are Vercel Cron GET requests. Set `CRON_SECRET` (sent as `Authorization: Bearer`) or the route's own bearer secret (`SCHEDULED_JOB_SECRET` for notifications and offer expiry, `SEARCH_SYNC_SECRET` for search sync). A missing secret returns 503.
+Scheduled routes are Vercel Cron GET requests. Set `CRON_SECRET` (sent as `Authorization: Bearer`) or the route's own bearer secret (`SCHEDULED_JOB_SECRET` for notifications, offer expiry, and `/api/payments/reconcile`, `SEARCH_SYNC_SECRET` for search sync). A missing secret returns 503. Reconcile repairs escrow rows stuck in capturing, releasing, or refunding for more than 10 minutes.
 
 Public image build arguments are required. Pass `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` to `docker build`. The image does not bake placeholder values for those variables.
 

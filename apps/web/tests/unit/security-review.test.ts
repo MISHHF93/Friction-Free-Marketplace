@@ -48,12 +48,16 @@ describe("local auth runtime", () => {
     process.env.ALLOW_DEV_AUTH_BYPASS = "true";
     process.env.FFM_E2E_AUTH = "true";
     process.env.NODE_ENV = "staging";
-    expect(isDevAuthBypassEnabled("127.0.0.1:3001", "127.0.0.1")).toBe(false);
-    expect(isE2EAuthEnabled("127.0.0.1:3001", "127.0.0.1")).toBe(false);
+    expect(isDevAuthBypassEnabled("127.0.0.1:3001")).toBe(false);
+    expect(isE2EAuthEnabled("127.0.0.1:3001")).toBe(false);
 
     process.env.NODE_ENV = "development";
-    expect(isDevAuthBypassEnabled("127.0.0.1:3001", "203.0.113.8")).toBe(false);
-    expect(isE2EAuthEnabled("127.0.0.1:3001", "203.0.113.8")).toBe(false);
+    expect(isDevAuthBypassEnabled("127.0.0.1:3001")).toBe(false);
+    expect(isE2EAuthEnabled("127.0.0.1:3001")).toBe(false);
+    process.env.FFM_BIND_HOST = "127.0.0.1";
+    expect(isDevAuthBypassEnabled("127.0.0.1:3001")).toBe(true);
+    expect(isE2EAuthEnabled("127.0.0.1:3001")).toBe(true);
+    delete process.env.FFM_BIND_HOST;
     delete process.env.FFM_E2E_AUTH;
   });
 });

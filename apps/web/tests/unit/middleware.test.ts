@@ -22,6 +22,7 @@ function enableLocalBypass() {
   vi.stubEnv("CI", "");
   vi.stubEnv("VERCEL", "");
   vi.stubEnv("ALLOW_DEV_AUTH_BYPASS", "true");
+  vi.stubEnv("FFM_BIND_HOST", "127.0.0.1");
 }
 
 function createSupabaseAuthCookie(accessToken: string) {

@@ -5,11 +5,13 @@ describe("per-user session fixtures", () => {
   afterEach(() => {
     delete process.env.FFM_E2E_AUTH;
     delete process.env.VERCEL;
+    delete process.env.FFM_BIND_HOST;
   });
 
   it("keeps two local test users distinct and closed in production", () => {
     process.env.FFM_E2E_AUTH = "true";
     process.env.NODE_ENV = "development";
+    process.env.FFM_BIND_HOST = "127.0.0.1";
     const alice = e2eUserFromCookie("alice", "127.0.0.1:3001");
     const bob = e2eUserFromCookie("bob", "localhost:3001");
 
@@ -26,6 +28,7 @@ describe("per-user session fixtures", () => {
   it("does not accept an unknown cookie as a shared user", () => {
     process.env.FFM_E2E_AUTH = "true";
     process.env.NODE_ENV = "development";
+    process.env.FFM_BIND_HOST = "127.0.0.1";
     expect(e2eUserFromCookie("garfield", "localhost:3001")).toBeNull();
     expect(e2eUserFromCookie(undefined, "localhost:3001")).toBeNull();
   });

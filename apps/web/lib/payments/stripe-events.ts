@@ -5,6 +5,7 @@ import { centsToDollars } from "@/lib/payments/money";
 import { upsertSellerAccountFromStripe } from "@/lib/payments/connect";
 import { buildCaptureJournal, buildDisputeHoldJournal, postLedgerJournal } from "@/lib/financial/ledger";
 import { canApplyTransactionStatus } from "@/lib/payments/stripe-mode";
+import { isGenuinePostCompletionRefund, paymentSourcesForIntent, refundMayOverwriteStatus, refundStatusSources } from "@/lib/payments/webhook-guards";
 import { getStripe } from "@/lib/stripe/server";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -13,7 +14,7 @@ function assertWrite(error: { message?: string } | null | undefined, label: stri
   if (error) throw new Error(`${label}: ${error.message ?? "write failed"}`);
 }
 
-async function updatePaymentIntent(intent: Stripe.PaymentIntent) {
+export async function updatePaymentIntent(intent: Stripe.PaymentIntent) {
   const transactionId = intent.metadata?.transaction_id;
   if (!transactionId) return;
   const supabase = createAdminClient() as any;
@@ -24,24 +25,36 @@ async function updatePaymentIntent(intent: Stripe.PaymentIntent) {
   const chargeId = typeof intent.latest_charge === "string" ? intent.latest_charge : intent.latest_charge?.id ?? null;
 
   if (intent.status === "requires_action") {
-    const paymentUpdate = await supabase.from("escrow_payments").update({ status: "requires_action" }).eq("provider_payment_id", intent.id);
+    const paymentUpdate = await supabase.from("escrow_payments").update({ status: "requires_action" }).eq("provider_payment_id", intent.id).in("status", paymentSourcesForIntent("requires_action")).select("id");
     assertWrite(paymentUpdate.error, "Mark payment requires action");
+    if (!paymentUpdate.data?.length) {
+      await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "payment_requires_action", from_status: transaction?.status, to_status: transaction?.status, provider_object_id: intent.id, message: "Ignored payment_intent requires_action because the payment had already moved on." });
+      return;
+    }
     await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "payment_requires_action", from_status: transaction?.status, to_status: transaction?.status, provider_object_id: intent.id, message: "Buyer action is required before the payment can continue." });
     return;
   }
 
   if (intent.status === "requires_capture" && canApplyTransactionStatus(transaction?.status, "paid")) {
-    const paymentUpdate = await supabase.from("escrow_payments").update({ status: "authorized", authorized_at: new Date().toISOString(), provider_charge_id: chargeId }).eq("provider_payment_id", intent.id);
+    const paymentUpdate = await supabase.from("escrow_payments").update({ status: "authorized", authorized_at: new Date().toISOString(), provider_charge_id: chargeId }).eq("provider_payment_id", intent.id).in("status", paymentSourcesForIntent("requires_capture")).select("id");
     assertWrite(paymentUpdate.error, "Authorize escrow payment");
-    const transactionUpdate = await supabase.from("transactions").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", transactionId);
+    if (!paymentUpdate.data?.length) {
+      await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "payment_authorized", from_status: transaction?.status, to_status: transaction?.status, provider_object_id: intent.id, message: "Ignored a late requires_capture event because the payment was no longer authorizable." });
+      return;
+    }
+    const transactionUpdate = await supabase.from("transactions").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", transactionId).in("status", ["pending_payment", "paid"]).select("id");
     assertWrite(transactionUpdate.error, "Mark transaction paid");
     await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "payment_authorized", from_status: transaction?.status, to_status: "paid", provider_object_id: intent.id, amount: centsToDollars(intent.amount), currency: intent.currency, message: "Payment authorized; awaiting manual capture." });
   }
 
   if (intent.status === "succeeded" && canApplyTransactionStatus(transaction?.status, "escrowed")) {
-    const paymentUpdate = await supabase.from("escrow_payments").update({ status: "held", captured_at: new Date().toISOString(), held_at: new Date().toISOString(), provider_charge_id: chargeId }).eq("provider_payment_id", intent.id);
+    const paymentUpdate = await supabase.from("escrow_payments").update({ status: "held", captured_at: new Date().toISOString(), held_at: new Date().toISOString(), provider_charge_id: chargeId }).eq("provider_payment_id", intent.id).in("status", paymentSourcesForIntent("succeeded")).select("id");
     assertWrite(paymentUpdate.error, "Hold captured payment");
-    const transactionUpdate = await supabase.from("transactions").update({ status: "escrowed", paid_at: new Date().toISOString() }).eq("id", transactionId);
+    if (!paymentUpdate.data?.length) {
+      await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "escrow_held", from_status: transaction?.status, to_status: transaction?.status, provider_object_id: intent.id, message: "Ignored payment_intent.succeeded because the payment was not authorized or capturing." });
+      return;
+    }
+    const transactionUpdate = await supabase.from("transactions").update({ status: "escrowed", paid_at: new Date().toISOString() }).eq("id", transactionId).in("status", ["pending_payment", "paid"]).select("id");
     assertWrite(transactionUpdate.error, "Mark transaction escrowed");
     if (transaction && payment) {
       await postLedgerJournal(supabase, buildCaptureJournal({
@@ -77,16 +90,21 @@ async function updatePaymentIntent(intent: Stripe.PaymentIntent) {
   }
 
   if (intent.status === "requires_payment_method") {
-    const paymentUpdate = await supabase.from("escrow_payments").update({ failure_code: intent.last_payment_error?.code ?? null }).eq("provider_payment_id", intent.id);
+    const paymentUpdate = await supabase.from("escrow_payments").update({ failure_code: intent.last_payment_error?.code ?? null }).eq("provider_payment_id", intent.id).in("status", paymentSourcesForIntent("requires_payment_method")).select("id");
     assertWrite(paymentUpdate.error, "Record payment method failure");
+    if (!paymentUpdate.data?.length) return;
     await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "failed", from_status: transaction?.status, to_status: transaction?.status, provider_object_id: intent.id, message: intent.last_payment_error?.message ?? "Payment needs a new method. The order was not cancelled." });
     return;
   }
 
   if (intent.status === "canceled" && canApplyTransactionStatus(transaction?.status, "cancelled")) {
-    const paymentUpdate = await supabase.from("escrow_payments").update({ status: "cancelled", failure_code: intent.last_payment_error?.code ?? null }).eq("provider_payment_id", intent.id);
+    const paymentUpdate = await supabase.from("escrow_payments").update({ status: "cancelled", failure_code: intent.last_payment_error?.code ?? null }).eq("provider_payment_id", intent.id).in("status", paymentSourcesForIntent("canceled")).select("id");
     assertWrite(paymentUpdate.error, "Cancel escrow payment");
-    const transactionUpdate = await supabase.from("transactions").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", transactionId);
+    if (!paymentUpdate.data?.length) {
+      await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "failed", from_status: transaction?.status, to_status: transaction?.status, provider_object_id: intent.id, message: "Ignored payment_intent.canceled because the payment was already held or settled." });
+      return;
+    }
+    const transactionUpdate = await supabase.from("transactions").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", transactionId).in("status", ["pending_payment", "paid"]).select("id");
     assertWrite(transactionUpdate.error, "Cancel transaction");
     await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "failed", from_status: transaction?.status, to_status: "cancelled", provider_object_id: intent.id, message: intent.last_payment_error?.message ?? "Payment was canceled." });
   }
@@ -162,6 +180,12 @@ async function applyChargeRefund(charge: Stripe.Charge) {
     : await query.eq("provider_charge_id", charge.id).maybeSingle();
   assertWrite(error, "Load refunded payment");
   if (!payment) return;
+  const { data: transaction, error: transactionError } = await supabase.from("transactions").select("status").eq("id", payment.transaction_id).maybeSingle();
+  assertWrite(transactionError, "Load refunded transaction");
+  if (!refundMayOverwriteStatus(payment.status)) {
+    await recordTransactionEvent(supabase, { transaction_id: payment.transaction_id, type: "refund_succeeded", from_status: payment.status, to_status: payment.status, provider_object_id: charge.id, amount: centsToDollars(charge.amount_refunded), currency: charge.currency, message: `Ignored charge.refunded while the payment was ${payment.status}.` });
+    return;
+  }
   const refunded = centsToDollars(charge.amount_refunded);
   const fullyRefunded = charge.refunded || refunded >= Number(payment.amount);
   const paymentUpdate = await supabase.from("escrow_payments").update({
@@ -169,12 +193,32 @@ async function applyChargeRefund(charge: Stripe.Charge) {
     status: fullyRefunded ? "refunded" : payment.status,
     refunded_at: fullyRefunded ? new Date().toISOString() : payment.refunded_at,
     provider_charge_id: charge.id
-  }).eq("id", payment.id);
+  }).eq("id", payment.id).in("status", [...refundStatusSources]).select("id");
   assertWrite(paymentUpdate.error, "Record refund");
-  const { data: transaction, error: transactionError } = await supabase.from("transactions").select("status").eq("id", payment.transaction_id).maybeSingle();
-  assertWrite(transactionError, "Load refunded transaction");
+  if (!paymentUpdate.data?.length) {
+    await recordTransactionEvent(supabase, { transaction_id: payment.transaction_id, type: "refund_succeeded", from_status: payment.status, to_status: payment.status, provider_object_id: charge.id, amount: refunded, currency: charge.currency, message: "Ignored charge.refunded because the payment status had changed." });
+    return;
+  }
+  if (isGenuinePostCompletionRefund(transaction?.status, fullyRefunded)) {
+    const transactionUpdate = await supabase.from("transactions").update({ status: "refunded" }).eq("id", payment.transaction_id).eq("status", "completed").select("id");
+    assertWrite(transactionUpdate.error, "Mark completed transaction refunded");
+    const audit = await supabase.from("audit_logs").insert({
+      actor_type: "system",
+      action: "post_completion_refund",
+      table_name: "transactions",
+      record_id: payment.transaction_id,
+      metadata: { charge_id: charge.id, refunded_amount: refunded }
+    });
+    assertWrite(audit.error, "Log post-completion refund");
+    await recordTransactionEvent(supabase, { transaction_id: payment.transaction_id, type: "refund_succeeded", from_status: "completed", to_status: "refunded", provider_object_id: charge.id, amount: refunded, currency: charge.currency, message: "Genuine post-completion refund recorded for admin review." });
+    return;
+  }
+  if (transaction?.status === "completed") {
+    await recordTransactionEvent(supabase, { transaction_id: payment.transaction_id, type: "refund_succeeded", from_status: "completed", to_status: "completed", provider_object_id: charge.id, amount: refunded, currency: charge.currency, message: "Left a completed order unchanged because the Stripe refund was not a full post-completion refund." });
+    return;
+  }
   if (fullyRefunded && canApplyTransactionStatus(transaction?.status, "refunded")) {
-    const transactionUpdate = await supabase.from("transactions").update({ status: "refunded" }).eq("id", payment.transaction_id);
+    const transactionUpdate = await supabase.from("transactions").update({ status: "refunded" }).eq("id", payment.transaction_id).eq("status", transaction.status).select("id");
     assertWrite(transactionUpdate.error, "Mark transaction refunded");
   }
   await recordTransactionEvent(supabase, { transaction_id: payment.transaction_id, type: "refund_succeeded", from_status: payment.status, to_status: fullyRefunded ? "refunded" : payment.status, provider_object_id: charge.id, amount: refunded, currency: charge.currency, message: "Stripe reported a refund on this charge." });

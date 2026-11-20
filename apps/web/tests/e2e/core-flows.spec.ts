@@ -53,27 +53,47 @@ test.describe("core marketplace flows", () => {
     const context = await browser.newContext();
     await context.addCookies([{ name: "ffm-e2e-user", value: "alice", url: "http://127.0.0.1:3001" }]);
     await context.route("**/api/reviews", (route) => route.fulfill({ json: { message: "Review saved for this order." } }));
-    await context.route("**/api/disputes", (route) => route.fulfill({ json: { message: "Dispute opened. The order is marked disputed and no new charge was made." } }));
+    await context.route("**/api/stripe/transactions/**/dispute", (route) => route.fulfill({ json: { message: "Dispute opened. The order is marked disputed and no new charge was made." } }));
     const page = await context.newPage();
     await page.goto("/dashboard/purchases");
-    await page.getByLabel("Completed order").fill("11111111-1111-4111-8111-111111111111");
     await page.getByLabel("Review").fill("The handoff was clear and the item matched the listing.");
     await page.getByRole("button", { name: "Submit review" }).click();
     await expect(page.getByText("Review saved for this order.")).toBeVisible();
-    await page.getByLabel("Dispute order").fill("11111111-1111-4111-8111-111111111111");
+    await page.getByRole("button", { name: "Dispute this order" }).click();
     await page.getByLabel("What happened").fill("The item arrived with damage that was not in the listing.");
-    await page.getByRole("button", { name: "Submit dispute" }).click();
+    await page.getByRole("button", { name: "Confirm dispute" }).click();
     await expect(page.getByText(/no new charge was made/i)).toBeVisible();
     await context.close();
   });
 
+  test("stripe.js loads under the content security policy", async ({ page }) => {
+    const stripeScript = page.waitForResponse((response) => response.url().includes("https://js.stripe.com/v3/") && response.ok());
+    const response = await page.goto("/listings/verified-road-bike");
+    const policy = response?.headers()["content-security-policy"] ?? "";
+    expect(policy).toContain("https://js.stripe.com");
+    const script = page.locator("script[src='https://js.stripe.com/v3/']");
+    await expect(script).toHaveCount(1);
+    const nonce = await script.evaluate((element) => (element as HTMLScriptElement).nonce || element.getAttribute("nonce") || "");
+    const pageNonce = await page.locator("html").getAttribute("data-nonce");
+    expect(pageNonce && pageNonce.length > 0).toBe(true);
+    expect(nonce).toBe(pageNonce);
+    await stripeScript;
+  });
+
   test("sample listing checkout preview uses the mocked Stripe test response", async ({ page }) => {
-    await page.route("**/api/stripe/payment-intents", (route) => route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ transactionId: "txn_test_escrow", mode: "test" })
-    }));
+    await page.route("**/api/stripe/payment-intents", (route) => {
+      const key = route.request().headers()["idempotency-key"];
+      if (!key || key.length < 8) {
+        return route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify({ error: "A valid Idempotency-Key header is required for checkout." }) });
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ transactionId: "txn_test_escrow", mode: "test" })
+      });
+    });
     await page.goto("/listings/verified-road-bike");
+    await page.getByRole("button", { name: "Open checkout" }).click();
     await page.getByRole("button", { name: "Preview test authorization" }).click();
     await expect(page.getByText("txn_test_escrow")).toBeVisible();
     await expect(page.getByText(/no charge was made/i)).toBeVisible();

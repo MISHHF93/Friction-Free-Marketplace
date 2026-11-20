@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartCard, MetricCard, SearchBar, TrustBadge } from "@/components/ui-library";
 import { getFeaturedListings, getPublicCategories, getTrustSafetyStats } from "@/lib/public-marketplace";
+import { NoncedJsonLd } from "@/components/security/nonce-script";
 import { marketplaceJsonLd, publicCategories } from "@/lib/public-site";
 
 export const dynamic = "force-dynamic";
@@ -41,12 +42,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(marketplaceJsonLd("/", "Friction-Free Marketplace", metadata.description ?? "")),
-        }}
-      />
+      <NoncedJsonLd data={marketplaceJsonLd("/", "Friction-Free Marketplace", metadata.description ?? "")} />
 
       <section className="app-container relative isolate grid gap-10 overflow-hidden py-section-sm lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)] lg:items-center">
         <div className="hero-orb hero-orb-primary" aria-hidden="true" />

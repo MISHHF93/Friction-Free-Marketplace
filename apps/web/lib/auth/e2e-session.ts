@@ -1,4 +1,4 @@
-import { isExactLocalRuntime, isLocalDevelopmentHost, isLoopbackAddress } from "@/lib/auth/dev-bypass";
+import { isExactLocalRuntime, isLocalDevelopmentHost } from "@/lib/auth/dev-bypass";
 
 export const E2E_USER_COOKIE = "ffm-e2e-user";
 
@@ -19,17 +19,18 @@ const e2eUsers = {
 
 export type E2EUserKey = keyof typeof e2eUsers;
 
-export function isE2EAuthEnabled(host: string | null | undefined, remoteAddress?: string | null) {
+export function isE2EAuthEnabled(host: string | null | undefined) {
   if (process.env.FFM_E2E_AUTH !== "true") return false;
   if (!isExactLocalRuntime()) return false;
   if (process.env.VERCEL === "1") return false;
   if (!isLocalDevelopmentHost(host)) return false;
-  if (remoteAddress && !isLoopbackAddress(remoteAddress)) return false;
+  const peer = process.env.FFM_BIND_HOST?.trim().toLowerCase();
+  if (peer !== "127.0.0.1" && peer !== "::1" && peer !== "localhost") return false;
   return true;
 }
 
-export function e2eUserFromCookie(value: string | undefined, host: string | null | undefined, remoteAddress?: string | null) {
-  if (!isE2EAuthEnabled(host, remoteAddress) || !value || !(value in e2eUsers)) return null;
+export function e2eUserFromCookie(value: string | undefined, host: string | null | undefined) {
+  if (!isE2EAuthEnabled(host) || !value || !(value in e2eUsers)) return null;
   return e2eUsers[value as E2EUserKey];
 }
 

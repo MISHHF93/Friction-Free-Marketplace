@@ -2,6 +2,19 @@ export function escrowActionKey(action: "release" | "capture" | "refund" | "canc
   return [action, transactionId, paymentId, detail].filter(Boolean).join(":");
 }
 
+const escrowTransitions: Record<string, readonly string[]> = {
+  requires_action: ["authorized", "cancelled", "failed"],
+  authorized: ["capturing", "refunding", "cancelled"],
+  capturing: ["held", "authorized"],
+  held: ["releasing", "refunding"],
+  releasing: ["released", "held"],
+  refunding: ["refunded", "held", "cancelled"]
+};
+
+export function isEscrowTransition(from: string, to: string) {
+  return escrowTransitions[from]?.includes(to) ?? false;
+}
+
 type WriteError = { message?: string; code?: string } | null;
 
 type ClaimClient = {
@@ -23,6 +36,7 @@ function firstRow(data: unknown) {
 }
 
 export async function claimEscrowPayment(supabase: ClaimClient, paymentId: string, from: string, to: string) {
+  if (!isEscrowTransition(from, to)) return null;
   const rpc = await supabase.rpc("claim_escrow_payment", {
     p_payment_id: paymentId,
     p_from: from,

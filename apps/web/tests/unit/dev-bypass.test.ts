@@ -6,6 +6,7 @@ describe("development auth bypass", () => {
     delete process.env.ALLOW_DEV_AUTH_BYPASS;
     delete process.env.VERCEL;
     delete process.env.CI;
+    delete process.env.FFM_BIND_HOST;
   });
 
   it("stays off unless every local gate is present", () => {
@@ -13,6 +14,8 @@ describe("development auth bypass", () => {
     expect(isDevAuthBypassEnabled("localhost:3001")).toBe(false);
 
     process.env.ALLOW_DEV_AUTH_BYPASS = "true";
+    expect(isDevAuthBypassEnabled("localhost:3001")).toBe(false);
+    process.env.FFM_BIND_HOST = "127.0.0.1";
     expect(isDevAuthBypassEnabled("localhost:3001")).toBe(true);
     expect(isDevAuthBypassEnabled("marketplace.example")).toBe(false);
     expect(isDevAuthBypassEnabled(null)).toBe(false);

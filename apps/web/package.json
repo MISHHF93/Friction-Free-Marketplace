@@ -6,7 +6,7 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "dev": "next dev --webpack -p 3001",
+    "dev": "FFM_BIND_HOST=127.0.0.1 next dev --webpack --hostname 127.0.0.1 -p 3001",
     "build": "next build --webpack",
     "start": "next start",
     "web:build": "next build --webpack",

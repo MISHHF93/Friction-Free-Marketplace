@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartCard, SearchBar } from "@/components/ui-library";
 import { getPublicCategories } from "@/lib/public-marketplace";
+import { NoncedJsonLd } from "@/components/security/nonce-script";
 import { marketplaceJsonLd, publicCategories } from "@/lib/public-site";
 
 export const dynamic = "force-dynamic";
@@ -32,10 +33,7 @@ export default async function CategoriesPage() {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(marketplaceJsonLd("/categories", "Marketplace categories", metadata.description ?? "")) }}
-      />
+      <NoncedJsonLd data={marketplaceJsonLd("/categories", "Marketplace categories", metadata.description ?? "")} />
 
       <section className="app-container py-section-sm">
         <div className="rounded-shell border border-border bg-card p-6 shadow-panel sm:p-8 lg:p-10">

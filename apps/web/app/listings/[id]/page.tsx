@@ -34,7 +34,11 @@ import { createClient } from "@/lib/supabase/server";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { ShareListingButton } from "@/components/listings/share-listing-button";
 import { CheckoutCard, SampleCheckoutPreview } from "@/components/payments/checkout-card";
+import { ListingBuyBar } from "@/components/payments/listing-buy-bar";
+import { StripeJsScript } from "@/components/security/nonce-script";
 import { quoteCheckoutAmounts } from "@/lib/payments/quote";
+import { normalizeCurrency } from "@/lib/payments/money";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { StartConversationCard } from "@/components/messaging/start-conversation-card";
 import { PriceDisplay, TrustBadge } from "@/components/marketplace-design-system";
 import { PublicListingGrid } from "@/components/public-listing-grid";
@@ -224,6 +228,20 @@ function riskTone(riskLevel: string): "success" | "warning" {
   return riskLevel === "low" ? "success" : "warning";
 }
 
+async function loadPayableOffer(offerId: string | undefined, listingId: string | undefined, buyerId: string | undefined, listingCurrency: string) {
+  if (!offerId || !listingId || !buyerId || !/^[0-9a-f-]{36}$/i.test(offerId)) return null;
+  try {
+    const admin = createAdminClient() as any;
+    const { data } = await admin.from("offers").select("id,amount,currency,status,buyer_id,listing_id,payment_due_at").eq("id", offerId).maybeSingle();
+    if (!data || data.status !== "accepted" || data.buyer_id !== buyerId || data.listing_id !== listingId) return null;
+    if (!data.payment_due_at || new Date(data.payment_due_at).getTime() <= Date.now()) return null;
+    if (normalizeCurrency(String(data.currency)) !== normalizeCurrency(listingCurrency)) return null;
+    return data as { id: string; amount: number; currency: string };
+  } catch {
+    return null;
+  }
+}
+
 export default async function ListingDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ offer?: string }> }) {
   const { id } = await params;
   const offerId = (await searchParams)?.offer;
@@ -239,8 +257,11 @@ export default async function ListingDetailPage({ params, searchParams }: { para
   if (!listing) notFound();
 
   const isLiveDatabaseListing = Boolean(dbListing);
+  const payableOffer = await loadPayableOffer(offerId, dbListing?.id, user?.id, listing.currency);
+  const checkoutPrice = payableOffer ? Number(payableOffer.amount) : Number(listing.price_amount);
   const checkoutQuote = quoteCheckoutAmounts({
-    priceAmount: Number(listing.price_amount),
+    priceAmount: checkoutPrice,
+    itemAmount: payableOffer ? Number(payableOffer.amount) : undefined,
     metadata: dbListing?.metadata ?? null
   });
   const moderationStatus = typeof dbListing?.metadata?.moderation_status === "string" ? dbListing.metadata.moderation_status : "active";
@@ -255,7 +276,8 @@ export default async function ListingDetailPage({ params, searchParams }: { para
   const reportHref = `/safety?report=listing&id=${encodeURIComponent(listing.id)}`;
 
   return (
-    <main className="app-container section-y">
+    <main className="app-container section-y pb-28">
+      <StripeJsScript />
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3 text-sm">
         <Link href="/browse" className="inline-flex items-center gap-2 font-bold text-muted-foreground hover:text-foreground">
           <ArrowRight className="h-4 w-4 rotate-180" aria-hidden="true" />
@@ -316,7 +338,7 @@ export default async function ListingDetailPage({ params, searchParams }: { para
           ) : null}
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-24">
+        <aside className="space-y-4">
           <Card className="shadow-soft">
             <CardHeader className="space-y-4">
               <div className="flex flex-wrap gap-2">
@@ -335,7 +357,8 @@ export default async function ListingDetailPage({ params, searchParams }: { para
             <CardContent className="space-y-5">
               <div className="rounded-3xl border border-trust-border bg-trust-soft p-4">
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-trust">Price</p>
-                <PriceDisplay amount={listing.price_amount} currency={listing.currency} size="lg" className="text-foreground" />
+                <PriceDisplay amount={checkoutPrice} currency={listing.currency} size="lg" className="text-foreground" />
+                {payableOffer ? <p className="mt-2 text-sm font-semibold text-trust">Accepted offer price. List price was {listing.price_amount} {listing.currency}.</p> : null}
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">Use protected checkout when available. Ask for receipts or serial numbers before pickup.</p>
               </div>
 
@@ -369,9 +392,10 @@ export default async function ListingDetailPage({ params, searchParams }: { para
             </CardContent>
           </Card>
 
-          <div id="protected-checkout" className="sticky bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-30 md:static">
+          <ListingBuyBar amount={checkoutPrice} currency={listing.currency} label={payableOffer ? "Accepted offer" : "List price"}>
+            {payableOffer ? null : offerId ? <p className="mb-3 text-sm text-muted-foreground">That offer cannot be paid. Checkout uses the list price only when you are the buyer on an accepted, unexpired offer in the same currency.</p> : null}
             {isLiveDatabaseListing ? (
-              <CheckoutCard listingId={listing.id} offerId={offerId} priceAmount={Number(listing.price_amount)} currency={listing.currency} shippingCents={checkoutQuote.shippingCents} />
+              <CheckoutCard listingId={listing.id} offerId={payableOffer?.id} priceAmount={checkoutPrice} currency={listing.currency} shippingCents={checkoutQuote.shippingCents} />
             ) : (
               <Card className="border-primary/20 bg-primary/5">
                 <CardHeader><CardTitle className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-primary" aria-hidden="true" /> Protected checkout</CardTitle></CardHeader>
@@ -381,7 +405,7 @@ export default async function ListingDetailPage({ params, searchParams }: { para
                 </CardContent>
               </Card>
             )}
-          </div>
+          </ListingBuyBar>
 
           <Card id="message-seller">
             <CardHeader>

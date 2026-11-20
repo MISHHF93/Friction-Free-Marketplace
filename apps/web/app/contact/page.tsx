@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ContactForm } from "@/components/contact-form";
 import { EmptyState } from "@/components/ui-library";
+import { NoncedJsonLd } from "@/components/security/nonce-script";
 import { contactReasons, marketplaceJsonLd } from "@/lib/public-site";
 import { env } from "@/lib/env.server";
 
@@ -23,10 +24,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(marketplaceJsonLd("/contact", "Contact", metadata.description ?? "")) }}
-      />
+      <NoncedJsonLd data={marketplaceJsonLd("/contact", "Contact", metadata.description ?? "")} />
 
       <section className="app-container py-section-sm">
         <div className="rounded-shell border border-border bg-card p-6 shadow-panel sm:p-8 lg:p-10">
