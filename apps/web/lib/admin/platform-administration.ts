@@ -236,8 +236,8 @@ export async function getPlatformAdministrationData(role: AdminRole): Promise<Pl
     listings: (recentListings.data ?? []).map((listing: any) => ({ subject: listing.title ?? listing.id, status: listing.status, detail: `${listing.currency ?? "USD"} ${listing.price_amount ?? 0}`, created: new Date(listing.created_at).toLocaleDateString() })),
     transactions: transactionRows.map((transaction) => ({ subject: transaction.id, status: transaction.status, detail: money(Number(transaction.total_amount ?? 0), transaction.currency ?? "USD"), created: "recent" })),
     finance: [
-      { subject: "GMV", status: "sample", detail: money(gmv, currency), created: "recent" },
-      { subject: "Marketplace fees", status: "sample", detail: money(fees, currency), created: "recent" },
+      { subject: "GMV", status: "recent", detail: money(gmv, currency), created: "recent" },
+      { subject: "Marketplace fees", status: "recent", detail: money(fees, currency), created: "recent" },
       { subject: "Held funds", status: "escrow", detail: money(heldFunds, currency), created: "current" },
     ],
     fraud: (fraudSignals.data ?? []).map((signal: any) => ({ subject: signal.signal_type, status: String(Math.round(Number(signal.risk_score ?? 0))), detail: signal.source, created: new Date(signal.created_at).toLocaleDateString() })),

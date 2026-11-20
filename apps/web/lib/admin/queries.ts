@@ -1,3 +1,4 @@
+import { isLiveDatabaseConfigured } from "@/lib/marketplace/demo-mode";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type AdminOverviewData = {
@@ -45,6 +46,7 @@ export function boundedAdminLimit(limit: number) {
 
 export async function getAdminDirectoryRows(kind: string, limit = 50) {
   const bounded = boundedAdminLimit(limit);
+  if (!isLiveDatabaseConfigured()) return { data: [], error: null };
   const supabase = getServiceClient();
 
   switch (kind) {

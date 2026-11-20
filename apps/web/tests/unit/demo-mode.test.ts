@@ -17,10 +17,10 @@ describe("marketplace demo-data policy", () => {
     })).toBe(true);
   });
 
-  it("keeps placeholder-backed local development useful", () => {
+  it("does not invent inventory when the database is not configured", () => {
     expect(isDemoMarketplaceDataEnabled({
       NODE_ENV: "development",
       SUPABASE_SERVICE_ROLE_KEY: "local-dev-placeholder",
-    })).toBe(true);
+    })).toBe(false);
   });
 });
