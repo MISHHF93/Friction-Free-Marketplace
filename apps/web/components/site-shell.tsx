@@ -10,6 +10,7 @@ import { ToastCenter } from "@/components/ui/toast-center";
 import { GlobalAssistant } from "@/components/ai/global-assistant";
 import { brandProfile } from "@/lib/brand-profile";
 import { getMarketplaceSession } from "@/lib/auth/session";
+import { MobileBackBar, MobileTabBar } from "@/components/mobile/mobile-chrome";
 import { MenuDisclosure } from "@/components/menu-disclosure";
 import { cn } from "@/lib/utils";
 
@@ -107,7 +108,7 @@ async function AuthNav() {
           </>
         }
       >
-        <div className="absolute right-0 z-50 mt-3 w-64 rounded-2xl border border-border bg-card p-2 shadow-soft motion-dropdown">
+        <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border border-border bg-card p-2 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-soft md:absolute md:inset-x-auto md:bottom-auto md:right-0 md:mt-3 md:w-64 md:rounded-2xl md:pb-2">
           <Link href="/dashboard" className="block rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Dashboard</Link>
           <Link href="/account/settings" className="block rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Account settings</Link>
           <Link href="/dashboard/messages" className="block rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Messages</Link>
@@ -122,15 +123,15 @@ async function AuthNav() {
   );
 }
 
-function HeaderSearch() {
+function HeaderSearch({ id = "global-marketplace-search", placeholder = "Search listings, budget, condition, or pickup area..." }: { id?: string; placeholder?: string }) {
   return (
     <form action="/search" className="relative w-full" role="search">
-      <label htmlFor="global-marketplace-search" className="sr-only">Search trusted marketplace listings</label>
+      <label htmlFor={id} className="sr-only">Search trusted marketplace listings</label>
       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <input
-        id="global-marketplace-search"
+        id={id}
         name="q"
-        placeholder="Search listings, budget, condition, or pickup area..."
+        placeholder={placeholder}
         className="h-11 w-full rounded-xl border border-input bg-card pl-10 pr-4 text-sm font-medium shadow-sm outline-none transition placeholder:text-muted-foreground hover:border-primary focus:border-primary focus:ring-2 focus:ring-ring/30"
       />
     </form>
@@ -151,7 +152,7 @@ function LocationSelector() {
         </>
       }
     >
-      <div className="fixed left-4 right-4 top-32 z-50 rounded-2xl border border-border bg-card p-4 shadow-soft motion-dropdown md:absolute md:left-0 md:right-auto md:top-auto md:mt-3 md:w-72">
+      <div className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-soft md:absolute md:inset-x-auto md:bottom-auto md:left-0 md:mt-3 md:w-72 md:rounded-2xl md:pb-4">
         <p className="font-bold">Shop near you</p>
         <p className="mt-1 text-sm text-muted-foreground">Use location, pickup, shipping, and radius filters to narrow results.</p>
         <div className="mt-4 grid gap-2">
@@ -191,33 +192,6 @@ function CategoriesMenu() {
   );
 }
 
-function MobilePrimaryNav() {
-  return (
-    <MenuDisclosure
-      className="group relative shrink-0 md:hidden"
-      label="Open mobile navigation"
-      summaryClassName="inline-flex h-11 cursor-pointer list-none items-center gap-2 rounded-lg border border-border bg-card px-3 text-xs font-bold shadow-xs transition hover:bg-secondary [&::-webkit-details-marker]:hidden"
-      summary={
-        <>
-        <Menu className="h-4 w-4" aria-hidden="true" />
-        Menu
-        <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" aria-hidden="true" />
-        </>
-      }
-    >
-      <div className="fixed left-4 right-4 top-32 z-50 rounded-2xl border border-border bg-card p-3 shadow-soft motion-dropdown">
-        <nav className="grid gap-1" aria-label="Mobile primary navigation">
-          {navLinks.map((link) => (
-            <Link href={link.href} className="rounded-xl px-3 py-2 text-sm font-bold hover:bg-secondary" key={link.href}>
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
-    </MenuDisclosure>
-  );
-}
-
 export function SiteShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen">
@@ -225,8 +199,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <ToastCenter />
       <header className="sticky top-0 z-50 border-b border-border bg-background shadow-xs">
         <div className="app-container flex flex-col gap-3 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <BrandLogo href="/" size="md" showTagline className="min-w-0" />
+          <div className="flex items-center justify-between gap-3 pt-[env(safe-area-inset-top)]">
+            <div className="flex min-w-0 items-center gap-1">
+              <MobileBackBar />
+              <BrandLogo href="/" size="md" showTagline className="min-w-0" />
+            </div>
             <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
               {navLinks.map((link) => (
                 <Link key={link.href} href={link.href} className="rounded-xl px-2 py-2 text-sm font-bold text-muted-foreground hover:text-foreground">
@@ -247,19 +224,14 @@ export function SiteShell({ children }: { children: ReactNode }) {
               <AuthNav />
             </div>
           </div>
-          <div className="grid gap-2 md:hidden">
-            <HeaderSearch />
-            <div className="flex min-w-0 flex-wrap gap-2">
-              <MobilePrimaryNav />
-              <LocationSelector />
-              <CategoriesMenu />
-              <Link href="/dashboard/listings/create" className={cn(buttonVariants({ variant: "trust", size: "sm" }), "shrink-0")}>Sell</Link>
-            </div>
+          <div className="md:hidden">
+            <HeaderSearch id="global-marketplace-search-mobile" placeholder="Search listings" />
           </div>
         </div>
       </header>
-      <main id="main-content" tabIndex={-1}>{children}</main>
-      <footer className="border-t border-border bg-premium-dark text-white">
+      <main id="main-content" className="pb-[calc(6.5rem+env(safe-area-inset-bottom))] md:pb-0" tabIndex={-1}>{children}</main>
+      <MobileTabBar />
+      <footer className="hidden border-t border-border bg-premium-dark text-white md:block">
         <div className="app-container grid gap-10 py-10 sm:py-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)]">
           <div className="space-y-5">
             <BrandLogo href="/" size="lg" tone="onDark" showTagline />
