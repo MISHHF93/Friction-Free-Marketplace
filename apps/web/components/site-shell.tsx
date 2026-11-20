@@ -10,7 +10,7 @@ import { ToastCenter } from "@/components/ui/toast-center";
 import { GlobalAssistant } from "@/components/ai/global-assistant";
 import { brandProfile } from "@/lib/brand-profile";
 import { getMarketplaceSession } from "@/lib/auth/session";
-import { MobileBackBar, MobileTabBar, PhoneFrame } from "@/components/mobile/mobile-chrome";
+import { MobileBackBar, MobileTabBar, PageTitleMirror, PhoneFrame } from "@/components/mobile/mobile-chrome";
 import { MenuDisclosure } from "@/components/menu-disclosure";
 import { cn } from "@/lib/utils";
 
@@ -102,9 +102,11 @@ async function AuthNav() {
         }
       >
         <div className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border border-border bg-card p-2 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-soft">
-          <Link href="/dashboard" className="block rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Dashboard</Link>
-          <Link href="/account/settings" className="block rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Account settings</Link>
-          <Link href="/dashboard/messages" className="block rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Messages</Link>
+          <Link href="/dashboard" className="block min-h-11 rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Dashboard</Link>
+          <Link href="/dashboard/purchases" className="block min-h-11 rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Orders</Link>
+          <Link href="/dashboard/offers" className="block min-h-11 rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Offers</Link>
+          <Link href="/account/settings" className="block min-h-11 rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Account settings</Link>
+          <Link href="/dashboard/messages" className="block min-h-11 rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Messages</Link>
           <form action={logoutAction} className="mt-1 border-t border-border pt-1">
             <button className="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground" type="submit">
               Log out
@@ -195,7 +197,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between gap-2 pt-[env(safe-area-inset-top)]">
             <div className="flex min-w-0 items-center gap-1">
               <MobileBackBar />
-              <BrandLogo href="/" size="sm" showTagline={false} className="min-w-0" />
+              <div className="min-w-0">
+                <BrandLogo href="/" size="sm" showTagline={false} className="min-w-0" />
+                <PageTitleMirror />
+              </div>
             </div>
             <div className="flex items-center gap-1.5">
               <GlobalAssistant />

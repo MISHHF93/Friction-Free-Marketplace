@@ -76,6 +76,8 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
   const [reportReason, setReportReason] = useState("");
   const [typingUsers, setTypingUsers] = useState<Record<string, string[]>>({});
   const [error, setError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
   const [isPending, startTransition] = useTransition();
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const attachmentInputRef = useRef<HTMLInputElement | null>(null);
@@ -87,6 +89,14 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
   );
   const otherParticipant = activeConversation?.buyer_id === userId ? activeConversation?.seller : activeConversation?.buyer;
   const otherParticipantId = activeConversation?.buyer_id === userId ? activeConversation?.seller_id : activeConversation?.buyer_id;
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const onResize = () => setKeyboardOffset(Math.max(0, window.innerHeight - viewport.height));
+    viewport.addEventListener("resize", onResize);
+    return () => viewport.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     const upsertConversationSummary = (conversationId: string) => {
@@ -208,6 +218,7 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
       const storage = createClient().storage.from(payload.bucket);
       const uploaded: PendingAttachment[] = [];
       for (const [index, upload] of payload.uploads.entries()) {
+        setUploadProgress(`Uploading ${index + 1} of ${payload.uploads.length}`);
         const { error: uploadError } = await storage.uploadToSignedUrl(upload.path, upload.token, files[index], { contentType: files[index].type });
         if (uploadError) throw uploadError;
         uploaded.push({
@@ -219,8 +230,10 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
         });
       }
       setAttachments((current) => [...current, ...uploaded].slice(0, 5));
+      setUploadProgress(null);
       if (attachmentInputRef.current) attachmentInputRef.current.value = "";
     } catch (uploadError) {
+      setUploadProgress(null);
       setError(uploadError instanceof Error ? uploadError.message : "Attachment upload failed.");
     }
   }
@@ -329,8 +342,9 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
               })}
             </div>
             <div className="mt-2 h-5 text-xs text-muted-foreground">{(typingUsers[activeConversation.id] ?? []).length > 0 ? `${otherParticipant?.display_name ?? "They"} is typing…` : " "}</div>
-            <form className="mt-3 grid gap-3" onSubmit={(event) => { event.preventDefault(); runAction(() => sendMessageAction({ conversationId: activeConversation.id, body, clientToken: crypto.randomUUID(), attachments: [...attachments, ...(attachmentUrl ? [{ storagePath: `external/${crypto.randomUUID()}`, publicUrl: attachmentUrl, fileName: attachmentUrl.split('/').pop() || 'attachment', contentType: 'application/octet-stream', byteSize: 1024 }] : [])] }), () => { setBody(""); setAttachmentUrl(""); setAttachments([]); if (activeConversation) setTypingAction({ conversationId: activeConversation.id, isTyping: false }).catch(() => null); }); }}>
-              <Textarea value={body} onChange={(event) => onMessageInput(event.target.value)} placeholder="Write a real-time message…" disabled={activeConversation.status === "blocked"} />
+            <form className="sticky z-20 mt-3 grid gap-3 bg-background py-2" style={{ bottom: `calc(4.5rem + env(safe-area-inset-bottom) + ${keyboardOffset}px)` }} onSubmit={(event) => { event.preventDefault(); runAction(() => sendMessageAction({ conversationId: activeConversation.id, body, clientToken: crypto.randomUUID(), attachments: [...attachments, ...(attachmentUrl ? [{ storagePath: `external/${crypto.randomUUID()}`, publicUrl: attachmentUrl, fileName: attachmentUrl.split('/').pop() || 'attachment', contentType: 'application/octet-stream', byteSize: 1024 }] : [])] }), () => { setBody(""); setAttachmentUrl(""); setAttachments([]); if (activeConversation) setTypingAction({ conversationId: activeConversation.id, isTyping: false }).catch(() => null); }); }}>
+              {uploadProgress ? <p className="text-xs text-muted-foreground" role="status">{uploadProgress}</p> : null}
+              <Textarea value={body} onChange={(event) => onMessageInput(event.target.value)} placeholder="Write a real-time message…" enterKeyHint="send" disabled={activeConversation.status === "blocked"} />
               {attachments.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {attachments.map((attachment) => (

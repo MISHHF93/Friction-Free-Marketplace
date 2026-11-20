@@ -77,6 +77,11 @@ export default async function PurchasesPage() {
         <CardContent className="grid gap-3">
           {purchases.length ? purchases.map((purchase) => (
             <DashboardListItem key={purchase.id} title={purchase.title} detail={`${money(purchase.total_amount, purchase.currency)} · ${purchaseMilestone(purchase)}`} status={purchase.status}>
+              <ol className="grid gap-1 text-xs" aria-label="Order status">
+                {["paid", "escrowed", "shipped", "delivered", "completed"].map((step) => (
+                  <li key={step} className={purchase.status === step ? "font-bold text-primary" : "text-muted-foreground"} aria-current={purchase.status === step ? "step" : undefined}>{step}</li>
+                ))}
+              </ol>
               <Button asChild size="sm" variant="outline"><Link href={`/listings/${purchase.listing_id}`}>View listing</Link></Button>
               <EscrowActions transactionId={purchase.id} role="buyer" status={purchase.status} amount={Number(purchase.total_amount)} currency={purchase.currency} />
             </DashboardListItem>

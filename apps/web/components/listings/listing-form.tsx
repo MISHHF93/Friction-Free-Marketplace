@@ -32,6 +32,7 @@ import {
   type AiListingResponse,
 } from "@/lib/listings/validation";
 import { createClient as createBrowserClient } from "@/lib/supabase/browser";
+import { cn } from "@/lib/utils";
 
 const MAX_IMAGES = 12;
 const FULFILLMENT_OPTIONS = ["shipping", "pickup", "local_delivery"] as const;
@@ -301,6 +302,7 @@ export function ListingForm({
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [sellerNotes, setSellerNotes] = useState("");
+  const [sellStep, setSellStep] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -608,7 +610,12 @@ export function ListingForm({
       }}
     >
       <div className="space-y-6">
-        <Card>
+        <div className="grid grid-cols-5 gap-1" aria-label="Listing steps">
+          {["Photos", "Details", "Price", "Fulfilment", "Review"].map((label, index) => (
+            <button key={label} type="button" className={cn("min-h-11 rounded-xl px-1 text-[11px] font-bold", sellStep === index ? "bg-primary text-primary-foreground" : "bg-secondary")} aria-current={sellStep === index ? "step" : undefined} onClick={() => setSellStep(index)}>{label}</button>
+          ))}
+        </div>
+        <Card className={sellStep === 1 || sellStep === 2 ? "" : "hidden"}>
           <CardHeader className="p-4 sm:p-6">
             <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
               <div>
@@ -684,7 +691,7 @@ export function ListingForm({
                 {helperText(errors.condition?.message)}
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
+            <div className={cn("grid gap-4 sm:grid-cols-2 2xl:grid-cols-3", sellStep === 2 ? "" : "hidden")}>
               <div className="grid gap-2">
                 <Label htmlFor="priceAmount">Price</Label>
                 <Input
@@ -729,7 +736,7 @@ export function ListingForm({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={sellStep === 0 ? "" : "hidden"}>
           <CardHeader>
             <CardTitle>Photos and AI generation</CardTitle>
           </CardHeader>
@@ -750,6 +757,7 @@ export function ListingForm({
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                capture="environment"
                 multiple
                 className="mt-4"
                 onChange={uploadPhotos}
@@ -879,7 +887,7 @@ export function ListingForm({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={sellStep === 3 ? "" : "hidden"}>
           <CardHeader>
             <CardTitle>Location and fulfillment</CardTitle>
           </CardHeader>
@@ -944,7 +952,7 @@ export function ListingForm({
         </Card>
       </div>
 
-      <aside className="space-y-5 xl:sticky xl:top-24 xl:h-fit">
+      <aside className={sellStep === 4 ? "space-y-5" : "hidden"}>
         <Card className={isReadyToPublish ? "border-primary/30 bg-primary/5" : undefined}>
           <CardHeader>
             <CardTitle>Publish readiness</CardTitle>

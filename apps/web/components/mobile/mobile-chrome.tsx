@@ -1,17 +1,15 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, Home, MessageSquare, Plus, Search, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function PhoneFrame({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const wide = pathname.startsWith("/admin");
   return (
     <div className="app-backdrop min-h-screen">
-      <div className={cn("app-shell relative mx-auto min-h-screen w-full bg-background shadow-[0_0_48px_rgba(16,21,28,0.08)]", wide ? "max-w-[760px]" : "max-w-[480px]")}>
+      <div className="app-shell relative mx-auto min-h-screen w-full max-w-[480px] bg-background pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] shadow-[0_0_48px_rgba(16,21,28,0.08)]">
         {children}
       </div>
     </div>
@@ -22,50 +20,107 @@ const tabs = [
   { href: "/", label: "Home", icon: Home },
   { href: "/search", label: "Search", icon: Search },
   { href: "/dashboard/listings/create", label: "Sell", icon: Plus, emphasize: true },
-  { href: "/dashboard/messages", label: "Messages", icon: MessageSquare },
-  { href: "/account/settings", label: "Account", icon: UserRound }
+  { href: "/dashboard/messages", label: "Messages", icon: MessageSquare, badge: "messages" },
+  { href: "/account/settings", label: "Account", icon: UserRound, badge: "offers" }
 ] as const;
 
 const rootPaths = new Set(["/", "/browse", "/search", "/login", "/signup"]);
 
+function parentPath(pathname: string) {
+  if (pathname.startsWith("/listings/")) return "/browse";
+  if (pathname.startsWith("/dashboard/messages")) return "/dashboard";
+  if (pathname.startsWith("/dashboard/listings/")) return "/dashboard/listings";
+  if (pathname.startsWith("/dashboard/purchases") || pathname.startsWith("/dashboard/sales")) return "/dashboard";
+  if (pathname.startsWith("/dashboard/")) return "/dashboard";
+  if (pathname.startsWith("/account")) return "/";
+  if (pathname.startsWith("/admin/")) return "/admin";
+  const parts = pathname.split("/").filter(Boolean);
+  return parts.length > 1 ? `/${parts.slice(0, -1).join("/")}` : "/";
+}
+
 export function MobileBackBar() {
   const pathname = usePathname();
+  const router = useRouter();
   if (rootPaths.has(pathname)) return null;
   return (
-    <Link href="/" className="inline-flex h-11 min-w-11 items-center gap-1 rounded-xl px-2 text-sm font-bold" aria-label="Back to home">
+    <button
+      type="button"
+      className="inline-flex h-11 min-w-11 items-center gap-1 rounded-xl px-2 text-sm font-bold active:scale-[0.98]"
+      aria-label="Back"
+      onClick={() => {
+        if (window.history.length > 1) router.back();
+        else router.push(parentPath(pathname));
+      }}
+    >
       <ArrowLeft className="h-5 w-5" aria-hidden="true" />
       Back
-    </Link>
+    </button>
   );
+}
+
+export function PageTitleMirror() {
+  const pathname = usePathname();
+  const titleRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    const heading = document.querySelector("main h1");
+    if (titleRef.current) titleRef.current.textContent = heading?.textContent?.trim() ?? "";
+  }, [pathname]);
+  return <p ref={titleRef} className="truncate text-sm font-black" aria-hidden="true" />;
 }
 
 export function MobileTabBar() {
   const pathname = usePathname();
-  const wide = pathname.startsWith("/admin");
+  const [counts, setCounts] = useState({ messages: 0, offers: 0 });
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    const onResize = () => {
+      const open = Boolean(viewport && window.innerHeight - viewport.height > 140);
+      document.documentElement.classList.toggle("keyboard-open", open);
+    };
+    onResize();
+    viewport?.addEventListener("resize", onResize);
+    return () => viewport?.removeEventListener("resize", onResize);
+  }, []);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/nav-counts")
+      .then((response) => response.ok ? response.json() : { messages: 0, offers: 0 })
+      .then((payload) => {
+        if (!cancelled) setCounts({ messages: Number(payload.messages ?? 0), offers: Number(payload.offers ?? 0) });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
   return (
     <nav
       aria-label="App sections"
-      className={cn("app-tabs fixed bottom-0 left-1/2 z-40 w-full -translate-x-1/2 border-t border-border bg-background/95 backdrop-blur", wide ? "max-w-[760px]" : "max-w-[480px]")}
+      className="app-tabs fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 border-t border-border bg-background/95 backdrop-blur"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <ul className="keep-grid grid grid-cols-5">
         {tabs.map((tab) => {
           const active = tab.href === "/" ? pathname === "/" : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
           const Icon = tab.icon;
+          const count = "badge" in tab ? counts[tab.badge] : 0;
           return (
             <li key={tab.href}>
               <Link
                 href={tab.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex min-h-11 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[11px] font-bold",
+                  "relative flex min-h-11 flex-col items-center justify-center gap-0.5 px-1 py-1 text-[11px] font-bold active:scale-[0.98]",
                   active ? "text-primary" : "text-foreground"
                 )}
               >
-                <span className={cn("flex h-11 w-11 items-center justify-center rounded-2xl", "emphasize" in tab && tab.emphasize ? "bg-primary text-primary-foreground" : "")}>
+                <span className={cn("relative flex h-11 w-11 items-center justify-center rounded-2xl", "emphasize" in tab && tab.emphasize ? "bg-primary text-primary-foreground" : "")}>
                   <Icon className="h-5 w-5" aria-hidden="true" />
+                  {count > 0 ? <span className="absolute right-0 top-0 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-black text-white">{count > 9 ? "9+" : count}</span> : null}
                 </span>
                 {tab.label}
+                {count > 0 ? <span className="sr-only">{count} unread</span> : null}
               </Link>
             </li>
           );

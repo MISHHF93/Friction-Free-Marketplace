@@ -63,6 +63,34 @@ function canPreviewItem(item: MediaViewerItem, config: ReturnType<typeof getMedi
   return withinSizeLimit && config.allowedTypes.includes(item.type);
 }
 
+function GalleryImage({ src, alt, onPrevious, onNext }: { src: string; alt: string; onPrevious: () => void; onNext: () => void }) {
+  const [scale, setScale] = useState(1);
+  const startX = useRef<number | null>(null);
+  return (
+    <div className="grid justify-items-center gap-3">
+      <div
+        className="touch-pan-y"
+        onTouchStart={(event) => {
+          if (event.touches.length === 1) startX.current = event.touches[0].clientX;
+        }}
+        onTouchEnd={(event) => {
+          if (startX.current == null) return;
+          const delta = event.changedTouches[0].clientX - startX.current;
+          startX.current = null;
+          if (delta > 48) onPrevious();
+          if (delta < -48) onNext();
+        }}
+      >
+        <RemoteImage src={src} alt={alt} loading="eager" fetchPriority="high" className="max-h-[70vh] max-w-full rounded-2xl object-contain" style={{ transform: `scale(${scale})` }} />
+      </div>
+      <div className="flex gap-2">
+        <Button type="button" variant="surface" className="min-h-11" onClick={() => setScale((value) => Math.max(1, Number((value - 0.25).toFixed(2))))}>Zoom out</Button>
+        <Button type="button" variant="surface" className="min-h-11" onClick={() => setScale((value) => Math.min(3, Number((value + 0.25).toFixed(2))))}>Zoom in</Button>
+      </div>
+    </div>
+  );
+}
+
 export function MediaViewer({ items, initialIndex = 0, triggerLabel = "Open media viewer", triggerClassName, thumbnailClassName, mode = "button", surface = "listingGallery" }: MediaViewerProps) {
   const surfaceConfig = getMediaViewerSurfaceConfig(surface);
   const availableItems = useMemo(() => items.filter((item) => item.src), [items]);
@@ -171,7 +199,7 @@ export function MediaViewer({ items, initialIndex = 0, triggerLabel = "Open medi
             <main className="grid min-h-0 flex-1 gap-0 lg:grid-cols-[minmax(0,1fr)_20rem]">
               <section className="relative flex min-h-0 items-center justify-center p-4">
                 {activeItem.type === "image" && activeItemCanPreview ? (
-                  <RemoteImage src={activeItem.src} alt={activeItem.alt ?? activeItem.title} loading="eager" fetchPriority="high" className="max-h-full max-w-full rounded-2xl object-contain" />
+                  <GalleryImage src={activeItem.src} alt={activeItem.alt ?? activeItem.title} onPrevious={previous} onNext={next} />
                 ) : activeItem.type === "video" && activeItemCanPreview ? (
                   <div className="relative w-full max-w-5xl">
                     <video ref={videoRef} src={activeItem.src} poster={activeItem.poster ?? undefined} controls preload={surfaceConfig.videoPreload} playsInline className="max-h-[70vh] w-full rounded-2xl bg-black" onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} />
