@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { DEV_AUTH_BYPASS_COOKIE, isOpenLocalAuthEnabled } from "@/lib/auth/dev-bypass";
+import { DEV_AUTH_BYPASS_COOKIE, devBypassCookieSecure, isDevAuthBypassEnabled } from "@/lib/auth/dev-bypass";
+import { getRequestHost } from "@/lib/auth/dev-bypass-session";
 import { publicEnv } from "@/lib/env";
 import { authSchema, profileSettingsSchema, signupSchema } from "@/lib/validations/auth";
 
@@ -36,13 +37,18 @@ function formatValidationError(error: z.ZodError) {
 }
 
 async function establishLocalAuthSession(next: string): Promise<never> {
+  const host = await getRequestHost();
+  if (!isDevAuthBypassEnabled(host)) {
+    redirect(`/login?next=${encodeURIComponent(next)}&authError=${encodeURIComponent("Developer bypass is not available in this environment.")}`);
+  }
+
   const cookieStore = await cookies();
   cookieStore.set(DEV_AUTH_BYPASS_COOKIE, "1", {
     httpOnly: true,
     sameSite: "lax",
-    secure: false,
+    secure: devBypassCookieSecure(process.env.NEXT_PUBLIC_APP_URL),
     path: "/",
-    maxAge: 60 * 60 * 24 * 30
+    maxAge: 60 * 60 * 12
   });
   revalidatePath("/", "layout");
   redirect(next);
@@ -50,11 +56,6 @@ async function establishLocalAuthSession(next: string): Promise<never> {
 
 export async function loginAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
   const next = getSafeRedirectPath(formData.get("next"));
-
-  // Temporary open local auth: accept any login attempt without Supabase.
-  if (isOpenLocalAuthEnabled()) {
-    await establishLocalAuthSession(next);
-  }
 
   const parsed = authSchema.safeParse({
     email: getFormString(formData, "email"),
@@ -78,11 +79,6 @@ export async function loginAction(_previousState: AuthActionState, formData: For
 
 export async function signupAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
   const next = getSafeRedirectPath(formData.get("next"));
-
-  // Temporary open local auth: accept any signup attempt without Supabase.
-  if (isOpenLocalAuthEnabled()) {
-    await establishLocalAuthSession(next);
-  }
 
   const parsed = signupSchema.safeParse({
     displayName: getFormString(formData, "displayName"),
@@ -161,11 +157,6 @@ export async function oauthSignInAction(formData: FormData) {
 
 export async function devBypassAction(formData: FormData) {
   const next = getSafeRedirectPath(formData.get("next"));
-
-  if (!isOpenLocalAuthEnabled()) {
-    redirect(`/login?next=${encodeURIComponent(next)}&authError=${encodeURIComponent("Developer bypass is not available in this environment.")}`);
-  }
-
   await establishLocalAuthSession(next);
 }
 

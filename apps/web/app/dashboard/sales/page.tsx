@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Banknote, Box, Send, Store } from "lucide-react";
 import { DashboardActionCard, DashboardListItem, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
+import { EscrowActions } from "@/components/payments/escrow-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
@@ -59,7 +61,8 @@ async function getSellerSales(userId: string) {
 export default async function SalesPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const sales = user ? await getSellerSales(user.id) : [];
+  if (!user) redirect("/login?next=/dashboard/sales");
+  const sales = await getSellerSales(user.id);
   const active = sales.filter((sale) => !["completed", "cancelled", "refunded"].includes(sale.status));
   const pendingPayout = sales.reduce((sum, sale) => sale.payout?.status === "pending" ? sum + Number(sale.payout.amount) : sum, 0);
   const completed = sales.filter((sale) => sale.status === "completed").length;
@@ -78,6 +81,7 @@ export default async function SalesPage() {
           {sales.length ? sales.map((sale) => (
             <DashboardListItem key={sale.id} title={sale.title} detail={`${money(sale.total_amount, sale.currency)} · ${sellerNextStep(sale.status)}`} status={sale.status}>
               <Button asChild size="sm"><Link href="/dashboard/messages">Manage</Link></Button>
+              <EscrowActions transactionId={sale.id} role="seller" status={sale.status} />
             </DashboardListItem>
           )) : (
             <div className="rounded-2xl border border-dashed border-border bg-secondary/50 p-5 text-sm text-muted-foreground">

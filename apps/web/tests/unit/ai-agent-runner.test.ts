@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const createCompletion = vi.fn();
-const configured = vi.fn();
+const { createCompletion, configured } = vi.hoisted(() => ({
+  createCompletion: vi.fn(),
+  configured: vi.fn()
+}));
 
 vi.mock("@/lib/openai/client", () => ({
   getOpenAI: () => ({

@@ -6,12 +6,17 @@ for (const marker of ["mutationMethods", "isTrustedMutationOrigin", "serverMutat
   if (!proxy.includes(marker)) throw new Error(`Centralized API mutation policy is missing ${marker}.`);
 }
 
+const jobGuard = readFileSync("apps/web/lib/security/secrets.ts", "utf8");
+if (!jobGuard.includes("hasValidBearerSecret") || !jobGuard.includes("status: 503")) {
+  throw new Error("Job routes must fail closed with a bearer secret or HTTP 503.");
+}
+
 const serverRoutes = [
   ["apps/web/app/api/stripe/webhooks/route.ts", ["webhooks.constructEvent", "STRIPE_WEBHOOK_SECRET"]],
-  ["apps/web/app/api/search/sync/route.ts", ["hasValidBearerSecret", "SEARCH_SYNC_SECRET"]],
+  ["apps/web/app/api/search/sync/route.ts", ["authorizeJobRequest", "SEARCH_SYNC_SECRET"]],
   ["apps/web/app/api/admin/trust-safety/workers/route.ts", ["hasValidBearerSecret", "ADMIN_WORKER_SECRET"]],
-  ["apps/web/app/api/notifications/dispatch/route.ts", ["hasValidBearerSecret", "SCHEDULED_JOB_SECRET"]],
-  ["apps/web/app/api/offers/expire/route.ts", ["hasValidBearerSecret", "SCHEDULED_JOB_SECRET"]],
+  ["apps/web/app/api/notifications/dispatch/route.ts", ["authorizeJobRequest", "SCHEDULED_JOB_SECRET"]],
+  ["apps/web/app/api/offers/expire/route.ts", ["authorizeJobRequest", "SCHEDULED_JOB_SECRET"]],
 ];
 
 for (const [path, markers] of serverRoutes) {

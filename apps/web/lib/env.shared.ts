@@ -24,8 +24,21 @@ export const localDevelopmentPublicEnv: PublicEnv = {
   NEXT_PUBLIC_POSTHOG_HOST: "https://app.posthog.com"
 };
 
-export function shouldUseLocalDevelopmentEnv() {
-  return process.env.NODE_ENV !== "production" && process.env.CI !== "true";
+/** True only while Next is compiling. Runtime, Vercel functions, and CI servers are not a build. */
+export function isNextBuildPhase(env: NodeJS.ProcessEnv = process.env) {
+  const phase = env["NEXT_PHASE"];
+  return phase === "phase-production-build" || phase === "phase-export";
+}
+
+/**
+ * Local and unit-test runs can use inert development values.
+ * Production, Vercel, and non-test CI must supply real configuration.
+ */
+export function shouldUseLocalDevelopmentEnv(env: NodeJS.ProcessEnv = process.env) {
+  if (env.VERCEL === "1") return false;
+  if (env.NODE_ENV === "production") return false;
+  if (env.CI === "true" && env.NODE_ENV !== "test") return false;
+  return true;
 }
 
 function summarizeZodError(error: z.ZodError) {

@@ -2,21 +2,22 @@ export const dynamic = "force-dynamic";
 
 import { NextResponse } from "next/server";
 import { env } from "@/lib/env.server";
-import { hasValidBearerSecret } from "@/lib/security/secrets";
+import { authorizeJobRequest } from "@/lib/security/secrets";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-function authorized(request: Request) {
-  if (!env.SCHEDULED_JOB_SECRET) return process.env.NODE_ENV !== "production";
-  return hasValidBearerSecret(request, env.SCHEDULED_JOB_SECRET);
-}
-
-export async function POST(request: Request) {
-  if (process.env.NODE_ENV === "production" && !env.SCHEDULED_JOB_SECRET) {
-    return NextResponse.json({ error: "Scheduled job secret is not configured." }, { status: 503 });
-  }
-  if (!authorized(request)) return NextResponse.json({ error: "Unauthorized offer expiration request." }, { status: 401 });
+async function expireOffers(request: Request) {
+  const authorization = authorizeJobRequest(request, env.SCHEDULED_JOB_SECRET, "Unauthorized offer expiration request.");
+  if (!authorization.ok) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
 
   const { data, error } = await createAdminClient().rpc("expire_due_offers");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true, expired: Number(data ?? 0) });
+}
+
+export function POST(request: Request) {
+  return expireOffers(request);
+}
+
+export function GET(request: Request) {
+  return expireOffers(request);
 }

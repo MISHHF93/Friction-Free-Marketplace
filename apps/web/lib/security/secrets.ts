@@ -18,3 +18,24 @@ export function hasValidBearerSecret(request: Request, expectedSecret: string | 
 
   return safeEqualSecret(bearer, expectedSecret) || safeEqualSecret(alternate, expectedSecret);
 }
+
+export type JobAuthorization =
+  | { ok: true }
+  | { ok: false; status: 401 | 503; error: string };
+
+/** Missing job secrets fail closed in every environment, including local dev. */
+export function authorizeJobRequest(
+  request: Request,
+  secret: string | null | undefined,
+  unauthorizedMessage: string,
+  alternateHeader?: string
+): JobAuthorization {
+  const accepted = [secret, process.env.CRON_SECRET].filter((value): value is string => Boolean(value?.trim()));
+  if (!accepted.length) {
+    return { ok: false, status: 503, error: "Job secret is not configured." };
+  }
+  if (!accepted.some((value) => hasValidBearerSecret(request, value, alternateHeader))) {
+    return { ok: false, status: 401, error: unauthorizedMessage };
+  }
+  return { ok: true };
+}

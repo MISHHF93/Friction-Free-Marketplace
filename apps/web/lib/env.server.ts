@@ -1,4 +1,4 @@
-import { formatEnvError, shouldUseLocalDevelopmentEnv } from "@/lib/env.shared";
+import { formatEnvError, isNextBuildPhase, shouldUseLocalDevelopmentEnv } from "@/lib/env.shared";
 import { localDevelopmentEnv, serverEnvSchema, type ServerEnv } from "@/lib/env.server-schema";
 
 if (typeof window !== "undefined") {
@@ -31,41 +31,22 @@ const buildTimeServerEnv: ServerEnv = {
   POSTHOG_HOST: "https://app.posthog.com"
 };
 
-function isBuildOrCompilePhase() {
-  const phase = process.env.NEXT_PHASE ?? "";
-  const lifecycle = process.env.npm_lifecycle_event ?? "";
-  return (
-    phase === "phase-production-build" ||
-    phase === "phase-export" ||
-    lifecycle === "build" ||
-    lifecycle === "web:build" ||
-    lifecycle === "vercel-build" ||
-    process.env.CI === "true" ||
-    (process.env.VERCEL === "1" && !process.env.NEXT_RUNTIME)
-  );
-}
-
 export function validateServerEnv(input: NodeJS.ProcessEnv = process.env): ServerEnv {
   const result = serverEnvSchema.safeParse(input);
   if (!result.success) {
-    if (isBuildOrCompilePhase()) {
+    if (isNextBuildPhase(input)) {
       return buildTimeServerEnv;
     }
 
-    if (shouldUseLocalDevelopmentEnv()) {
+    if (shouldUseLocalDevelopmentEnv(input)) {
       return localDevelopmentEnv;
-    }
-
-    // Soft fallback during Vercel builds/previews when project secrets are incomplete.
-    if (process.env.VERCEL === "1") {
-      return buildTimeServerEnv;
     }
 
     throw new Error(formatEnvError(result.error, "server"));
   }
   const parsed = result.data;
-  // Strict production checks only for live serverless runtime, not compile workers.
-  if (process.env.NODE_ENV === "production" && !isBuildOrCompilePhase() && process.env.NEXT_RUNTIME) {
+  // Strict production checks only for the live server runtime, not the Next compile.
+  if (input.NODE_ENV === "production" && !isNextBuildPhase(input)) {
     const invalid: string[] = [];
     const appUrl = new URL(parsed.NEXT_PUBLIC_APP_URL);
     const localOrigin = ["localhost", "127.0.0.1"].includes(appUrl.hostname);

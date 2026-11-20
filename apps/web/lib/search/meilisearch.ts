@@ -42,7 +42,8 @@ async function meiliRequest<T>(path: string, init: RequestInit = {}) {
       "Content-Type": "application/json",
       ...(init.headers ?? {})
     },
-    cache: "no-store"
+    cache: "no-store",
+    signal: init.signal ?? AbortSignal.timeout(2_000)
   });
 
   if (!response.ok) {

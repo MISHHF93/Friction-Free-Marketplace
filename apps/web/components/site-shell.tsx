@@ -9,7 +9,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { ToastCenter } from "@/components/ui/toast-center";
 import { GlobalAssistant } from "@/components/ai/global-assistant";
 import { brandProfile } from "@/lib/brand-profile";
-import { getLocalAuthUser } from "@/lib/auth/dev-bypass";
+import { getDevBypassSession } from "@/lib/auth/dev-bypass-session";
 import { createClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils";
 
@@ -78,7 +78,7 @@ async function AuthNav() {
   const {
     data: { user }
   } = await supabase.auth.getUser();
-  const localUser = getLocalAuthUser();
+  const localUser = (await getDevBypassSession()).user;
   const signedIn = Boolean(user || localUser);
 
   if (!signedIn) {

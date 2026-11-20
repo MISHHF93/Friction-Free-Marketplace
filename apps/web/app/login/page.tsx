@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/forms/auth-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { isOpenLocalAuthEnabled } from "@/lib/auth/dev-bypass";
+import { getDevBypassSession } from "@/lib/auth/dev-bypass-session";
 import { createClient } from "@/lib/supabase/server";
 
 function getSafeNext(next?: string | string[]) {
@@ -13,9 +13,9 @@ function getSafeNext(next?: string | string[]) {
 export default async function LoginPage({ searchParams }: { searchParams?: Promise<{ next?: string | string[]; loggedOut?: string; authError?: string; accountDeletionPending?: string }> }) {
   const resolvedSearchParams = await searchParams;
   const next = getSafeNext(resolvedSearchParams?.next);
+  const devBypass = await getDevBypassSession();
 
-  // Temporary open local auth: send people straight into the app.
-  if (isOpenLocalAuthEnabled()) {
+  if (devBypass.user) {
     redirect(next);
   }
 
@@ -51,7 +51,7 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
               Your marketplace data was anonymized and this session was closed. Contact support to finish removing the authentication record.
             </p>
           ) : null}
-          <AuthForm mode="login" next={next} showDevBypass={false} />
+          <AuthForm mode="login" next={next} showDevBypass={devBypass.enabled} />
           <p className="mt-5 text-center text-sm text-muted-foreground">
             New here? <Link className="font-semibold text-primary" href={`/signup?next=${encodeURIComponent(next)}`}>Create an account</Link>
           </p>
