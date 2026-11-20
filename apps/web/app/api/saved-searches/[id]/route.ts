@@ -13,7 +13,7 @@ const patchSchema = z.object({
 });
 
 async function requireUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { supabase, user: null, response: NextResponse.json({ error: "Sign in to manage saved searches." }, { status: 401 }) };
   return { supabase, user, response: null };

@@ -12,7 +12,7 @@ const enrichmentSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return NextResponse.json({ error: "Sign in to use AI search intent extraction." }, { status: 401 });
 

@@ -93,7 +93,7 @@ type DbListing = {
 
 async function getDatabaseListing(id: string) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data, error } = await supabase
       .from("listings")
       .select("id,title,description,condition,price_amount,currency,seller_id,location_city,location_region,ships_to,pickup_available,metadata,listing_images(public_url,alt_text)")
@@ -226,7 +226,7 @@ function riskTone(riskLevel: string): "success" | "warning" {
 
 export default async function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const [favoriteIds, dbListing, discoveryListing] = await Promise.all([
     user ? getFavoriteListingIds(user.id) : Promise.resolve(new Set<string>()),

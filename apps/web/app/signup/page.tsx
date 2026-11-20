@@ -17,7 +17,7 @@ export default async function SignupPage({ searchParams }: { searchParams?: Prom
 
   if (devBypass.user) redirect(next);
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();

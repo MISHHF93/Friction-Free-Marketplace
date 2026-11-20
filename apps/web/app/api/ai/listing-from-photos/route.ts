@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     if (!isTrustedMutationOrigin(request)) {
       return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
     }
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data } = await supabase.auth.getUser();
     if (!data.user) {
       return NextResponse.json({ error: "Sign in to generate an AI listing draft." }, { status: 401 });

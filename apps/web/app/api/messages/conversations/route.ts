@@ -14,7 +14,7 @@ function errorResponse(error: unknown) {
 
 export async function GET() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Sign in to view conversations." }, { status: 401 });
     const conversations = await getConversationSummaries(supabase, user.id);

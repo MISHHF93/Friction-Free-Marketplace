@@ -4,7 +4,8 @@ import { NotificationPreferencesForm } from "@/components/notifications/notifica
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/server";
+import { getMarketplaceSession } from "@/lib/auth/session";
+import { accountCopy } from "@/lib/i18n/account-copy";
 import { getNotificationPreferences, getUnreadNotificationCount } from "@/lib/notifications/service";
 
 const sections = [
@@ -15,18 +16,15 @@ const sections = [
 ];
 
 export default async function SettingsPage() {
-  const supabase = createClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  const [preferences, unreadCount] = user
-    ? await Promise.all([getNotificationPreferences(user.id), getUnreadNotificationCount(user.id)])
+  const session = await getMarketplaceSession();
+  const [preferences, unreadCount] = session?.source === "supabase"
+    ? await Promise.all([getNotificationPreferences(session.id), getUnreadNotificationCount(session.id)])
     : [null, 0] as const;
 
   return (
     <DashboardShell title="Settings" description="Control profile details, notification cadence, privacy settings, security preferences, and marketplace communications.">
       <div className="grid gap-5 sm:grid-cols-3">
-        <DashboardStatCard icon={Settings} label="Account status" value="Active" detail="Your account can buy, sell, message, and make offers." />
+        <DashboardStatCard icon={Settings} label={accountCopy.account} value={session?.displayName ?? accountCopy.signedOut} detail={session?.email || accountCopy.sessionMissing} />
         <DashboardStatCard icon={Bell} label="Unread notifications" value={String(unreadCount)} detail="Configurable channels across email and in-app alerts." />
         <DashboardStatCard icon={Lock} label="Privacy checks" value="On" detail="Recommendations and blocked-user controls are enabled." />
       </div>

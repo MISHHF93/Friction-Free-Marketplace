@@ -37,7 +37,7 @@ export default async function OffersPage() {
   let setupError: string | null = null;
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       userId = user.id;

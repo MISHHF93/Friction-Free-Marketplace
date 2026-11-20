@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 async function getCategoryOptions(): Promise<ListingCategoryOption[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await supabase
     .from("categories")
     .select("slug,name")

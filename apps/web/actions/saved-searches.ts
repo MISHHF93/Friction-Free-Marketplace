@@ -22,7 +22,7 @@ const savedSearchSchema = z.object({
 const savedSearchUpdateSchema = savedSearchSchema.partial().extend({ id: z.string().uuid() });
 
 async function requireAuthUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw new Error("Sign in to manage saved searches.");
   return { supabase, user: data.user };

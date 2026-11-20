@@ -17,7 +17,7 @@ const actions = [
 ];
 
 export default async function TrustScorePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const summary = user ? await getUserTrustSafetySummary(supabase as any, user.id) : null;
   const trustScore = summary?.trustScore ?? { score: 0, sellerScore: 0, buyerScore: 0, fraudRiskLevel: "low", disputeRate: 0, signals: {}, modelVersion: "trust-engine-v1" };

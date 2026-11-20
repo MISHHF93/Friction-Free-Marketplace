@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { connection } from "next/server";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { SiteShell } from "@/components/site-shell";
@@ -6,6 +7,9 @@ import { publicEnv } from "@/lib/env";
 import { brandChrome, brandProfile } from "@/lib/brand-profile";
 import { PwaRegistrar } from "@/components/pwa-registrar";
 import { NativeBridge } from "@/components/native-bridge";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -69,7 +73,8 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  await connection();
   return (
     <html lang="en" dir="ltr">
       <body>

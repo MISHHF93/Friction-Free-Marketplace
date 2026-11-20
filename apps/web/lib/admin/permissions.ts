@@ -60,8 +60,8 @@ export const permissionLabels: Record<AdminPermission, string> = {
 type UserRow = Database["public"]["Tables"]["users"]["Row"];
 type AdminAuthorizationSuccess = {
   authorized: true;
-  supabase: ReturnType<typeof createClient>;
-  authUser: NonNullable<Awaited<ReturnType<ReturnType<typeof createClient>["auth"]["getUser"]>>["data"]["user"]>;
+  supabase: Awaited<ReturnType<typeof createClient>>;
+  authUser: NonNullable<Awaited<ReturnType<Awaited<ReturnType<typeof createClient>>["auth"]["getUser"]>>["data"]["user"]>;
   adminUser: Pick<UserRow, "id" | "email" | "role" | "status" | "metadata">;
   role: AdminRole;
 };
@@ -86,7 +86,7 @@ export function can(role: AdminRole | null, permission: AdminPermission) {
 }
 
 export async function getAdminAuthorization(permission: AdminPermission = "admin.access"): Promise<AdminAuthorizationSuccess | AdminAuthorizationFailure> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
   if (authError || !authData.user) {

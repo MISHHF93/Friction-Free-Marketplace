@@ -13,7 +13,7 @@ const savedSearchSchema = z.object({
 });
 
 export async function GET() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in to view saved searches." }, { status: 401 });
 
@@ -24,7 +24,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const input = savedSearchSchema.parse(await request.json());
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in to save this search." }, { status: 401 });
 

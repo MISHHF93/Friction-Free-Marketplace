@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { isolatedPreviewCounts } from "@/lib/auth/e2e-session";
+import { getMarketplaceSession } from "@/lib/auth/session";
+import { createClient } from "@/lib/supabase/server";
 import {
   Bell,
   Bot,
@@ -20,12 +24,28 @@ import { DashboardActionCard, DashboardListItem, DashboardProgressCard, Dashboar
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-const stats = [
-  { label: "Active listings", value: "12", detail: "3 drafts need photos or price updates.", icon: Tags },
-  { label: "Open offers", value: "5", detail: "2 need a response before they expire today.", icon: Wallet },
-  { label: "Unread messages", value: "8", detail: "Sorted by active purchases and sales.", icon: MessageSquare },
-  { label: "Protected payments", value: "$2.1k", detail: "Authorized or pending release across your orders.", icon: CreditCard }
-];
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+async function countsFor(userId: string) {
+  try {
+    const supabase = await createClient();
+    const [listings, offers, messages, orders] = await Promise.all([
+      supabase.from("listings").select("id", { count: "exact", head: true }).eq("seller_id", userId).is("deleted_at", null),
+      supabase.from("offers").select("id", { count: "exact", head: true }).or(`buyer_id.eq.${userId},seller_id.eq.${userId}`),
+      supabase.from("conversations").select("id", { count: "exact", head: true }).or(`buyer_id.eq.${userId},seller_id.eq.${userId}`),
+      supabase.from("transactions").select("id", { count: "exact", head: true }).or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+    ]);
+    return {
+      listings: listings.count ?? 0,
+      offers: offers.count ?? 0,
+      messages: messages.count ?? 0,
+      orders: orders.count ?? 0
+    };
+  } catch {
+    return { listings: 0, offers: 0, messages: 0, orders: 0 };
+  }
+}
 
 const activityFeed = [
   { title: "Counteroffer received", detail: "Vintage Herman Miller chair needs a response before 6 PM.", status: "Offer", href: "/dashboard/offers" },
@@ -60,11 +80,21 @@ const recommendedActions = [
   { icon: LineChart, title: "Review seller performance", description: "Check listing quality, response speed, pricing, and buyer interest in your seller workspace.", href: "/dashboard/seller", label: "Seller tools" }
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const session = await getMarketplaceSession();
+  if (!session) redirect("/login?next=/dashboard");
+  const counts = session.source === "supabase" ? await countsFor(session.id) : isolatedPreviewCounts(session.id);
+  const stats = [
+    { label: "Your listings", value: String(counts.listings), detail: "Listings owned by this signed-in account.", icon: Tags },
+    { label: "Your offers", value: String(counts.offers), detail: "Offers where you are the buyer or seller.", icon: Wallet },
+    { label: "Your messages", value: String(counts.messages), detail: "Conversations that include this account.", icon: MessageSquare },
+    { label: "Your orders", value: String(counts.orders), detail: "Purchases and sales for this account.", icon: CreditCard }
+  ];
+
   return (
     <DashboardShell
-      title="Overview"
-      description="A clear workspace for listings, messages, offers, payments, verification, and marketplace alerts."
+      title={`${session.displayName}'s overview`}
+      description={`Signed in as ${session.email || session.displayName}. These counts belong only to this account.`}
       actions={
         <>
           <Button asChild variant="trust"><Link href="/dashboard/listings/create">Create listing</Link></Button>

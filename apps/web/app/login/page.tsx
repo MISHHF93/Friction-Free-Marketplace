@@ -19,7 +19,7 @@ export default async function LoginPage({ searchParams }: { searchParams?: Promi
     redirect(next);
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();

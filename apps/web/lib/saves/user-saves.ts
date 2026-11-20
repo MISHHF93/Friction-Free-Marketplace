@@ -91,7 +91,7 @@ function rowToDiscoveryDocument(row: Row): DiscoveryDocument {
 
 export async function getFavoriteListingIds(userId: string): Promise<Set<string>> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data, error } = await (supabase as any).from("favorites").select("listing_id").eq("user_id", userId);
     if (error) throw error;
     return new Set((data ?? []).map((row: Row) => String(row.listing_id)));
@@ -102,7 +102,7 @@ export async function getFavoriteListingIds(userId: string): Promise<Set<string>
 
 export async function getFavoritesDashboard(userId: string): Promise<{ favorites: FavoriteDashboardItem[]; stats: Pick<SaveStats, "favoritesCount" | "alertCount" | "offerReadyCount">; source: "database" | "demo" }> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: favorites, error: favoritesError } = await (supabase as any)
       .from("favorites")
       .select("listing_id, created_at")
@@ -138,7 +138,7 @@ export async function getFavoritesDashboard(userId: string): Promise<{ favorites
 }
 
 async function getRecentSavedSearchMatches(userId: string, searches: SavedSearchDashboardItem[]): Promise<SavedSearchMatchItem[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: deliveries, error } = await (supabase as any)
     .from("saved_search_alert_deliveries")
     .select("id, saved_search_id, listing_id, notification_id, delivered_at")
@@ -186,7 +186,7 @@ async function getRecentSavedSearchMatches(userId: string, searches: SavedSearch
 
 export async function getSavedSearchesDashboard(userId: string): Promise<{ searches: SavedSearchDashboardItem[]; recentMatches: SavedSearchMatchItem[]; stats: Pick<SaveStats, "savedSearchCount" | "newMatchCount" | "digestCount">; source: "database" | "demo" }> {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const [{ data: searches, error: searchesError }, { data: deliveries, error: deliveriesError }, { data: notifications, error: notificationsError }] = await Promise.all([
       (supabase as any).from("saved_searches").select("*").eq("user_id", userId).order("updated_at", { ascending: false }),
       (supabase as any).from("saved_search_alert_deliveries").select("saved_search_id").eq("user_id", userId),

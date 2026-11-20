@@ -24,7 +24,7 @@ export type ListingActionResult<T = unknown> =
   | { ok: false; error: string };
 
 async function requireAuthUser() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw new Error("You must be signed in to manage listings.");
   return { supabase, user: data.user };
@@ -34,7 +34,7 @@ function actionError(error: unknown, fallback = "Unable to manage listing.") {
   return { ok: false, error: error instanceof Error ? error.message : fallback } as const;
 }
 
-async function ensureListingOwner(supabase: ReturnType<typeof createClient>, listingId: string, sellerId: string) {
+async function ensureListingOwner(supabase: Awaited<ReturnType<typeof createClient>>, listingId: string, sellerId: string) {
   const { data, error } = await supabase
     .from("listings")
     .select("id")

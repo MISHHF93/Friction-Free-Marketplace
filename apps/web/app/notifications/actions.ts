@@ -9,7 +9,7 @@ import { markAllNotificationsRead, markNotificationRead, updateNotificationPrefe
 const digestFrequencySchema = z.enum(["instant", "daily", "weekly", "never"]);
 
 async function requireUserId() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
     error

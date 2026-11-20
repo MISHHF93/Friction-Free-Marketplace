@@ -12,7 +12,7 @@ import { captureReliabilityEvent, getRequestId } from "@/lib/observability/relia
 export const dynamic = "force-dynamic";
 
 async function getActorId() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const result = await supabase.auth.getUser();
   return result.data.user?.id ?? null;
 }

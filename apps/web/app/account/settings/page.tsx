@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export default async function AccountSettingsPage({ searchParams }: { searchParams?: Promise<{ deleteError?: string }> }) {
   const query = await searchParams;
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
     error: userError

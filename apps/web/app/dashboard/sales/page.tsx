@@ -39,7 +39,7 @@ function sellerNextStep(status: string) {
 }
 
 async function getSellerSales(userId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data } = await (supabase as any)
     .from("transactions")
     .select("id,listing_id,status,total_amount,marketplace_fee_amount,currency,updated_at")
@@ -59,7 +59,7 @@ async function getSellerSales(userId: string) {
 }
 
 export default async function SalesPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/dashboard/sales");
   const sales = await getSellerSales(user.id);

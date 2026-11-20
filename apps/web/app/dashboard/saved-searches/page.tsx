@@ -18,7 +18,7 @@ function searchHref(query: string | null, filters: Record<string, unknown>) {
 }
 
 export default async function SavedSearchesPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { searches, recentMatches, stats, source } = user
     ? await getSavedSearchesDashboard(user.id)

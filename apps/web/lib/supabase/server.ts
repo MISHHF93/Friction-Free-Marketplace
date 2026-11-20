@@ -2,20 +2,19 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import { publicEnv } from "@/lib/env";
 
-export function createClient() {
-  const cookieStore = cookies();
+export async function createClient() {
+  const cookieStore = await cookies();
 
   return createServerClient(publicEnv.NEXT_PUBLIC_SUPABASE_URL, publicEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
     cookies: {
-      async getAll() {
-        return (await cookieStore).getAll();
+      getAll() {
+        return cookieStore.getAll();
       },
-      async setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) {
+      setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>) {
         try {
-          const store = await cookieStore;
-          cookiesToSet.forEach(({ name, value, options }) => store.set(name, value, options));
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
         } catch {
-          // Server Components cannot set cookies; middleware refreshes auth sessions.
+          // Server Components cannot set cookies; the proxy refreshes auth sessions.
         }
       }
     }

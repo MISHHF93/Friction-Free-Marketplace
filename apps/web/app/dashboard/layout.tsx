@@ -6,10 +6,12 @@ import { dashboardLinks, getSerializableDashboardLinks } from "@/components/dash
 import { DashboardMobileBottomNav, DashboardMobileNavigation, DashboardSidebar } from "@/components/dashboard-navigation";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Button } from "@/components/ui/button";
-import { getDevBypassSession } from "@/lib/auth/dev-bypass-session";
+import { getMarketplaceSession } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
 
 type DashboardProfile = {
   display_name: string | null;
@@ -19,7 +21,7 @@ type DashboardProfile = {
 
 async function getDashboardProfile(userId: string) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data } = await supabase
       .from("profiles")
       .select("display_name,username,location_label")
@@ -33,19 +35,14 @@ async function getDashboardProfile(userId: string) {
 }
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const supabase = createClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-  const localUser = (await getDevBypassSession()).user;
+  const session = await getMarketplaceSession();
 
-  if (!user && !localUser) {
+  if (!session) {
     redirect("/login?next=/dashboard");
   }
 
-  const dashboardUser = user ?? localUser;
-  const profile = user ? await getDashboardProfile(user.id) : null;
-  const displayName = profile?.display_name ?? (localUser ? "Local developer" : null) ?? dashboardUser?.email ?? "Marketplace member";
+  const profile = session.source === "supabase" ? await getDashboardProfile(session.id) : null;
+  const displayName = profile?.display_name || session.displayName;
   const navigationLinks = getSerializableDashboardLinks(dashboardLinks);
 
   return (
@@ -53,7 +50,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <a className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-background focus:px-4 focus:py-2 focus:shadow" href="#dashboard-content">
         Skip to dashboard content
       </a>
-      <DashboardSidebar links={navigationLinks} user={{ name: displayName, email: dashboardUser?.email ?? "No email on file", location: profile?.location_label ?? profile?.username ?? (localUser && !user ? "Local development" : "Marketplace workspace") }} />
+      <DashboardSidebar links={navigationLinks} user={{ name: displayName, email: session.email || "No email on file", location: profile?.location_label ?? profile?.username ?? "Marketplace workspace" }} />
       <div className="min-w-0 space-y-6">
         <DashboardMobileNavigation links={navigationLinks} showQuickLinks={false} />
         <div className="overflow-hidden rounded-[1.75rem] border border-slate-900/10 bg-premium-dark p-4 text-white shadow-admin sm:rounded-[2rem] sm:p-6">
@@ -78,7 +75,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                 </span>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold">{displayName}</p>
-                  <p className="truncate text-xs text-slate-300">{dashboardUser?.email ?? "Authenticated account"}</p>
+                  <p className="truncate text-xs text-slate-300">{session.email || "Authenticated account"}</p>
                 </div>
               </div>
             </div>

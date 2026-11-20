@@ -13,7 +13,7 @@ export default async function MessagesPage({ searchParams }: { searchParams?: Pr
   let setupError: string | null = null;
 
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       userId = user.id;

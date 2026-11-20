@@ -5,7 +5,7 @@ import { getUserTrustSafetySummary } from "@/lib/trust-safety/service";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
 
