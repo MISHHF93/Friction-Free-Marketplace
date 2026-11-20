@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEV_AUTH_BYPASS_COOKIE, devBypassCookieSecure, isDevAuthBypassEnabled } from "@/lib/auth/dev-bypass";
 import { publicEnv } from "@/lib/env";
-import { authSchema, profileSettingsSchema, signupSchema } from "@/lib/validations/auth";
+import { authSchema, memberDisplayName, profileSettingsSchema, signupSchema } from "@/lib/validations/auth";
 
 export type AuthActionState = {
   status: "idle" | "error" | "success";
@@ -98,7 +98,7 @@ export async function signupAction(_previousState: AuthActionState, formData: Fo
     options: {
       emailRedirectTo: redirectTo,
       data: {
-        display_name: parsed.data.displayName,
+        display_name: parsed.data.displayName || (data.user ? memberDisplayName(data.user.id) : "Member"),
         full_name: parsed.data.displayName
       }
     }
@@ -121,7 +121,7 @@ export async function signupAction(_previousState: AuthActionState, formData: Fo
     );
     await supabase.from("profiles").upsert({
       user_id: data.user.id,
-      display_name: parsed.data.displayName
+      display_name: parsed.data.displayName || (data.user ? memberDisplayName(data.user.id) : "Member")
     });
 
     revalidatePath("/", "layout");
@@ -239,4 +239,50 @@ export async function deleteAccountAction(formData: FormData) {
   cookieStore.delete(DEV_AUTH_BYPASS_COOKIE);
   if (error) redirect("/login?accountDeletionPending=1");
   redirect("/?accountDeleted=1");
+}
+
+export async function requestPasswordResetAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  const email = getFormString(formData, "email").trim();
+  const parsed = z.string().trim().email("Enter a valid email address.").safeParse(email);
+  if (!parsed.success) {
+    return { status: "error", message: parsed.error.issues[0]?.message ?? "Enter a valid email address." };
+  }
+
+  const supabase = await createClient();
+  const redirectTo = new URL("/auth/callback?next=/auth/update-password", publicEnv.NEXT_PUBLIC_APP_URL).toString();
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, { redirectTo });
+  if (error) {
+    return { status: "error", message: error.message };
+  }
+
+  return {
+    status: "success",
+    message: "If an account exists for that email, we sent a link to reset your password."
+  };
+}
+
+export async function updatePasswordAction(_previousState: AuthActionState, formData: FormData): Promise<AuthActionState> {
+  const parsed = z.object({
+    password: z.string().min(8, "Password must be at least 8 characters."),
+    confirmPassword: z.string().min(8, "Password must be at least 8 characters.")
+  }).safeParse({
+    password: getFormString(formData, "password"),
+    confirmPassword: getFormString(formData, "confirmPassword")
+  });
+
+  if (!parsed.success) {
+    return { status: "error", message: formatValidationError(parsed.error) };
+  }
+  if (parsed.data.password !== parsed.data.confirmPassword) {
+    return { status: "error", message: "Passwords do not match." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+  if (error) {
+    return { status: "error", message: error.message };
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/login?next=/dashboard");
 }

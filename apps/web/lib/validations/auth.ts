@@ -24,7 +24,11 @@ const displayNameSchema = z.string().trim().superRefine((value, context) => {
 });
 
 export const signupSchema = authSchema.extend({
-  displayName: displayNameSchema
+  displayName: z.string().trim().optional().or(z.literal("")).superRefine((value, context) => {
+    if (!value) return;
+    const message = displayNameError(value);
+    if (message) context.addIssue({ code: "custom", message });
+  })
 });
 
 const optionalTrimmedString = (max: number, message: string) =>

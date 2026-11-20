@@ -10,6 +10,12 @@ import { Label } from "@/components/ui/label";
 
 const initialState: AuthActionState = { status: "idle", message: null };
 
+const oauthProviders = (process.env.NEXT_PUBLIC_OAUTH_PROVIDERS ?? "")
+  .split(",")
+  .map((value) => value.trim().toLowerCase())
+  .filter((value): value is "google" | "apple" => value === "google" || value === "apple");
+
+
 function SubmitButton({ mode }: { mode: "login" | "signup" }) {
   const { pending } = useFormStatus();
 
@@ -38,27 +44,31 @@ export function AuthForm({ mode, next, showDevBypass = false }: { mode: "login" 
           </Button>
         </form>
       ) : null}
-      <div className="grid gap-3">
-        {(["google", "apple"] as const).map((provider) => (
-          <form key={provider} action={oauthSignInAction}>
-            <input type="hidden" name="provider" value={provider} />
-            {next ? <input type="hidden" name="next" value={next} /> : null}
-            <Button className="w-full justify-center" type="submit" variant="outline">
-              Continue with {provider === "google" ? "Google" : "Apple"}
-            </Button>
-          </form>
-        ))}
-      </div>
-      <div className="flex items-center gap-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
-        <span className="h-px flex-1 bg-border" />
-        Email
-        <span className="h-px flex-1 bg-border" />
-      </div>
+      {oauthProviders.length ? (
+        <>
+          <div className="grid gap-3">
+            {oauthProviders.map((provider) => (
+              <form key={provider} action={oauthSignInAction}>
+                <input type="hidden" name="provider" value={provider} />
+                {next ? <input type="hidden" name="next" value={next} /> : null}
+                <Button className="w-full justify-center" type="submit" variant="outline">
+                  Continue with {provider === "google" ? "Google" : "Apple"}
+                </Button>
+              </form>
+            ))}
+          </div>
+          <div className="flex items-center gap-3 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            Email
+            <span className="h-px flex-1 bg-border" />
+          </div>
+        </>
+      ) : null}
       <form className="grid gap-5" action={formAction}>
         {mode === "signup" ? (
           <div className="grid gap-2">
             <Label htmlFor="displayName">Display name</Label>
-            <Input id="displayName" name="displayName" placeholder="Alex Marketplace" required minLength={2} maxLength={80} />
+            <Input id="displayName" name="displayName" placeholder="Alex Marketplace" minLength={2} maxLength={80} />
           </div>
         ) : null}
         <div className="grid gap-2">
@@ -86,6 +96,11 @@ export function AuthForm({ mode, next, showDevBypass = false }: { mode: "login" 
           </FormMessage>
         ) : null}
         <SubmitButton mode={mode} />
+        {mode === "login" ? (
+          <p className="text-center text-sm">
+            <a className="font-semibold text-primary" href="/auth/forgot-password">Forgot password</a>
+          </p>
+        ) : null}
       </form>
     </div>
   );
