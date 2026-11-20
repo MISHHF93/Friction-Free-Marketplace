@@ -112,8 +112,7 @@ const recommendedActions = [
   { icon: LineChart, title: "Review seller performance", description: "Check listing quality, response speed, pricing, and buyer interest in your seller workspace.", href: "/dashboard/seller", label: "Seller tools" }
 ];
 
-export default async function DashboardPage({ searchParams }: { searchParams?: Promise<{ adminDenied?: string }> }) {
-  const resolvedSearchParams = await searchParams;
+export default async function DashboardPage() {
   const session = await getMarketplaceSession();
   if (!session) redirect("/login?next=/dashboard");
   const counts = session.source === "supabase" ? await countsFor(session.id) : isolatedPreviewCounts(session.id);
@@ -136,11 +135,6 @@ export default async function DashboardPage({ searchParams }: { searchParams?: P
         </>
       }
     >
-      {resolvedSearchParams?.adminDenied ? (
-        <p className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm font-semibold text-amber-950" role="status">
-          This account is not authorized for the admin console.
-        </p>
-      ) : null}
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => <DashboardStatCard key={stat.label} {...stat} />)}
       </div>

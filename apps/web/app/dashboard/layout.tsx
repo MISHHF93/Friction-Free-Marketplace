@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Plus, Search, ShieldCheck, Sparkles, UserRound } from "lucide-react";
 import { dashboardLinks, getSerializableDashboardLinks } from "@/components/dashboard-config";
 import { DashboardMobileNavigation } from "@/components/dashboard-navigation";
+import { AdminDeniedNotice } from "@/components/admin-denied-notice";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Button } from "@/components/ui/button";
 import { getMarketplaceSession } from "@/lib/auth/session";
@@ -52,6 +53,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <a className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-background focus:px-4 focus:py-2 focus:shadow" href="#dashboard-content">
         Skip to dashboard content
       </a>
+      <AdminDeniedNotice />
       <div className="min-w-0 space-y-6">
         <DashboardMobileNavigation links={navigationLinks} showQuickLinks={false} />
         <div className="dashboard-banner overflow-hidden rounded-[1.75rem] border border-slate-900/10 bg-premium-dark p-4 text-white shadow-admin sm:rounded-[2rem] sm:p-6">

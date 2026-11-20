@@ -13,6 +13,7 @@ export function DashboardShell({
   description,
   kicker = "Protected workspace",
   actions,
+  notice,
   children
 }: {
   title: string;
@@ -20,10 +21,12 @@ export function DashboardShell({
   kicker?: string;
   links?: DashboardLink[];
   actions?: ReactNode;
+  notice?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="dashboard-shell">
+      {notice}
       <div className="dashboard-hero">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
           <div>
