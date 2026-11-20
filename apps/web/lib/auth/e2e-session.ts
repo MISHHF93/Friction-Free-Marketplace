@@ -35,6 +35,7 @@ export function e2eUserFromCookie(value: string | undefined, host: string | null
 }
 
 export function isolatedPreviewCounts(userId: string) {
+  if (process.env.NODE_ENV === "production") return { listings: 0, offers: 0, messages: 0, orders: 0 };
   const seed = userId.split("").reduce((sum, character) => sum + character.charCodeAt(0), 0);
   return {
     listings: seed % 5,

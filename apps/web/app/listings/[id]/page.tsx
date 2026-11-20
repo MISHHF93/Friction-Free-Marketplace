@@ -33,7 +33,8 @@ import { createMediaViewerItem, MediaViewer, type MediaViewerItem } from "@/comp
 import { createClient } from "@/lib/supabase/server";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { ShareListingButton } from "@/components/listings/share-listing-button";
-import { CheckoutCard, SampleCheckoutPreview } from "@/components/payments/checkout-card";
+import { CheckoutCard } from "@/components/payments/checkout-card";
+import { isDemoMarketplaceDataEnabled } from "@/lib/marketplace/demo-mode";
 import { ListingBuyBar } from "@/components/payments/listing-buy-bar";
 import { StripeJsScript } from "@/components/security/nonce-script";
 import { quoteCheckoutAmounts } from "@/lib/payments/quote";
@@ -208,6 +209,21 @@ function buildAiInsights(listing: DiscoveryDocument, aiListing: Record<string, u
     fraudInsight,
     listing.seo_tags.length ? `Relevant details: ${listing.seo_tags.slice(0, 4).join(", ")}.` : "No extra listing details are attached yet."
   ];
+}
+
+async function DemoCheckout({ listingId }: { listingId: string }) {
+  if (process.env.NODE_ENV === "production" || !isDemoMarketplaceDataEnabled()) {
+    return <p className="text-sm text-muted-foreground">Checkout is available only for a live listing.</p>;
+  }
+  const { SampleCheckoutPreview } = await import("@/components/payments/demo-checkout");
+  return (
+    <Card className="border-primary/20 bg-primary/5">
+      <CardHeader><CardTitle className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-primary" aria-hidden="true" /> Protected checkout</CardTitle></CardHeader>
+      <CardContent>
+        <SampleCheckoutPreview listingId={listingId} />
+      </CardContent>
+    </Card>
+  );
 }
 
 function buildSafetyWarnings(listing: DiscoveryDocument, fraudScore: number | null, isLiveDatabaseListing: boolean) {
@@ -397,13 +413,7 @@ export default async function ListingDetailPage({ params, searchParams }: { para
             {isLiveDatabaseListing ? (
               <CheckoutCard listingId={listing.id} offerId={payableOffer?.id} priceAmount={checkoutPrice} currency={listing.currency} shippingCents={checkoutQuote.shippingCents} />
             ) : (
-              <Card className="border-primary/20 bg-primary/5">
-                <CardHeader><CardTitle className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-primary" aria-hidden="true" /> Protected checkout</CardTitle></CardHeader>
-                <CardContent>
-                  <SampleCheckoutPreview listingId={listing.id} />
-                  <p className="mt-3 text-xs leading-5 text-muted-foreground">This sample listing stays in test mode. The preview calls the checkout API and does not charge a card.</p>
-                </CardContent>
-              </Card>
+              <DemoCheckout listingId={listing.id} />
             )}
           </ListingBuyBar>
 

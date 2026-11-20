@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { z } from "zod";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { sendMarketplaceEmail } from "@/lib/email/resend";
 import { env } from "@/lib/env.server";
 import { consumeRateLimit, RateLimitUnavailableError } from "@/lib/security/rate-limit";
@@ -62,6 +63,10 @@ export async function submitContactAction(_state: ContactActionState, formData: 
   }
 
   const { name, email, topic, message } = parsed.data;
+  const saved = await (createAdminClient() as any).from("contact_messages").insert({ name, email, topic, message });
+  if (saved.error) {
+    return { status: "error", message: "The message could not be saved. Please try again." };
+  }
   try {
     await sendMarketplaceEmail({
       to: env.SUPPORT_EMAIL,

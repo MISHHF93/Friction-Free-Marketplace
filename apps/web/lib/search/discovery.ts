@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { listings as demoListings } from "@/lib/marketplace-data";
+import { loadDemoListings } from "@/lib/dev/load-demo-catalog";
 import { configureDiscoveryIndex, deleteDiscoveryDocuments, isSearchConfigured, searchDiscoveryIndex, upsertDiscoveryDocuments, waitForMeiliTask } from "@/lib/search/meilisearch";
 import { enrichSearchParamsWithClassification } from "@/lib/search/item-classifier";
 import { recordReliabilityEvent } from "@/lib/observability/reliability";
@@ -73,7 +73,8 @@ export function rowToDiscoveryDocument(row: Row): DiscoveryDocument {
   return document;
 }
 
-function demoDocuments(): DiscoveryDocument[] {
+async function demoDocuments(): Promise<DiscoveryDocument[]> {
+  const demoListings = await loadDemoListings();
   return demoListings.map((listing, index) => {
     const published = new Date(Date.now() - index * 36 * 60 * 60 * 1000).toISOString();
     const trust = listing.trustScore;
@@ -213,7 +214,7 @@ export async function searchMarketplace(params: DiscoverySearchParams): Promise<
   }
 
   if (isDemoMarketplaceDataEnabled()) {
-    const filtered = sortFallback(demoDocuments().filter((doc) => matchesFallback(doc, resolvedParams)), resolvedParams);
+    const filtered = sortFallback((await demoDocuments()).filter((doc) => matchesFallback(doc, resolvedParams)), resolvedParams);
     const fallbackFacets = buildFallbackFacets(filtered);
     return { listings: filtered.slice(0, resolvedParams.limit ?? 24), total: filtered.length, ...fallbackFacets, source: "demo" };
   }
