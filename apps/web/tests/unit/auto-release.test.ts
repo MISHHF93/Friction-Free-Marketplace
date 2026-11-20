@@ -47,3 +47,12 @@ describe("dispute settlement plan", () => {
     expect(isEscrowTransition("releasing", "authorized")).toBe(true);
   });
 });
+
+describe("shared dispute status lists", () => {
+  it("treats a settling dispute as blocking auto-release", async () => {
+    const { isOpenDisputeStatus } = await import("@/lib/payments/auto-release");
+    expect(isOpenDisputeStatus("resolving")).toBe(true);
+    expect(isOpenDisputeStatus("opened")).toBe(true);
+    expect(isOpenDisputeStatus("resolved_buyer")).toBe(false);
+  });
+});

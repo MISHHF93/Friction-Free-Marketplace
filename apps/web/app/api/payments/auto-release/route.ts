@@ -38,7 +38,7 @@ async function autoRelease(request: Request) {
     try {
       const { data: payment } = await supabase.from("escrow_payments").select("*").eq("transaction_id", transaction.id).maybeSingle();
       const { data: disputes } = await supabase.from("disputes").select("status").eq("transaction_id", transaction.id);
-      const hasOpenDispute = (disputes ?? []).some((dispute: { status?: string }) => isOpenDisputeStatus(dispute.status) || dispute.status === "resolving");
+      const hasOpenDispute = (disputes ?? []).some((dispute: { status?: string }) => isOpenDisputeStatus(dispute.status));
       const durableSkip = durableAutoReleaseSkip(payment?.status);
       if (durableSkip) {
         await supabase.from("transactions").update({

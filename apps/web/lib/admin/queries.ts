@@ -1,4 +1,5 @@
 import { isLiveDatabaseConfigured } from "@/lib/marketplace/demo-mode";
+import { UNSETTLED_DISPUTE_STATUSES } from "@/lib/disputes/status";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type AdminOverviewData = {
@@ -16,7 +17,7 @@ export async function getAdminOverview(): Promise<AdminOverviewData> {
     supabase.from("users").select("id", { count: "exact", head: true }),
     supabase.from("listings").select("id", { count: "exact", head: true }),
     supabase.from("reports").select("id", { count: "exact", head: true }).in("status", ["open", "triaged", "investigating"]),
-    supabase.from("disputes").select("id", { count: "exact", head: true }).in("status", ["opened", "awaiting_buyer", "awaiting_seller", "under_review"]),
+    supabase.from("disputes").select("id", { count: "exact", head: true }).in("status", [...UNSETTLED_DISPUTE_STATUSES]),
     supabase.from("fraud_signals").select("id", { count: "exact", head: true }).is("reviewed_at", null),
     supabase.from("transactions").select("id", { count: "exact", head: true }),
     supabase.from("escrow_payments").select("id", { count: "exact", head: true }),
@@ -101,7 +102,7 @@ export async function getAdminAggregateMetrics(kind: string) {
     ] };
   }
   if (kind === "disputes") {
-    const [total, open] = await Promise.all([count("disputes"), count("disputes", ["opened", "under_review", "awaiting_buyer", "awaiting_seller"])]);
+    const [total, open] = await Promise.all([count("disputes"), count("disputes", [...UNSETTLED_DISPUTE_STATUSES])]);
     if (total.error) return { error: total.error.message as string };
     return { metrics: [
       { label: "Disputes", value: String(total.count ?? 0), detail: "All dispute rows." },

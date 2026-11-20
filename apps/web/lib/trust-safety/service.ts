@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { UNSETTLED_DISPUTE_STATUSES } from "@/lib/disputes/status";
 import {
   TRUST_ENGINE_VERSION,
   calculateCompositeRisk,
@@ -104,7 +105,7 @@ export async function getUserTrustSafetySummary(supabase: Db, userId: string): P
     supabase.from("trust_scores").select("score,seller_score,buyer_score,dispute_rate,fraud_risk_level,model_version,signals").eq("user_id", userId).maybeSingle(),
     supabase.from("user_trust_badges").select("code,label,description,level,icon").eq("user_id", userId).eq("visibility", "public"),
     supabase.from("reports").select("id", { count: "exact", head: true }).eq("reported_user_id", userId).in("status", ["open", "triaged", "investigating"]),
-    supabase.from("disputes").select("id,transactions!inner(buyer_id,seller_id)", { count: "exact", head: true }).or(`transactions.buyer_id.eq.${userId},transactions.seller_id.eq.${userId}`).in("status", ["opened", "awaiting_buyer", "awaiting_seller", "under_review"]),
+    supabase.from("disputes").select("id,transactions!inner(buyer_id,seller_id)", { count: "exact", head: true }).or(`transactions.buyer_id.eq.${userId},transactions.seller_id.eq.${userId}`).in("status", [...UNSETTLED_DISPUTE_STATUSES]),
     supabase.from("automated_risk_flags").select("status").eq("user_id", userId),
     supabase.from("fraud_signals").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("risk_score", 70).is("reviewed_at", null),
     supabase.from("scam_message_detections").select("id", { count: "exact", head: true }).eq("sender_id", userId).gte("risk_score", 35)
@@ -252,7 +253,7 @@ export async function getAdminTrustSafetyDashboard(supabase: Db, limit = 50) {
     supabase.from("admin_review_queue_items").select("*").in("status", ["queued", "assigned", "investigating", "waiting_on_user"]).order("priority", { ascending: false }).order("created_at", { ascending: false }).limit(limit),
     supabase.from("automated_risk_flags").select("*").in("status", ["open", "auto_contained", "in_review"]).order("score", { ascending: false }).limit(limit),
     supabase.from("reports").select("*").in("status", ["open", "triaged", "investigating"]).order("created_at", { ascending: false }).limit(limit),
-    supabase.from("disputes").select("*").in("status", ["opened", "awaiting_buyer", "awaiting_seller", "under_review"]).order("created_at", { ascending: false }).limit(limit),
+    supabase.from("disputes").select("*").in("status", [...UNSETTLED_DISPUTE_STATUSES]).order("created_at", { ascending: false }).limit(limit),
     supabase.from("user_verification_checks").select("*").eq("status", "pending").order("created_at", { ascending: false }).limit(limit),
   ]);
 

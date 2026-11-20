@@ -6,6 +6,7 @@ import { upsertSellerAccountFromStripe } from "@/lib/payments/connect";
 import { buildCaptureJournal, buildDisputeHoldJournal, postLedgerJournal } from "@/lib/financial/ledger";
 import { canApplyTransactionStatus } from "@/lib/payments/stripe-mode";
 import { isGenuinePostCompletionRefund, paymentSourcesForIntent, refundMayOverwriteStatus, refundStatusSources } from "@/lib/payments/webhook-guards";
+import { OPEN_DISPUTE_STATUSES } from "@/lib/disputes/status";
 import { getStripe } from "@/lib/stripe/server";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -126,7 +127,7 @@ export async function saveStripeDispute(dispute: Stripe.Dispute) {
 
   const { data: byProvider, error: providerError } = await supabase.from("disputes").select("id").eq("provider_dispute_id", dispute.id).maybeSingle();
   assertWrite(providerError, "Load Stripe dispute");
-  const { data: active, error: activeError } = await supabase.from("disputes").select("id").eq("transaction_id", payment.transaction_id).in("status", ["opened", "awaiting_buyer", "awaiting_seller", "under_review"]).maybeSingle();
+  const { data: active, error: activeError } = await supabase.from("disputes").select("id").eq("transaction_id", payment.transaction_id).in("status", [...OPEN_DISPUTE_STATUSES]).maybeSingle();
   assertWrite(activeError, "Load active dispute");
   const existing = byProvider ?? active;
   const closed = dispute.status === "won" || dispute.status === "lost";

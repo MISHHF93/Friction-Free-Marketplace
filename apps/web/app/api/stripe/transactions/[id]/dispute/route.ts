@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/payments/auth";
 import { recordTransactionEvent } from "@/lib/payments/audit";
 import { enqueueTemplateNotification } from "@/lib/notifications/service";
+import { UNSETTLED_DISPUTE_STATUSES } from "@/lib/disputes/status";
 import { buildDisputeHoldJournal, postLedgerJournal } from "@/lib/financial/ledger";
 const disputeSchema = z.object({ reason: z.string().min(10), evidence: z.record(z.unknown()).default({}) });
 const transactionIdSchema = z.string().uuid();
@@ -33,7 +34,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .from("disputes")
     .select("id,status")
     .eq("transaction_id", transactionId.data)
-    .in("status", ["opened", "under_review", "awaiting_buyer", "awaiting_seller"])
+    .in("status", [...UNSETTLED_DISPUTE_STATUSES])
     .maybeSingle();
   if (existingDispute) {
     return NextResponse.json({ error: "An open dispute already exists for this transaction.", disputeId: existingDispute.id }, { status: 409 });

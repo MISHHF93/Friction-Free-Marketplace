@@ -1,10 +1,11 @@
+import { isUnsettledDisputeStatus } from "@/lib/disputes/status";
+
 export const AUTO_RELEASE_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
 export const AUTO_RELEASE_SHIPPED_MS = 14 * 24 * 60 * 60 * 1000;
 
-const OPEN_DISPUTE_STATUSES = ["opened", "under_review", "awaiting_buyer", "awaiting_seller"];
-
+/** True for any dispute that blocks auto-release, including one being settled. */
 export function isOpenDisputeStatus(status: string | null | undefined) {
-  return OPEN_DISPUTE_STATUSES.includes(String(status ?? ""));
+  return isUnsettledDisputeStatus(status);
 }
 
 export const autoReleaseCandidateFilter = "metadata->>auto_release_ineligible.is.null,metadata->>auto_release_ineligible.neq.true";
