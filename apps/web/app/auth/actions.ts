@@ -113,7 +113,8 @@ export async function signupAction(_previousState: AuthActionState, formData: Fo
       {
         id: data.user.id,
         email: data.user.email ?? parsed.data.email,
-        status: "active",
+        role: "buyer",
+        status: "pending",
         metadata: { signup_source: "web" }
       },
       { ignoreDuplicates: true }
