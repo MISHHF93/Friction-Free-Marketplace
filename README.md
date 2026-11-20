@@ -164,7 +164,24 @@ The hosted product is `apps/web`, a Next.js App Router application. `packages/sh
 
 `apps/web/proxy.ts` runs on each matched request. It checks mutation origins and redirects unauthenticated visitors away from dashboard, admin, and account pages. API handlers still check the caller themselves. A local auth bypass exists only when `ALLOW_DEV_AUTH_BYPASS=true`, the process is not production, Vercel, or CI, the Host is loopback, and the bypass cookie is present. It never grants admin.
 
-The interface is English (`lang="en"` `dir="ltr"`). Formatting helpers recognize additional locales, but there is no locale routing or translation catalog yet.
+The document language follows the signed-in profile locale, then the browser language, and otherwise English left-to-right. There is no translation catalog yet.
+
+## Mobile and installed web app
+
+The web app is designed for a 360–430px phone first. A bottom tab bar (Home, Search, Sell, Messages, Account) and a compact top bar with back navigation appear below the desktop breakpoint. Listing checkout stays sticky above that bar. `apps/web/public/sw.js` serves the offline page for public navigations and never caches `/api` or signed-in routes. The Capacitor projects in `apps/mobile` keep loading the hosted web origin. Nothing in this repository publishes a store build.
+
+## Marketplace MCP
+
+`/api/mcp` is a Streamable HTTP Model Context Protocol endpoint. It stays off unless `FFM_MCP_ENABLED=1`. Discovery is `GET /.well-known/mcp`.
+
+Public read-only tools:
+
+- `search_listings` with query, category, price range, and location
+- `get_listing`
+- `get_seller_public_profile`
+- `list_categories`
+
+These tools return public listing and profile fields only. They do not create payments, refunds, or payouts. Authenticated tools (`my_listings`, `my_offers`, `my_orders`, `create_offer`) are not enabled. The planned path is a per-user Supabase bearer token checked with row-level security, never the service-role key, and `create_offer` would require a second confirmation call.
 
 ## Database notes
 

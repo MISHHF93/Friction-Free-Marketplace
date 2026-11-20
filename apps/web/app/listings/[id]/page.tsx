@@ -368,7 +368,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
             </CardContent>
           </Card>
 
-          <div id="protected-checkout">
+          <div id="protected-checkout" className="sticky bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-30 md:static">
             {isLiveDatabaseListing ? (
               <CheckoutCard listingId={listing.id} priceAmount={Number(listing.price_amount)} currency={listing.currency} shippingCents={checkoutQuote.shippingCents} />
             ) : (

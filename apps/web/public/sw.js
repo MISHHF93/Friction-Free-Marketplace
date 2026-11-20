@@ -15,11 +15,14 @@ self.addEventListener("activate", (event) => {
 });
 
 function isPublicNavigation(request, url) {
+  if (request.headers.get("authorization")) return false;
   return request.mode === "navigate" &&
     !url.pathname.startsWith("/api/") &&
     !url.pathname.startsWith("/dashboard") &&
     !url.pathname.startsWith("/account") &&
     !url.pathname.startsWith("/admin") &&
+    !url.pathname.startsWith("/seller") &&
+    !url.pathname.startsWith("/assistant") &&
     !url.pathname.startsWith("/auth");
 }
 
