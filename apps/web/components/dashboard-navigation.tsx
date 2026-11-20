@@ -49,62 +49,6 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function DashboardSidebar({
-  links,
-  user,
-  eyebrow = "User dashboard",
-  title = "Your account",
-  description = "Manage your listings, messages, orders, payments, and account."
-}: {
-  links: DashboardLink[];
-  user?: { name: string; email: string; location: string };
-  eyebrow?: string;
-  title?: string;
-  description?: string;
-}) {
-  const pathname = usePathname();
-
-  return (
-    <aside className="hidden rounded-panel border border-border bg-card p-4 shadow-md lg:sticky lg:top-24 lg:block lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
-      <div className="mb-4 rounded-2xl bg-premium-dark p-4 text-white shadow-admin">
-        <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-300">{eyebrow}</p>
-        <h2 className="mt-2 text-xl font-black tracking-tight">{title}</h2>
-        <p className="mt-2 text-sm leading-6 text-slate-300">{description}</p>
-        {user ? (
-          <div className="mt-4 rounded-2xl bg-white/10 p-3 text-sm">
-            <p className="truncate font-bold">{user.name}</p>
-            <p className="truncate text-xs text-slate-300">{user.email}</p>
-            <p className="mt-1 truncate text-xs text-slate-100">{user.location}</p>
-          </div>
-        ) : null}
-      </div>
-      <nav className="grid gap-1" aria-label="Dashboard navigation">
-        {links.map((link) => {
-          const Icon = iconByHref[link.href] ?? Home;
-          const active = isActivePath(pathname, link.href);
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "group flex items-start gap-3 rounded-2xl px-3 py-2.5 text-sm transition-all hover:-translate-y-0.5 hover:bg-secondary hover:text-foreground",
-                active ? "bg-trust text-trust-foreground shadow-trust hover:text-trust-foreground" : "text-muted-foreground"
-              )}
-            >
-              <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>
-                <span className="block font-semibold">{link.label}</span>
-                {link.description ? <span className={cn("block text-xs leading-5", active ? "text-trust-foreground" : "text-muted-foreground")}>{link.description}</span> : null}
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
-  );
-}
-
 export function DashboardMobileNavigation({ links, showQuickLinks = true }: { links: DashboardLink[]; showQuickLinks?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -148,39 +92,5 @@ export function DashboardMobileNavigation({ links, showQuickLinks = true }: { li
         })}
       </div> : null}
     </div>
-  );
-}
-
-const mobileBottomHrefs = ["/dashboard", "/dashboard/listings", "/dashboard/messages", "/dashboard/offers", "/dashboard/settings"];
-
-export function DashboardMobileBottomNav({ links }: { links: DashboardLink[] }) {
-  const pathname = usePathname();
-  const primaryLinks = mobileBottomHrefs
-    .map((href) => links.find((link) => link.href === href))
-    .filter((link): link is DashboardLink => Boolean(link));
-
-  return (
-    <nav className="fixed inset-x-2 bottom-2 z-40 rounded-panel border border-border bg-card p-2 shadow-soft sm:inset-x-3 sm:bottom-3 lg:hidden" aria-label="Dashboard bottom navigation">
-      <div className="grid grid-cols-5 gap-1">
-        {primaryLinks.map((link) => {
-          const Icon = iconByHref[link.href] ?? ChevronRight;
-          const active = isActivePath(pathname, link.href);
-          return (
-            <Link
-              href={link.href}
-              key={link.href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex min-w-0 flex-col items-center justify-center gap-1 rounded-2xl px-2 py-2 text-[11px] font-bold transition",
-                active ? "bg-trust text-trust-foreground shadow-trust" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              <span className="max-w-full truncate">{link.label.replace("My ", "")}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </nav>
   );
 }
