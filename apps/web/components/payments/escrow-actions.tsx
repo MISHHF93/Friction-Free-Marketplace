@@ -106,7 +106,7 @@ export function EscrowActions({ transactionId, role, status, amount, currency = 
       {canRelease ? (
         <>
           <Button type="button" size="sm" disabled={pending !== null} onClick={() => releaseDialog.current?.showModal()}>
-            {pending === "Release" ? "Releasing…" : "Confirm delivery / Release"}
+            {pending === "Release" ? "Releasing…" : "Release funds"}
           </Button>
           <dialog ref={releaseDialog} className="w-[min(100%,28rem)] rounded-2xl border border-border bg-background p-5 text-foreground">
             <h2 className="text-lg font-bold">Release {refundLabel} to the seller?</h2>

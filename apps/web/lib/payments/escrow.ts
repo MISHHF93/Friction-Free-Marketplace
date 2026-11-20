@@ -5,9 +5,9 @@ export function escrowActionKey(action: "release" | "capture" | "refund" | "canc
 const escrowTransitions: Record<string, readonly string[]> = {
   requires_action: ["authorized", "cancelled", "failed"],
   authorized: ["capturing", "refunding", "cancelled"],
-  capturing: ["held", "authorized"],
+  capturing: ["held", "authorized", "cancelled"],
   held: ["releasing", "refunding"],
-  releasing: ["released", "held"],
+  releasing: ["released", "held", "authorized", "cancelled"],
   refunding: ["refunded", "held", "cancelled", "authorized"]
 };
 

@@ -34,12 +34,12 @@ describe("admin permissions", () => {
     expect(can(null, "admin.access")).toBe(false);
   });
 
-  it("maps admin metadata roles to scoped permissions", () => {
+  it("uses the users.role column and ignores metadata.admin_role", () => {
     const role = getAdminRole({ role: "admin", metadata: { admin_role: "moderator" } });
 
-    expect(role).toBe("moderator");
+    expect(role).toBe("admin");
     expect(can(role, "listings.moderate")).toBe(true);
-    expect(can(role, "payments.monitor")).toBe(false);
+    expect(can(role, "payments.monitor")).toBe(true);
   });
 
   it("grants super admins every admin permission", () => {

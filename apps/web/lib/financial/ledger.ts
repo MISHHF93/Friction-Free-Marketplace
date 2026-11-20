@@ -182,7 +182,7 @@ export function buildReleaseJournal(input: MoneyBreakdown & { providerTransferId
       { accountCode: ledgerAccounts.stripeCash, credit: input.sellerNetAmount, provider: "stripe", providerObjectId: input.providerTransferId ?? null },
       { accountCode: ledgerAccounts.platformFeeDeferred, debit: input.platformFeeAmount, provider: "stripe", providerObjectId: input.providerPaymentId ?? null },
       { accountCode: ledgerAccounts.platformFeeRevenue, credit: input.platformFeeAmount, provider: "stripe", providerObjectId: input.providerPaymentId ?? null },
-    ],
+    ].filter((entry) => Number(entry.debit ?? 0) > 0 || Number(entry.credit ?? 0) > 0),
   };
 }
 

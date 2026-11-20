@@ -3,8 +3,11 @@
 import { useRef, useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { buildSettlementPlan, type SettlementOutcome } from "@/lib/payments/settlement-plan";
+import { centsToDollars } from "@/lib/payments/money";
+import { formatMoney } from "@/lib/i18n/format";
 
-export const destructiveAdminActions = new Set(["suspend", "ban", "reject", "confirm"]);
+export const destructiveAdminActions = new Set(["suspend", "ban", "reject", "confirm", "close", "hold"]);
 
 export function adminActionRequest(action: string, targetId: string, reason: string, outcome?: string) {
   return outcome ? { action, target_id: targetId, reason, outcome } : { action, target_id: targetId, reason };
@@ -18,17 +21,21 @@ export function adminActionControls(actions: string[]) {
   }));
 }
 
-export function AdminRowActionMenu({ slug, targetId, subject, actions }: { slug: string; targetId?: string; subject: string; primaryAction?: string; actions: string[] }) {
+export function AdminRowActionMenu({ slug, targetId, subject, actions, heldCents = 0, sellerNetCents = 0 }: { slug: string; targetId?: string; subject: string; primaryAction?: string; actions: string[]; heldCents?: number; sellerNetCents?: number }) {
   const [reason, setReason] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
-  const [outcome, setOutcome] = useState<"refund_buyer" | "release_seller" | "split">("release_seller");
+  const [outcome, setOutcome] = useState<SettlementOutcome | "">("");
   const reasonRef = useRef<HTMLTextAreaElement>(null);
   const ready = reason.trim().length >= 3 && Boolean(targetId) && actions.length > 0;
   const controls = adminActionControls(actions);
 
   async function send(action: string) {
     if (!targetId || !ready) return;
+    if (action === "close" && !outcome) {
+      setStatus("Choose a settlement outcome before closing the dispute.");
+      return;
+    }
     if (destructiveAdminActions.has(action) && pending !== action) {
       setPending(action);
       return;
@@ -58,13 +65,15 @@ export function AdminRowActionMenu({ slug, targetId, subject, actions }: { slug:
         {slug === "disputes" ? (
           <label className="grid gap-1 text-sm font-semibold">
             Close outcome
-            <select className="min-h-11 rounded-xl border border-border px-3" value={outcome} onChange={(event) => setOutcome(event.target.value as typeof outcome)}>
+            <select className="min-h-11 rounded-xl border border-border px-3" value={outcome} onChange={(event) => setOutcome(event.target.value as SettlementOutcome | "")} required>
+              <option value="">Choose an outcome</option>
               <option value="refund_buyer">Refund buyer</option>
               <option value="release_seller">Release to seller</option>
               <option value="split">Split the held funds</option>
             </select>
           </label>
         ) : null}
+        {slug === "disputes" && outcome && heldCents > 0 ? <SettlementPreview outcome={outcome} disputeId={targetId ?? "preview"} heldCents={heldCents} sellerNetCents={sellerNetCents || heldCents} /> : null}
         {controls.map((control) => (
           <Button key={control.action} type="button" className="min-h-11" disabled={!ready} title={!ready ? "Enter a reason of at least 3 characters." : undefined} onClick={() => void send(control.action)}>
             {pending === control.action ? `Confirm ${control.label}` : control.label}
@@ -75,4 +84,9 @@ export function AdminRowActionMenu({ slug, targetId, subject, actions }: { slug:
       </div>
     </details>
   );
+}
+
+function SettlementPreview({ outcome, disputeId, heldCents, sellerNetCents }: { outcome: SettlementOutcome; disputeId: string; heldCents: number; sellerNetCents: number }) {
+  const plan = buildSettlementPlan({ disputeId, outcome, originalAmountCents: heldCents, originalSellerNetCents: sellerNetCents, priorRefundedCents: 0 });
+  return <p className="text-sm">Refund {formatMoney(centsToDollars(plan.refundCents), "USD")} and release {formatMoney(centsToDollars(plan.releaseCents), "USD")}.</p>;
 }

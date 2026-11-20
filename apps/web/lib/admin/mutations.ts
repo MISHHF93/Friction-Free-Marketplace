@@ -2,11 +2,28 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { canRestrictUser } from "@/lib/admin/permissions";
 import { settleDispute } from "@/lib/payments/settlement";
+import { getStripe } from "@/lib/stripe/server";
 import { recordAdminAction } from "@/lib/admin/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { syncListingToSearch } from "@/lib/search/discovery";
 
 const uuidSchema = z.string().uuid();
+
+async function cancelRestrictedCheckoutIntents(supabase: any, userId: string) {
+  const cutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+  const { data: transactions } = await supabase.from("transactions").select("id").or(`buyer_id.eq.${userId},seller_id.eq.${userId}`).eq("status", "cancelled").gte("cancelled_at", cutoff);
+  const ids = (transactions ?? []).map((transaction: { id: string }) => transaction.id);
+  if (!ids.length) return;
+  const { data: payments } = await supabase.from("escrow_payments").select("provider_payment_id,status").in("transaction_id", ids).in("status", ["requires_action", "authorized", "capturing"]);
+  for (const payment of payments ?? []) {
+    if (!payment.provider_payment_id) continue;
+    try {
+      await getStripe().paymentIntents.cancel(payment.provider_payment_id);
+    } catch {
+      // The checkout row is already cancelled. A Stripe miss is reported by reconcile.
+    }
+  }
+}
 
 async function restrictMarketplaceUser(supabase: any, userId: string) {
   try {
@@ -83,6 +100,7 @@ export async function applyAdminMutation(input: {
         p_reason: reason
       });
       if (changed.error) return { response: NextResponse.json({ error: changed.error.message }, { status: 403 }) };
+      if (action !== "reinstate") await cancelRestrictedCheckoutIntents(supabase, targetId);
       update = await supabase.from("users").select("id,status").eq("id", targetId).maybeSingle();
       if (action !== "reinstate") await restrictMarketplaceUser(supabase, targetId);
       const touched = await supabase.from("listings").select("id").eq("seller_id", targetId).in("status", ["paused", "active"]);

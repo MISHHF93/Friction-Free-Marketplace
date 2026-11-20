@@ -111,7 +111,7 @@ export function AdminFeaturePage({ config, adminRole, nextCursor = null, loadErr
                   </p>
                 ))}
                 <RiskScoreIndicator score={row.score || row.trust} />
-                <AdminRowActionMenu slug={config.slug} targetId={row.id} subject={row.subject} primaryAction={row.action ?? config.primaryAction} actions={[...adminMutationsFor(config.slug)]} />
+                <AdminRowActionMenu slug={config.slug} targetId={row.id} subject={row.subject} primaryAction={row.action ?? config.primaryAction} actions={[...adminMutationsFor(config.slug)]} heldCents={Number(row.heldCents || 0)} sellerNetCents={Number(row.sellerNetCents || 0)} />
               </article>
             ))}
             {nextCursor ? <Button asChild variant="outline"><Link href={`/admin/${config.slug}?cursor=${encodeURIComponent(nextCursor)}`}>Next page</Link></Button> : null}

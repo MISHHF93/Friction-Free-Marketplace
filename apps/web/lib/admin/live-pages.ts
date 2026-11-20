@@ -95,6 +95,8 @@ function mapDisputes(rows: Row[]): AdminTableRow[] {
       buyer: shortId(transaction?.buyer_id ?? row.opened_by_id),
       seller: shortId(transaction?.seller_id),
       amount: money(transaction?.total_amount, text(transaction?.currency, "USD")),
+      heldCents: String(Math.round(Number(transaction?.total_amount ?? 0) * 100)),
+      sellerNetCents: String(Math.round(Number(transaction?.seller_net_amount ?? transaction?.total_amount ?? 0) * 100)),
       action: "Review dispute",
       severity: severity(status)
     };

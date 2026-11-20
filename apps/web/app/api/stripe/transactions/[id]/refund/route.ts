@@ -11,6 +11,7 @@ import { buildRefundJournal, postLedgerJournal } from "@/lib/financial/ledger";
 import { claimEscrowPayment, claimTransactionStatus, escrowActionKey } from "@/lib/payments/escrow";
 import { prepareEscrowAction, refundPlan } from "@/lib/payments/resume";
 import { nextRefundedAmount } from "@/lib/payments/refund-amount";
+import { reactivateReservedListing } from "@/lib/payments/record-outcome";
 import { getStripe } from "@/lib/stripe/server";
 
 const refundSchema = z.object({ amountCents: z.number().int().positive().optional(), reason: z.enum(["duplicate", "fraudulent", "requested_by_customer"]).default("requested_by_customer") });
@@ -69,6 +70,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const refundedAmount = Number(payment.refunded_amount ?? 0);
   const remainingCents = dollarsToCents(Number(payment.amount) - refundedAmount);
   const requestedCents = payload.data.amountCents ?? remainingCents;
+  const inflight = payment.metadata?.refund_in_flight;
+  const candidateCents = Number.isInteger(inflight?.amountCents) ? inflight.amountCents : requestedCents;
+  if (candidateCents > remainingCents) return NextResponse.json({ error: "Refund amount exceeds the remaining refundable balance." }, { status: 400 });
   const preparedRefund = await prepareEscrowAction(supabase, payment, "held", "refunding");
   if (!preparedRefund.payment || preparedRefund.payment.status !== "refunding") return NextResponse.json({ error: "This refund is already in progress." }, { status: 409 });
   const activePayment = preparedRefund.payment;
@@ -77,7 +81,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     reason: payload.data.reason,
     idempotencyKey: escrowActionKey("refund", transactionId.data, payment.id, `${requestedCents}:${payload.data.reason}`)
   });
-  if (plan.amountCents > remainingCents) return NextResponse.json({ error: "Refund amount exceeds the remaining refundable balance." }, { status: 400 });
   if (!plan.resumed) {
     await supabase.from("escrow_payments").update({
       metadata: {
@@ -104,18 +107,25 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const refundedTotal = recorded.amount;
   const fullyRefunded = refundedTotal >= Number(payment.amount);
 
+  const nextMetadata = { ...(payment.metadata ?? {}), refund_ids: recorded.ids };
+  delete nextMetadata.refund_in_flight;
+  delete nextMetadata.claim_token;
   const recordedRefund = await supabase.from("escrow_payments").update({
     status: fullyRefunded ? "refunded" : "held",
     refunded_amount: refundedTotal,
     refunded_at: fullyRefunded ? new Date().toISOString() : payment.refunded_at,
-    metadata: { ...(payment.metadata ?? {}), refund_ids: recorded.ids }
+    metadata: nextMetadata
   }).eq("id", payment.id).eq("status", "refunding").select("id");
-  if (recordedRefund.error || !recordedRefund.data?.length) return NextResponse.json({ error: "Refund could not be recorded." }, { status: 409 });
+  if (recordedRefund.error) return NextResponse.json({ error: "Refund could not be recorded." }, { status: 409 });
+  if (!recordedRefund.data?.length) {
+    const current = await supabase.from("escrow_payments").select("status").eq("id", payment.id).maybeSingle();
+    if (!(fullyRefunded && current.data?.status === "refunded")) return NextResponse.json({ error: "Refund could not be recorded." }, { status: 409 });
+  }
   if (fullyRefunded) {
     const refunded = await claimTransactionStatus(supabase, transactionId.data, transaction.status, "refunded");
     if (!refunded) return NextResponse.json({ error: "Transaction could not be marked refunded." }, { status: 409 });
   }
-  if (fullyRefunded && transaction.listing_id) await supabase.from("listings").update({ status: "active" }).eq("id", transaction.listing_id).eq("status", "reserved");
+  if (fullyRefunded) await reactivateReservedListing(supabase, transaction.listing_id);
   await supabase.from("transaction_receipts").update({ refunded_at: new Date().toISOString(), metadata: { refund_id: refund.id, refund_reason: payload.data.reason } }).eq("transaction_id", transactionId.data);
   if (!recorded.duplicate && (payment.status === "held" || resumingHeldRefund)) {
     await postLedgerJournal(supabase, buildRefundJournal({

@@ -1,4 +1,4 @@
-import { dollarsToCents } from "@/lib/payments/money";
+import { centsToDollars, dollarsToCents } from "@/lib/payments/money";
 import { buildReleaseJournal, postLedgerJournal } from "@/lib/financial/ledger";
 import { claimEscrowPayment, claimTransactionStatus, escrowActionKey } from "@/lib/payments/escrow";
 import { prepareEscrowAction } from "@/lib/payments/resume";
@@ -11,6 +11,9 @@ export async function releaseHeldEscrow(supabase: any, input: {
   sellerAccountId: string;
   actorId?: string | null;
   transferCents?: number;
+  idempotencyKey?: string;
+  payoutKey?: string;
+  skipJournal?: boolean;
 }) {
   const { transaction, payment, sellerAccountId } = input;
   if (payment.status === "released") return { status: "completed" as const, alreadyReleased: true };
@@ -22,7 +25,12 @@ export async function releaseHeldEscrow(supabase: any, input: {
   if (!prepared.payment || prepared.payment.status !== "releasing") {
     return { error: "This release is already in progress.", statusCode: 409 as const };
   }
-  const amount = input.transferCents ?? dollarsToCents(Number(payment.seller_net_amount));
+  const refundedCents = dollarsToCents(Number(payment.refunded_amount ?? 0));
+  const remainingCents = Math.max(0, dollarsToCents(Number(payment.amount)) - refundedCents);
+  const requestedCents = input.transferCents ?? dollarsToCents(Number(payment.seller_net_amount));
+  const amount = Math.max(0, Math.min(requestedCents, remainingCents));
+  if (amount <= 0) return { error: "Nothing remains to release.", statusCode: 409 as const };
+  const transferred = centsToDollars(amount);
   let transfer;
   try {
     transfer = await getStripe().transfers.create({
@@ -32,7 +40,7 @@ export async function releaseHeldEscrow(supabase: any, input: {
       source_transaction: payment.provider_charge_id ?? undefined,
       transfer_group: `transaction_${transaction.id}`,
       metadata: { transaction_id: transaction.id, escrow_payment_id: payment.id }
-    }, { idempotencyKey: escrowActionKey("release", transaction.id, payment.id, input.transferCents ? `partial:${amount}` : "") });
+    }, { idempotencyKey: input.idempotencyKey ?? escrowActionKey("release", transaction.id, payment.id, input.transferCents ? `partial:${amount}` : "") });
   } catch (error) {
     await claimEscrowPayment(supabase, payment.id, "releasing", "held");
     return { error: error instanceof Error ? error.message : "Stripe release failed.", statusCode: 502 as const };
@@ -43,20 +51,20 @@ export async function releaseHeldEscrow(supabase: any, input: {
     provider: "stripe",
     provider_transfer_id: transfer.id,
     status: "paid",
-    amount: Number(payment.seller_net_amount),
+    amount: transferred,
     currency: payment.currency,
     paid_at: new Date().toISOString(),
-    metadata: { transfer_group: transfer.transfer_group, transfer_cents: amount }
+    metadata: { transfer_group: transfer.transfer_group, transfer_cents: amount, settlement_key: input.payoutKey ?? null }
   });
   const releasedPayment = await supabase.from("escrow_payments").update({ status: "released", released_at: new Date().toISOString() }).eq("id", payment.id).eq("status", "releasing").select("id");
   if (releasedPayment.error || !releasedPayment.data?.length) return { error: "Release could not be recorded.", statusCode: 409 as const };
   await claimTransactionStatus(supabase, transaction.id, transaction.status, "completed", { completed_at: new Date().toISOString() });
   if (transaction.listing_id) await supabase.from("listings").update({ status: "sold", quantity: 0 }).eq("id", transaction.listing_id);
-  await postLedgerJournal(supabase, buildReleaseJournal({
+  if (!input.skipJournal) await postLedgerJournal(supabase, buildReleaseJournal({
     transactionId: transaction.id,
-    totalAmount: Number(payment.amount),
-    sellerNetAmount: Number(payment.seller_net_amount),
-    platformFeeAmount: Number(payment.platform_fee_amount),
+    totalAmount: transferred,
+    sellerNetAmount: transferred,
+    platformFeeAmount: input.transferCents ? 0 : Number(payment.platform_fee_amount),
     currency: payment.currency,
     buyerId: transaction.buyer_id,
     sellerId: transaction.seller_id,
@@ -71,7 +79,7 @@ export async function releaseHeldEscrow(supabase: any, input: {
     from_status: transaction.status,
     to_status: "completed",
     provider_object_id: transfer.id,
-    amount: Number(payment.seller_net_amount),
+    amount: transferred,
     currency: payment.currency,
     message: "Held funds released to the seller connected account."
   });

@@ -75,9 +75,6 @@ type AdminAuthorizationFailure = {
 export function getAdminRole(user: Pick<UserRow, "role" | "metadata"> | null | undefined): AdminRole | null {
   if (!user || (user.role !== "admin" && user.role !== "super_admin")) return null;
   if (user.role === "super_admin") return "super_admin";
-  const metadata = user.metadata as Record<string, unknown> | null;
-  const configuredRole = metadata?.admin_role;
-  if (typeof configuredRole === "string" && configuredRole in rolePermissions) return configuredRole as AdminRole;
   return "admin";
 }
 
