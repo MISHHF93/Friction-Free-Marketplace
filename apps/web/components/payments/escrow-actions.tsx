@@ -14,8 +14,7 @@ async function postAction(path: string, body?: Record<string, unknown>) {
   const response = await fetch(path, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
-      "Idempotency-Key": crypto.randomUUID()
+      "Content-Type": "application/json"
     },
     body: body ? JSON.stringify(body) : undefined
   });
@@ -34,6 +33,7 @@ export function EscrowActions({ transactionId, role, status }: EscrowActionsProp
   const base = `/api/stripe/transactions/${transactionId}`;
 
   async function run(label: string, path: string, body?: Record<string, unknown>) {
+    if (label === "Refund" && !window.confirm("Refund the remaining amount to the buyer? This cannot be undone from this screen.")) return;
     setPending(label);
     setMessage(null);
     try {
@@ -47,7 +47,7 @@ export function EscrowActions({ transactionId, role, status }: EscrowActionsProp
     }
   }
 
-  const canCapture = role === "seller" && (status === "paid" || status === "pending_payment");
+  const canCapture = role === "seller" && status === "paid";
   const canRelease = role === "buyer" && status === "escrowed";
   const canRefund = role === "seller" && ["paid", "escrowed", "disputed"].includes(status);
   const canDispute = role === "buyer" && ["paid", "escrowed"].includes(status);

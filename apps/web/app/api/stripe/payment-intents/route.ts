@@ -15,6 +15,7 @@ import { isTrustedMutationOrigin } from "@/lib/security/request-origin";
 
 const paymentIntentRequestSchema = z.object({
   listingId: z.string().uuid(),
+  offerId: z.string().uuid().optional(),
   shippingCents: z.number().int().min(0).max(25_000_00).optional(),
   taxCents: z.number().int().min(0).max(25_000_00).optional()
 });
@@ -60,7 +61,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Seller has not completed Stripe Connect onboarding." }, { status: 409 });
   }
 
-  const quote = quoteCheckoutAmounts({ priceAmount: Number(listing.price_amount), metadata: listing.metadata });
+  let offer: { id: string; amount: number; currency: string } | null = null;
+  if (payload.data.offerId) {
+    const { data: acceptedOffer, error: offerError } = await supabase
+      .from("offers")
+      .select("id,amount,currency,status,buyer_id,listing_id,expires_at")
+      .eq("id", payload.data.offerId)
+      .maybeSingle();
+    if (offerError) return NextResponse.json({ error: "Could not load the accepted offer." }, { status: 500 });
+    const expired = acceptedOffer?.expires_at && new Date(acceptedOffer.expires_at).getTime() <= Date.now();
+    if (!acceptedOffer || acceptedOffer.status !== "accepted" || acceptedOffer.buyer_id !== auth.user.id || acceptedOffer.listing_id !== listing.id || expired) {
+      return NextResponse.json({ error: "That accepted offer cannot be paid." }, { status: 409 });
+    }
+    offer = acceptedOffer;
+  }
+
+  const quote = quoteCheckoutAmounts({
+    priceAmount: Number(listing.price_amount),
+    itemAmount: offer ? Number(offer.amount) : undefined,
+    metadata: listing.metadata
+  });
   if (!clientChargesMatchQuote(quote, payload.data)) {
     return NextResponse.json({
       error: "Shipping or tax does not match the server quote.",
@@ -138,9 +158,11 @@ export async function POST(request: Request) {
       tax_amount: expectedAmounts.tax,
       marketplace_fee_amount: expectedAmounts.fee,
       currency: currency.toUpperCase(),
+      offer_id: offer?.id ?? null,
       idempotency_key: idempotencyKey,
       metadata: {
-        checkout_kind: "full_purchase",
+        checkout_kind: offer ? "accepted_offer" : "full_purchase",
+        offer_id: offer?.id ?? null,
         seller_stripe_account_id: sellerAccount.stripe_account_id
       }
     }).select("*").single();

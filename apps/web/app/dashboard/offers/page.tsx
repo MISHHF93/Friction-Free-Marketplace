@@ -116,6 +116,7 @@ export default async function OffersPage() {
                     <div className="flex flex-wrap items-center justify-end gap-2">
                       {awaitingYou ? <Badge variant="warning">Awaiting you</Badge> : <Badge>{displayOfferStatus(offer.status)}</Badge>}
                       {latestHistory && <Badge className="gap-1"><History className="h-3 w-3" />{latestHistory.from_status ? displayOfferStatus(latestHistory.from_status) : "new"} -&gt; {displayOfferStatus(latestHistory.to_status)}</Badge>}
+                      {offer.status === "accepted" && offer.buyer_id === userId ? <Button asChild size="sm" variant="trust"><Link href={`/listings/${offer.listing_id}?offer=${offer.id}#protected-checkout`}>Pay accepted offer</Link></Button> : null}
                       {offer.conversation_id && <Button asChild size="sm"><Link href={`/dashboard/messages?conversation=${offer.conversation_id}`}>Review</Link></Button>}
                     </div>
                   }

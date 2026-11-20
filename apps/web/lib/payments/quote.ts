@@ -2,6 +2,7 @@ import { calculatePlatformFeeCents, centsToDollars, dollarsToCents } from "@/lib
 
 type QuoteInput = {
   priceAmount: number;
+  itemAmount?: number;
   metadata?: unknown;
 };
 
@@ -29,7 +30,7 @@ export function quoteCheckoutAmounts(input: QuoteInput) {
   const shippingCents = finiteCents(metadata?.shipping_cents)
     ?? dollarsToCents(finiteDollars(metadata?.shipping_amount) ?? 0);
   const taxCents = 0;
-  const itemCents = dollarsToCents(Number(input.priceAmount));
+  const itemCents = dollarsToCents(Number(input.itemAmount ?? input.priceAmount));
   const platformFeeCents = calculatePlatformFeeCents(itemCents + shippingCents + taxCents);
   return {
     itemCents,

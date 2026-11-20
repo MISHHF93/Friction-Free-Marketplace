@@ -8,6 +8,7 @@ import { recordTransactionEvent } from "@/lib/payments/audit";
 import { centsToDollars, dollarsToCents } from "@/lib/payments/money";
 import { enqueueTemplateNotification } from "@/lib/notifications/service";
 import { buildRefundJournal, postLedgerJournal } from "@/lib/financial/ledger";
+import { claimEscrowPayment, claimTransactionStatus, escrowActionKey } from "@/lib/payments/escrow";
 import { getStripe } from "@/lib/stripe/server";
 
 const refundSchema = z.object({ amountCents: z.number().int().positive().optional(), reason: z.enum(["duplicate", "fraudulent", "requested_by_customer"]).default("requested_by_customer") });
@@ -33,11 +34,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!["authorized", "held"].includes(payment.status)) return NextResponse.json({ error: "Payment is not refundable in its current state." }, { status: 409 });
 
   if (payment.status === "authorized") {
-    await getStripe().paymentIntents.cancel(payment.provider_payment_id, {}, {
-      idempotencyKey: request.headers.get("idempotency-key") ?? `cancel:${transactionId.data}:${payment.id}`
-    });
-    await supabase.from("escrow_payments").update({ status: "cancelled" }).eq("id", payment.id);
-    await supabase.from("transactions").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", transactionId.data);
+    const claimed = await claimEscrowPayment(supabase, payment.id, "authorized", "refunding");
+    if (!claimed) return NextResponse.json({ error: "This refund is already in progress." }, { status: 409 });
+    try {
+      await getStripe().paymentIntents.cancel(payment.provider_payment_id, {}, {
+        idempotencyKey: escrowActionKey("cancel", transactionId.data, payment.id)
+      });
+    } catch (error) {
+      await claimEscrowPayment(supabase, payment.id, "refunding", "authorized");
+      const message = error instanceof Error ? error.message : "Stripe cancel failed.";
+      return NextResponse.json({ error: message }, { status: 502 });
+    }
+    const cancelledPayment = await supabase.from("escrow_payments").update({ status: "cancelled" }).eq("id", payment.id).eq("status", "refunding").select("id");
+    if (cancelledPayment.error || !cancelledPayment.data?.length) return NextResponse.json({ error: "Cancellation could not be recorded." }, { status: 409 });
+    const cancelled = await claimTransactionStatus(supabase, transactionId.data, transaction.status, "cancelled", { cancelled_at: new Date().toISOString() });
+    if (!cancelled) return NextResponse.json({ error: "Transaction could not be cancelled." }, { status: 409 });
     if (transaction.listing_id) await supabase.from("listings").update({ status: "active" }).eq("id", transaction.listing_id).eq("status", "reserved");
     await recordTransactionEvent(supabase, {
       transaction_id: transactionId.data,
@@ -55,15 +66,28 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const remainingCents = dollarsToCents(Number(payment.amount) - refundedAmount);
   const amount = payload.data.amountCents ?? remainingCents;
   if (amount > remainingCents) return NextResponse.json({ error: "Refund amount exceeds the remaining refundable balance." }, { status: 400 });
-  const refund = await getStripe().refunds.create(
-    { payment_intent: payment.provider_payment_id, amount, reason: payload.data.reason, metadata: { transaction_id: transactionId.data } },
-    { idempotencyKey: request.headers.get("idempotency-key") ?? `refund:${transactionId.data}:${payment.id}:${amount}:${payload.data.reason}` }
-  );
+  const claimedRefund = await claimEscrowPayment(supabase, payment.id, "held", "refunding");
+  if (!claimedRefund) return NextResponse.json({ error: "This refund is already in progress." }, { status: 409 });
+  let refund;
+  try {
+    refund = await getStripe().refunds.create(
+      { payment_intent: payment.provider_payment_id, amount, reason: payload.data.reason, metadata: { transaction_id: transactionId.data } },
+      { idempotencyKey: escrowActionKey("refund", transactionId.data, payment.id, `${amount}:${payload.data.reason}`) }
+    );
+  } catch (error) {
+    await claimEscrowPayment(supabase, payment.id, "refunding", "held");
+    const message = error instanceof Error ? error.message : "Stripe refund failed.";
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
   const refundedTotal = refundedAmount + centsToDollars(amount);
   const fullyRefunded = refundedTotal >= Number(payment.amount);
 
-  await supabase.from("escrow_payments").update({ status: fullyRefunded ? "refunded" : payment.status, refunded_amount: refundedTotal, refunded_at: fullyRefunded ? new Date().toISOString() : payment.refunded_at }).eq("id", payment.id);
-  if (fullyRefunded) await supabase.from("transactions").update({ status: "refunded" }).eq("id", transactionId.data);
+  const recordedRefund = await supabase.from("escrow_payments").update({ status: fullyRefunded ? "refunded" : "held", refunded_amount: refundedTotal, refunded_at: fullyRefunded ? new Date().toISOString() : payment.refunded_at }).eq("id", payment.id).eq("status", "refunding").select("id");
+  if (recordedRefund.error || !recordedRefund.data?.length) return NextResponse.json({ error: "Refund could not be recorded." }, { status: 409 });
+  if (fullyRefunded) {
+    const refunded = await claimTransactionStatus(supabase, transactionId.data, transaction.status, "refunded");
+    if (!refunded) return NextResponse.json({ error: "Transaction could not be marked refunded." }, { status: 409 });
+  }
   if (fullyRefunded && transaction.listing_id) await supabase.from("listings").update({ status: "active" }).eq("id", transaction.listing_id).eq("status", "reserved");
   await supabase.from("transaction_receipts").update({ refunded_at: new Date().toISOString(), metadata: { refund_id: refund.id, refund_reason: payload.data.reason } }).eq("transaction_id", transactionId.data);
   if (payment.status === "held") {

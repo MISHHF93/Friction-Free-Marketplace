@@ -224,8 +224,9 @@ function riskTone(riskLevel: string): "success" | "warning" {
   return riskLevel === "low" ? "success" : "warning";
 }
 
-export default async function ListingDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ListingDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ offer?: string }> }) {
   const { id } = await params;
+  const offerId = (await searchParams)?.offer;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const [favoriteIds, dbListing, discoveryListing] = await Promise.all([
@@ -370,7 +371,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
           <div id="protected-checkout" className="sticky bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-30 md:static">
             {isLiveDatabaseListing ? (
-              <CheckoutCard listingId={listing.id} priceAmount={Number(listing.price_amount)} currency={listing.currency} shippingCents={checkoutQuote.shippingCents} />
+              <CheckoutCard listingId={listing.id} offerId={offerId} priceAmount={Number(listing.price_amount)} currency={listing.currency} shippingCents={checkoutQuote.shippingCents} />
             ) : (
               <Card className="border-primary/20 bg-primary/5">
                 <CardHeader><CardTitle className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-primary" aria-hidden="true" /> Protected checkout</CardTitle></CardHeader>
