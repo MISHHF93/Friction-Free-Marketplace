@@ -1,11 +1,27 @@
 import type { Page } from "@playwright/test";
 
+/** Wait until the route loading shell is gone and a real heading is painted. */
+export async function waitForAppReady(page: Page, timeout = 10_000) {
+  await page.locator("[data-ffm-route-loading='true']").waitFor({ state: "hidden", timeout }).catch(() => undefined);
+  await page.waitForFunction(
+    () =>
+      [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")].some((element) => {
+        if (element.closest("[data-ffm-route-loading='true']")) return false;
+        const style = getComputedStyle(element);
+        if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) return false;
+        const rect = element.getBoundingClientRect();
+        return rect.width > 1 && rect.height > 1;
+      }),
+    { timeout }
+  );
+}
+
 export async function openPath(page: Page, path: string) {
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       await page.goto(path, { waitUntil: "domcontentloaded" });
-      await page.locator("[data-ffm-route-loading='true']").waitFor({ state: "detached", timeout: 10_000 }).catch(() => undefined);
+      await waitForAppReady(page);
       return;
     } catch (error) {
       lastError = error;
