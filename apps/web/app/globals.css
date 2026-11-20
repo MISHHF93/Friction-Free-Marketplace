@@ -537,24 +537,15 @@
   }
 
   .dashboard-hero {
-    @apply overflow-hidden rounded-shell border border-white/10 bg-premium-dark p-4 text-white shadow-admin sm:p-6;
+    @apply overflow-hidden rounded-shell border border-border bg-card p-4 text-foreground shadow-sm sm:p-6;
     position: relative;
   }
 
   .dashboard-compact .dashboard-banner,
   .dashboard-compact .dashboard-hero {
-    padding: 0.75rem 1rem;
+    display: none;
   }
 
-  .dashboard-compact .dashboard-banner h1,
-  .dashboard-compact .dashboard-hero h2 {
-    margin-top: 0.25rem;
-    font-size: 1.25rem;
-    line-height: 1.75rem;
-  }
-
-  .dashboard-compact .dashboard-banner-copy,
-  .dashboard-compact .dashboard-hero p,
   .dashboard-compact .dashboard-lead {
     display: none;
   }

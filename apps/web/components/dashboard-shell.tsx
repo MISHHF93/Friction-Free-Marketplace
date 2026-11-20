@@ -1,5 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
-import { Bell, ChevronRight, ListChecks, Package } from "lucide-react";
+import { ChevronRight, ListChecks, Package } from "lucide-react";
 import type { DashboardLink } from "@/components/dashboard-config";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,13 +11,13 @@ export { dashboardLinks } from "@/components/dashboard-config";
 export function DashboardShell({
   title,
   description,
-  kicker = "Protected workspace",
+  kicker,
   actions,
   notice,
   children
 }: {
   title: string;
-  description: string;
+  description?: string;
   kicker?: string;
   links?: DashboardLink[];
   actions?: ReactNode;
@@ -30,11 +30,9 @@ export function DashboardShell({
       <div className="dashboard-hero">
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
           <div>
-            <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-sky-300">
-              <Bell className="h-4 w-4" /> {kicker}
-            </p>
-            <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-4xl">{title}</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">{description}</p>
+            {kicker ? <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-muted-foreground">{kicker}</p> : null}
+            <h1 className="text-2xl font-black tracking-tight sm:text-4xl">{title}</h1>
+            {description ? <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground sm:text-base">{description}</p> : null}
           </div>
           {actions ? <div className="grid gap-2 sm:flex sm:flex-wrap md:justify-end">{actions}</div> : null}
         </div>
