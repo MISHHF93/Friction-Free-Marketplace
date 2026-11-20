@@ -16,6 +16,10 @@ export type NotificationTemplateKey =
   | "payment_refunded"
   | "dispute_opened"
   | "dispute_updated"
+  | "dispute_resolved"
+  | "order_shipped"
+  | "order_delivered"
+  | "order_auto_released"
   | "saved_search_match";
 
 export type NotificationTemplateInput = {
@@ -27,6 +31,8 @@ export type NotificationTemplateInput = {
   reason?: string | null;
   savedSearchName?: string | null;
   actionUrl?: string | null;
+  carrier?: string | null;
+  trackingNumber?: string | null;
 };
 
 export type RenderedNotification = {
@@ -101,7 +107,7 @@ export function renderNotificationTemplate(key: NotificationTemplateKey, input: 
     case "offer_withdrawn":
       return render(key, "offers", "Offer withdrawn", `An offer for ${money(input.amount, input.currency ?? "USD")} on ${listingTitle} was withdrawn.`, actionUrl);
     case "payment_authorized":
-      return render(key, "payments", "Payment authorization started", `${money(input.amount, input.currency ?? "USD")} is being authorized for ${listingTitle}.`, actionUrl);
+      return render(key, "payments", "Checkout started", `Checkout for ${listingTitle} (${money(input.amount, input.currency ?? "USD")}) has started. Nothing is charged yet. We will let you know when the payment is confirmed.`, actionUrl);
     case "payment_captured":
       return render(key, "payments", "Payment held for completion", `${money(input.amount, input.currency ?? "USD")} is now held for ${listingTitle} until the order is completed.`, actionUrl);
     case "payment_released":
@@ -112,6 +118,14 @@ export function renderNotificationTemplate(key: NotificationTemplateKey, input: 
       return render(key, "disputes", "Dispute opened", `A dispute was opened for ${listingTitle}${input.reason ? `: ${input.reason}` : "."}`, actionUrl);
     case "dispute_updated":
       return render(key, "disputes", "Dispute updated", `There is a new dispute update for ${listingTitle}${input.reason ? `: ${input.reason}` : "."}`, actionUrl);
+    case "dispute_resolved":
+      return render(key, "disputes", "Dispute resolved", `The dispute for ${listingTitle} was resolved${input.reason ? `: ${input.reason}` : "."}`, actionUrl);
+    case "order_shipped":
+      return render(key, "payments", "Your order shipped", `${listingTitle} is on its way${input.carrier ? ` with ${input.carrier}` : ""}${input.trackingNumber ? ` (tracking ${input.trackingNumber})` : ""}. Confirm delivery when it arrives.`, actionUrl);
+    case "order_delivered":
+      return render(key, "payments", "Delivery confirmed", `The buyer confirmed delivery of ${listingTitle}. Held funds are released when the buyer releases them or automatically after 3 days without a dispute.`, actionUrl);
+    case "order_auto_released":
+      return render(key, "payments", "Payment released automatically", `${money(input.amount, input.currency ?? "USD")} for ${listingTitle} was released to the seller because the review period ended without a dispute.`, actionUrl);
     case "saved_search_match":
       return render(key, "saved_searches", `New match for ${input.savedSearchName ?? "your saved search"}`, `${listingTitle} matches one of your saved search alerts.`, actionUrl);
   }

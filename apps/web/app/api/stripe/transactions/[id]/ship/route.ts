@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/payments/auth";
 import { claimTransactionStatus } from "@/lib/payments/escrow";
 import { recordTransactionEvent } from "@/lib/payments/audit";
+import { notifyTransactionParties } from "@/lib/notifications/transaction-events";
 
 export const dynamic = "force-dynamic";
 
@@ -40,5 +41,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     to_status: "shipped",
     message: `${payload.data.carrier} ${payload.data.trackingNumber}`
   });
+  await notifyTransactionParties(supabase, { transactionId: id, template: "order_shipped", to: ["buyer"], input: { carrier: payload.data.carrier, trackingNumber: payload.data.trackingNumber } });
   return NextResponse.json({ status: "shipped" });
 }

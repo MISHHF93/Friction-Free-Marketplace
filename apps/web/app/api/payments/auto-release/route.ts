@@ -4,6 +4,7 @@ import { authorizeJobRequest } from "@/lib/security/secrets";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AUTO_RELEASE_AFTER_MS, AUTO_RELEASE_SHIPPED_MS, autoReleaseCandidateFilter, autoReleaseCheckColumn, autoReleaseEligible, durableAutoReleaseSkip, isOpenDisputeStatus, stampAutoReleaseCheck } from "@/lib/payments/auto-release";
 import { releaseHeldEscrow } from "@/lib/payments/release-held";
+import { notifyTransactionParties } from "@/lib/notifications/transaction-events";
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +72,12 @@ async function autoRelease(request: Request) {
       }
       const result = await releaseHeldEscrow(supabase, { transaction, payment, sellerAccountId: sellerAccount.stripe_account_id, actorId: null });
       if ("error" in result && result.error) failed += 1;
-      else released += 1;
+      else {
+        released += 1;
+        if (!("alreadyReleased" in result && result.alreadyReleased)) {
+          await notifyTransactionParties(supabase, { transactionId: transaction.id, template: "order_auto_released", to: ["buyer", "seller"] });
+        }
+      }
     } catch {
       await supabase.from("transactions").update({
         metadata: stampAutoReleaseCheck(transaction.metadata, new Date().toISOString())

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { notifyTransactionParties } from "@/lib/notifications/transaction-events";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/payments/auth";
 import { claimTransactionStatus } from "@/lib/payments/escrow";
@@ -27,5 +28,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     to_status: "delivered",
     message: "The order was marked delivered."
   });
+  await notifyTransactionParties(supabase, { transactionId: id, template: "order_delivered", to: ["seller"] });
   return NextResponse.json({ status: "delivered" });
 }

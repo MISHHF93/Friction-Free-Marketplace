@@ -5,6 +5,7 @@ import { settleDispute } from "@/lib/payments/settlement";
 import { getStripe } from "@/lib/stripe/server";
 import { recordAdminAction } from "@/lib/admin/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyTransactionParties } from "@/lib/notifications/transaction-events";
 import { syncListingToSearch } from "@/lib/search/discovery";
 
 const uuidSchema = z.string().uuid();
@@ -126,7 +127,10 @@ export async function applyAdminMutation(input: {
         if (!reason || !outcome) return { response: NextResponse.json({ error: "Closing a dispute requires a reason and an outcome." }, { status: 400 }) };
         const settled = await settleDispute(supabase, { disputeId: targetId, outcome, actorId: input.adminId, reason });
         if ("error" in settled && settled.error) return { response: NextResponse.json({ error: settled.error }, { status: settled.statusCode ?? 409 }) };
-        update = await supabase.from("disputes").select("id,status").eq("id", targetId).maybeSingle();
+        update = await supabase.from("disputes").select("id,status,transaction_id").eq("id", targetId).maybeSingle();
+        if (update.data?.transaction_id) {
+          await notifyTransactionParties(supabase, { transactionId: update.data.transaction_id, template: "dispute_resolved", to: ["buyer", "seller"], input: { reason } });
+        }
         break;
       }
       update = await supabase.from("disputes").update({
