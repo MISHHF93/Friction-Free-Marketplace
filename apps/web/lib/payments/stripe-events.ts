@@ -7,6 +7,7 @@ import { buildCaptureJournal, buildDisputeHoldJournal, postLedgerJournal } from 
 import { canApplyTransactionStatus } from "@/lib/payments/stripe-mode";
 import { isGenuinePostCompletionRefund, paymentSourcesForIntent, refundMayOverwriteStatus, refundStatusSources } from "@/lib/payments/webhook-guards";
 import { OPEN_DISPUTE_STATUSES } from "@/lib/disputes/status";
+import { closeDisputeForExpiredAuthorization, shouldCloseDisputeForExpiredAuthorization } from "@/lib/payments/expired-authorization-dispute";
 import { getStripe } from "@/lib/stripe/server";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -95,6 +96,11 @@ export async function updatePaymentIntent(intent: Stripe.PaymentIntent) {
     assertWrite(paymentUpdate.error, "Record payment method failure");
     if (!paymentUpdate.data?.length) return;
     await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "failed", from_status: transaction?.status, to_status: transaction?.status, provider_object_id: intent.id, message: intent.last_payment_error?.message ?? "Payment needs a new method. The order was not cancelled." });
+    return;
+  }
+
+  if (payment && shouldCloseDisputeForExpiredAuthorization({ intentStatus: intent.status, transactionStatus: transaction?.status, paymentStatus: payment.status })) {
+    await closeDisputeForExpiredAuthorization(supabase, { transactionId, paymentId: payment.id, intentId: intent.id });
     return;
   }
 
