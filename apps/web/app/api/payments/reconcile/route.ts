@@ -46,8 +46,17 @@ async function reconcile(request: Request) {
     if (!next || next === row.status) continue;
     const claimed = await claimEscrowPayment(supabase, row.id, row.status, next);
     if (!claimed) continue;
-    const transfer = transfers.data.find((item: { id?: string; reversed?: boolean | null }) => !item.reversed);
-    await recordReconciledPayment(supabase, { payment: row, next, refundedCents, transferId: transfer?.id ?? null });
+    const transfer = transfers.data.find((item: { id?: string; reversed?: boolean | null; amount?: number }) => !item.reversed);
+    const refunds = charge && "refunds" in charge ? charge.refunds?.data ?? [] : [];
+    const latestRefund = refunds.find((refund) => refund.id);
+    await recordReconciledPayment(supabase, {
+      payment: row,
+      next,
+      refundedCents,
+      transferId: transfer?.id ?? null,
+      transferCents: typeof transfer?.amount === "number" ? transfer.amount : null,
+      refundId: latestRefund?.id ?? null
+    });
     repaired += 1;
   }
 

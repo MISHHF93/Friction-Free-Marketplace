@@ -29,6 +29,9 @@ describe("transaction status guard", () => {
     expect(canApplyTransactionStatus("escrowed", "refunded")).toBe(true);
     expect(canApplyTransactionStatus("completed", "refunded")).toBe(false);
     expect(canApplyTransactionStatus("cancelled", "refunded")).toBe(false);
+    expect(canApplyTransactionStatus("resolving", "paid")).toBe(false);
+    expect(canApplyTransactionStatus("resolving", "refunded")).toBe(false);
+    expect(canApplyTransactionStatus("resolving", "cancelled")).toBe(false);
     expect(canApplyTransactionStatus("paid", "cancelled")).toBe(true);
     expect(canApplyTransactionStatus(null, "paid")).toBe(true);
   });

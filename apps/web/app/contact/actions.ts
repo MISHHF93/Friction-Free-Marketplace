@@ -75,8 +75,8 @@ export async function submitContactAction(_state: ContactActionState, formData: 
       html: `<p><strong>From:</strong> ${escapeHtml(name)} &lt;${escapeHtml(email)}&gt;</p><p><strong>Topic:</strong> ${escapeHtml(topic)}</p><p>${escapeHtml(message).replace(/\n/g, "<br>")}</p>`,
       tags: [{ name: "category", value: "support" }]
     });
-    return { status: "success", message: "Your message was sent. Support will reply by email." };
   } catch {
-    return { status: "error", message: "Support could not receive the message right now. Please use the support email shown on this page." };
+    // The row is already saved. A mail failure does not undo the request.
   }
+  return { status: "success", message: "Your message was saved. Support will reply by email." };
 }

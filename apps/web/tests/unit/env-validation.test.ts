@@ -33,7 +33,21 @@ describe("environment validation", () => {
       SUPABASE_SERVICE_ROLE_KEY: "service-role-placeholder",
       STRIPE_SECRET_KEY: "sk_test_example",
       STRIPE_WEBHOOK_SECRET: "whsec_example",
-      SUPPORT_EMAIL: "support@market.example"
+      SUPPORT_EMAIL: "support@market.example",
+      RESEND_FROM_EMAIL: "Friction-Free Marketplace <hello@market.example>"
     })).toThrow(/placeholder/i);
+    expect(() => validateServerEnv({
+      ...productionRuntime,
+      NEXT_PUBLIC_APP_URL: "https://market.example",
+      NEXT_PUBLIC_APP_NAME: "Friction-Free Marketplace",
+      NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_example",
+      SUPABASE_SERVICE_ROLE_KEY: "service-role",
+      STRIPE_SECRET_KEY: "sk_test_example",
+      STRIPE_WEBHOOK_SECRET: "whsec_example",
+      SUPPORT_EMAIL: "support@market.example",
+      RESEND_FROM_EMAIL: "Friction-Free Marketplace <hello@example.com>"
+    })).toThrow(/RESEND_FROM_EMAIL contains a placeholder value/);
   });
 });

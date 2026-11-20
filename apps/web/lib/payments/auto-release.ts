@@ -7,6 +7,16 @@ export function isOpenDisputeStatus(status: string | null | undefined) {
   return OPEN_DISPUTE_STATUSES.includes(String(status ?? ""));
 }
 
+export const autoReleaseCandidateFilter = "metadata->>auto_release_ineligible.is.null,metadata->>auto_release_ineligible.neq.true";
+
+const terminalPaymentStatuses = new Set(["cancelled", "refunded", "released", "failed"]);
+
+/** Only a finished payment is a permanent reason to stop retrying auto-release. */
+export function durableAutoReleaseSkip(paymentStatus: string | null | undefined) {
+  const status = String(paymentStatus ?? "");
+  return terminalPaymentStatuses.has(status) ? status : null;
+}
+
 export function autoReleaseEligible(input: {
   transactionStatus: string;
   deliveredAt?: string | null;

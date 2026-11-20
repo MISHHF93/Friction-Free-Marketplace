@@ -37,6 +37,7 @@ export function buildSettlementPlan(input: {
   else {
     refundCents = Math.floor(remaining / 2);
     releaseCents = Math.min(Math.floor(proratedNet / 2), remaining - refundCents);
+    if (remaining - refundCents - releaseCents === 1) refundCents += 1;
   }
   if (refundCents < 0 || releaseCents < 0 || refundCents + releaseCents > remaining) {
     throw new Error("Settlement plan is outside the remaining held funds.");
@@ -57,7 +58,14 @@ export function planFromStored(value: unknown): SettlementPlan | null {
   if (!value || typeof value !== "object") return null;
   const plan = value as Partial<SettlementPlan>;
   if (plan.outcome !== "refund_buyer" && plan.outcome !== "release_seller" && plan.outcome !== "split") return null;
-  if (!Number.isInteger(plan.refundCents) || !Number.isInteger(plan.releaseCents) || typeof plan.refundKey !== "string" || typeof plan.releaseKey !== "string") return null;
+  const refundCents = plan.refundCents;
+  const releaseCents = plan.releaseCents;
+  if (typeof refundCents !== "number" || typeof releaseCents !== "number" || !Number.isInteger(refundCents) || !Number.isInteger(releaseCents) || refundCents < 0 || releaseCents < 0) return null;
+  if (typeof plan.refundKey !== "string" || typeof plan.releaseKey !== "string") return null;
+  const original = typeof plan.originalAmountCents === "number" ? plan.originalAmountCents : null;
+  const prior = typeof plan.priorRefundedCents === "number" ? plan.priorRefundedCents : 0;
+  if (original != null && refundCents + releaseCents > original - prior) return null;
+  if (typeof plan.remainingCents === "number" && refundCents + releaseCents > plan.remainingCents) return null;
   return plan as SettlementPlan;
 }
 

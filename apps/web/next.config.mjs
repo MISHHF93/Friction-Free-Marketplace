@@ -46,6 +46,9 @@ const useStandaloneOutput = process.env.VERCEL !== "1";
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   ...(useStandaloneOutput ? { output: "standalone" } : {}),
+  // Playwright starts `next dev` after `next build`. A separate directory keeps
+  // the production webpack graph from being served as a dev module map.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   allowedDevOrigins: ["127.0.0.1"],
   async headers() {
     return [

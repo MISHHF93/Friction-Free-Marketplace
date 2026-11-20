@@ -4,7 +4,8 @@ export const openCheckoutStatuses = [
   "escrowed",
   "shipped",
   "delivered",
-  "disputed"
+  "disputed",
+  "resolving"
 ] as const;
 
 export type OpenCheckoutStatus = (typeof openCheckoutStatuses)[number];

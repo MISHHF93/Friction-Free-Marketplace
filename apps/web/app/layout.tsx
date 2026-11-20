@@ -79,12 +79,11 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: { children: ReactNode }) {
   await connection();
   const headerStore = await headers();
-  const nonce = headerStore.get("x-nonce") ?? undefined;
   const session = await getMarketplaceSession().catch(() => null);
   const locale = documentLocale(session?.locale, headerStore.get("accept-language"));
   return (
-    <html lang={locale.lang} dir={locale.dir} data-nonce={nonce ?? ""}>
-      <body>
+    <html lang={locale.lang} dir={locale.dir} suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <SiteShell>{children}</SiteShell>
         <PwaRegistrar />
         <NativeBridge />

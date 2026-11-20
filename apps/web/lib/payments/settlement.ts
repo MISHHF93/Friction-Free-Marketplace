@@ -1,5 +1,5 @@
 import { centsToDollars, dollarsToCents } from "@/lib/payments/money";
-import { buildRefundJournal, buildReleaseJournal, postLedgerJournal } from "@/lib/financial/ledger";
+import { buildCaptureJournal, buildRefundJournal, buildReleaseJournal, postLedgerJournal } from "@/lib/financial/ledger";
 import { claimEscrowPayment, claimTransactionStatus } from "@/lib/payments/escrow";
 import { prepareEscrowAction } from "@/lib/payments/resume";
 import { recordTransactionEvent } from "@/lib/payments/audit";
@@ -9,6 +9,10 @@ import { reactivateReservedListing } from "@/lib/payments/record-outcome";
 import { buildSettlementPlan, paymentAlreadySettled, planFromStored, settlementLegs, type SettlementOutcome, type SettlementPlan } from "@/lib/payments/settlement-plan";
 
 const CLOSED = new Set(["closed", "resolved_buyer", "resolved_seller"]);
+
+export function uncapturedDisputeAction(outcome: SettlementOutcome) {
+  return outcome === "refund_buyer" ? "cancel" as const : "capture" as const;
+}
 
 function refundIdsOf(payment: { metadata?: { refund_ids?: unknown } | null }) {
   return Array.isArray(payment.metadata?.refund_ids) ? payment.metadata.refund_ids.filter((id: unknown) => typeof id === "string") : [];
@@ -36,6 +40,10 @@ export async function settleDispute(supabase: any, input: {
   });
   if (CLOSED.has(dispute.status) && paymentAlreadySettled(payment.status, candidate)) {
     return { ok: true as const, outcome: candidate.outcome, alreadySettled: true as const };
+  }
+  if (!stored && (payment.status === "authorized" || payment.status === "capturing")) {
+    const prepared = await settleUncapturedDispute(supabase, { dispute, transaction, payment, outcome: input.outcome, reason: input.reason });
+    if (prepared) return prepared;
   }
   if (!stored && payment.status !== "held") return { error: "The payment is not held, so this outcome cannot move money.", statusCode: 409 as const };
 
@@ -147,4 +155,65 @@ export async function settleDispute(supabase: any, input: {
     message: `Dispute closed with ${plan.outcome}. ${input.reason}`
   });
   return { ok: true as const, outcome: plan.outcome };
+}
+
+async function settleUncapturedDispute(supabase: any, input: {
+  dispute: { id: string };
+  transaction: { id: string; status: string; buyer_id: string; seller_id: string };
+  payment: Record<string, any>;
+  outcome: SettlementOutcome;
+  reason: string;
+}) {
+  const { dispute, transaction, payment } = input;
+  if (uncapturedDisputeAction(input.outcome) === "cancel") {
+    try {
+      await getStripe().paymentIntents.cancel(payment.provider_payment_id, {}, { idempotencyKey: `dispute:${dispute.id}:cancel` });
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : "The authorization could not be cancelled.", statusCode: 502 as const };
+    }
+    const from = payment.status === "capturing" ? "capturing" : "authorized";
+    const cancelled = await claimEscrowPayment(supabase, payment.id, from, "cancelled");
+    if (!cancelled) return { error: "The authorization could not be cancelled.", statusCode: 409 as const };
+    await claimTransactionStatus(supabase, transaction.id, transaction.status, "cancelled", { cancelled_at: new Date().toISOString() });
+    await supabase.from("disputes").update({
+      status: "resolved_buyer",
+      resolution: `refund_buyer: ${input.reason}`,
+      resolved_at: new Date().toISOString()
+    }).eq("id", dispute.id);
+    return { ok: true as const, outcome: "refund_buyer" as const };
+  }
+
+  const prepared = payment.status === "capturing" ? { payment } : await prepareEscrowAction(supabase, payment, "authorized", "capturing");
+  if (!prepared.payment || prepared.payment.status !== "capturing") {
+    return { error: "The authorization could not be captured.", statusCode: 409 as const };
+  }
+  let captured;
+  try {
+    captured = await getStripe().paymentIntents.capture(payment.provider_payment_id, {}, { idempotencyKey: `dispute:${dispute.id}:capture` });
+  } catch (error) {
+    await claimEscrowPayment(supabase, payment.id, "capturing", "authorized");
+    return { error: error instanceof Error ? error.message : "Stripe capture failed.", statusCode: 502 as const };
+  }
+  const charge = typeof captured.latest_charge === "string" ? captured.latest_charge : captured.latest_charge?.id ?? null;
+  const held = await supabase.from("escrow_payments").update({
+    status: "held",
+    provider_charge_id: charge,
+    captured_at: new Date().toISOString(),
+    held_at: new Date().toISOString()
+  }).eq("id", payment.id).eq("status", "capturing").select("id");
+  if (held.error || !held.data?.length) return { error: "Capture could not be recorded.", statusCode: 409 as const };
+  payment.status = "held";
+  payment.provider_charge_id = charge;
+  await postLedgerJournal(supabase, buildCaptureJournal({
+    transactionId: transaction.id,
+    totalAmount: Number(payment.amount),
+    sellerNetAmount: Number(payment.seller_net_amount),
+    platformFeeAmount: Number(payment.platform_fee_amount),
+    currency: payment.currency,
+    buyerId: transaction.buyer_id,
+    sellerId: transaction.seller_id,
+    providerPaymentId: payment.provider_payment_id,
+    providerChargeId: charge
+  }));
+  return null;
 }

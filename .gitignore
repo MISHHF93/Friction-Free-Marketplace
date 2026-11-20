@@ -5,6 +5,8 @@ node_modules/
 
 # Next.js
 .next/
+.next-playwright/
+apps/web/next-env.d.ts
 out/
 
 # production

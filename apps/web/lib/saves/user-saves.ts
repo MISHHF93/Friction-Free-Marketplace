@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isDemoMarketplaceDataEnabled } from "@/lib/marketplace/demo-mode";
 import { searchMarketplace } from "@/lib/search/discovery";
 import type { DiscoveryDocument } from "@/lib/search/schema";
 
@@ -132,6 +133,9 @@ export async function getFavoritesDashboard(userId: string): Promise<{ favorites
       source: "database"
     };
   } catch {
+    if (!isDemoMarketplaceDataEnabled()) {
+      return { favorites: [], stats: { favoritesCount: 0, alertCount: 0, offerReadyCount: 0 }, source: "database" };
+    }
     const demo = (await searchMarketplace({ limit: 6 })).listings.map((listing) => ({ ...listing, favorited_at: listing.updated_at }));
     return { favorites: demo, stats: { favoritesCount: demo.length, alertCount: 3, offerReadyCount: demo.filter((listing) => listing.seller_trust_score >= 85).length }, source: "demo" };
   }
@@ -235,6 +239,9 @@ export async function getSavedSearchesDashboard(userId: string): Promise<{ searc
       source: "database"
     };
   } catch {
+    if (!isDemoMarketplaceDataEnabled()) {
+      return { searches: [], recentMatches: [], stats: { savedSearchCount: 0, newMatchCount: 0, digestCount: 0 }, source: "database" };
+    }
     const searches: SavedSearchDashboardItem[] = [
       { id: "00000000-0000-4000-8000-000000000001", name: "Carbon road bikes", query: "road bike carbon under 1500", filters: { maxPrice: 1500, category: "sports" }, alert_enabled: true, alert_frequency: "instant", last_notified_at: null, last_checked_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), match_count: 4, unread_notification_count: 2 },
       { id: "00000000-0000-4000-8000-000000000002", name: "Local MacBook pickup", query: "M1 MacBook Pro 14 local pickup", filters: { pickup_available: true }, alert_enabled: true, alert_frequency: "daily", last_notified_at: null, last_checked_at: null, created_at: new Date().toISOString(), updated_at: new Date().toISOString(), match_count: 9, unread_notification_count: 1 }

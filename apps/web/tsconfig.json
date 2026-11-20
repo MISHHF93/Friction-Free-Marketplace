@@ -29,7 +29,7 @@
     }
   },
   "include": [
-    "next-env.d.ts",
+    "types/next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
@@ -39,6 +39,7 @@
     "node_modules",
     "tests",
     "playwright.config.ts",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "next-env.d.ts"
   ]
 }

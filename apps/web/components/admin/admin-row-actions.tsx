@@ -21,7 +21,7 @@ export function adminActionControls(actions: string[]) {
   }));
 }
 
-export function AdminRowActionMenu({ slug, targetId, subject, actions, heldCents = 0, sellerNetCents = 0 }: { slug: string; targetId?: string; subject: string; primaryAction?: string; actions: string[]; heldCents?: number; sellerNetCents?: number }) {
+export function AdminRowActionMenu({ slug, targetId, subject, actions, heldCents = 0, sellerNetCents = 0, currency = "USD", priorRefundedCents = 0 }: { slug: string; targetId?: string; subject: string; primaryAction?: string; actions: string[]; heldCents?: number; sellerNetCents?: number; currency?: string; priorRefundedCents?: number }) {
   const [reason, setReason] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
@@ -73,7 +73,7 @@ export function AdminRowActionMenu({ slug, targetId, subject, actions, heldCents
             </select>
           </label>
         ) : null}
-        {slug === "disputes" && outcome && heldCents > 0 ? <SettlementPreview outcome={outcome} disputeId={targetId ?? "preview"} heldCents={heldCents} sellerNetCents={sellerNetCents || heldCents} /> : null}
+        {slug === "disputes" && outcome && heldCents > 0 ? <SettlementPreview outcome={outcome} disputeId={targetId ?? "preview"} heldCents={heldCents} sellerNetCents={sellerNetCents || heldCents} currency={currency} priorRefundedCents={priorRefundedCents} /> : null}
         {controls.map((control) => (
           <Button key={control.action} type="button" className="min-h-11" disabled={!ready} title={!ready ? "Enter a reason of at least 3 characters." : undefined} onClick={() => void send(control.action)}>
             {pending === control.action ? `Confirm ${control.label}` : control.label}
@@ -86,7 +86,7 @@ export function AdminRowActionMenu({ slug, targetId, subject, actions, heldCents
   );
 }
 
-function SettlementPreview({ outcome, disputeId, heldCents, sellerNetCents }: { outcome: SettlementOutcome; disputeId: string; heldCents: number; sellerNetCents: number }) {
-  const plan = buildSettlementPlan({ disputeId, outcome, originalAmountCents: heldCents, originalSellerNetCents: sellerNetCents, priorRefundedCents: 0 });
-  return <p className="text-sm">Refund {formatMoney(centsToDollars(plan.refundCents), "USD")} and release {formatMoney(centsToDollars(plan.releaseCents), "USD")}.</p>;
+function SettlementPreview({ outcome, disputeId, heldCents, sellerNetCents, currency, priorRefundedCents }: { outcome: SettlementOutcome; disputeId: string; heldCents: number; sellerNetCents: number; currency: string; priorRefundedCents: number }) {
+  const plan = buildSettlementPlan({ disputeId, outcome, originalAmountCents: heldCents, originalSellerNetCents: sellerNetCents, priorRefundedCents });
+  return <p className="text-sm">Refund {formatMoney(centsToDollars(plan.refundCents), currency)} and release {formatMoney(centsToDollars(plan.releaseCents), currency)}.</p>;
 }

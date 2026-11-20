@@ -21,7 +21,7 @@ describe("offer response roles", () => {
 
 describe("open checkout statuses", () => {
   it("includes dispute and fulfillment states", () => {
-    expect(openCheckoutStatuses).toEqual(expect.arrayContaining(["disputed", "shipped", "delivered", "escrowed"]));
+    expect(openCheckoutStatuses).toEqual(expect.arrayContaining(["disputed", "resolving", "shipped", "delivered", "escrowed"]));
   });
 });
 

@@ -17,7 +17,8 @@ export default defineConfig({
         env: {
           ...process.env,
           FFM_E2E_AUTH: "true",
-          MARKETPLACE_DEMO_MODE: "true"
+          MARKETPLACE_DEMO_MODE: "true",
+          NEXT_DIST_DIR: ".next-playwright"
         },
         timeout: 120_000
       },
