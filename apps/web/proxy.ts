@@ -172,13 +172,15 @@ export async function proxy(request: NextRequest) {
   }
 
   const env = getPublicMiddlewareEnv();
-  const sessionResponse = continueRequest(request);
-
   if (!env) {
+    const sessionResponse = continueRequest(request);
     return isProtectedRoute(pathname) ? copyResponseCookies(sessionResponse, NextResponse.redirect(getLoginRedirectUrl(request))) : sessionResponse;
   }
 
-  const { user, supabase } = await refreshSupabaseUser(request, sessionResponse, env);
+  const refreshResponse = NextResponse.next();
+  const { user, supabase } = await refreshSupabaseUser(request, refreshResponse, env);
+  const sessionResponse = continueRequest(request);
+  copyResponseCookies(refreshResponse, sessionResponse);
 
   if (isProtectedRoute(pathname) && !user) {
     return copyResponseCookies(sessionResponse, NextResponse.redirect(getLoginRedirectUrl(request)));
