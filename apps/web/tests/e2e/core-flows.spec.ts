@@ -93,7 +93,8 @@ test.describe("core marketplace flows", () => {
         body: JSON.stringify({ transactionId: "txn_test_escrow", mode: "test" })
       });
     });
-    await page.goto("/listings/verified-road-bike");
+    // Wait for the page to be ready so a first-hit dev compile cannot re-render the sheet mid-click.
+    await openPath(page, "/listings/verified-road-bike");
     await page.getByRole("button", { name: "Buy", exact: true }).click();
     await page.getByRole("button", { name: "Preview test authorization" }).click();
     await expect(page.getByText("txn_test_escrow")).toBeVisible();
