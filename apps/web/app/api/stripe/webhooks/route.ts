@@ -7,6 +7,7 @@ import { centsToDollars } from "@/lib/payments/money";
 import { upsertSellerAccountFromStripe } from "@/lib/payments/connect";
 import { buildCaptureJournal, buildDisputeHoldJournal, postLedgerJournal } from "@/lib/financial/ledger";
 import { getStripe } from "@/lib/stripe/server";
+import { canApplyTransactionStatus, stripeSecretIsLive } from "@/lib/payments/stripe-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -25,9 +26,11 @@ async function updatePaymentIntent(intent: Stripe.PaymentIntent) {
   const { data: payment } = await supabase.from("escrow_payments").select("*").eq("provider_payment_id", intent.id).maybeSingle();
   const chargeId = typeof intent.latest_charge === "string" ? intent.latest_charge : intent.latest_charge?.id ?? null;
 
-  if (intent.status === "requires_capture") {
-    await supabase.from("escrow_payments").update({ status: "authorized", authorized_at: new Date().toISOString(), provider_charge_id: chargeId }).eq("provider_payment_id", intent.id);
-    await supabase.from("transactions").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", transactionId);
+  if (intent.status === "requires_capture" && canApplyTransactionStatus(transaction?.status, "paid")) {
+    const paymentUpdate = await supabase.from("escrow_payments").update({ status: "authorized", authorized_at: new Date().toISOString(), provider_charge_id: chargeId }).eq("provider_payment_id", intent.id);
+    if (paymentUpdate.error) throw new Error(paymentUpdate.error.message);
+    const transactionUpdate = await supabase.from("transactions").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", transactionId);
+    if (transactionUpdate.error) throw new Error(transactionUpdate.error.message);
     await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "payment_authorized", from_status: transaction?.status, to_status: "paid", provider_object_id: intent.id, amount: centsToDollars(intent.amount), currency: intent.currency, message: "Payment authorized; awaiting manual capture." });
   }
 
@@ -66,10 +69,19 @@ async function updatePaymentIntent(intent: Stripe.PaymentIntent) {
     await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "escrow_held", from_status: transaction?.status, to_status: "escrowed", provider_object_id: intent.id, amount: centsToDollars(intent.amount_received), currency: intent.currency, message: "Payment captured and held pending seller release." });
   }
 
-  if (["canceled", "requires_payment_method"].includes(intent.status)) {
-    await supabase.from("escrow_payments").update({ status: intent.status === "canceled" ? "cancelled" : "failed", failure_code: intent.last_payment_error?.code ?? null }).eq("provider_payment_id", intent.id);
-    await supabase.from("transactions").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", transactionId);
-    await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "failed", from_status: transaction?.status, to_status: "cancelled", provider_object_id: intent.id, message: intent.last_payment_error?.message ?? "Payment was canceled or failed." });
+  if (intent.status === "requires_payment_method") {
+    const paymentUpdate = await supabase.from("escrow_payments").update({ failure_code: intent.last_payment_error?.code ?? null }).eq("provider_payment_id", intent.id);
+    if (paymentUpdate.error) throw new Error(paymentUpdate.error.message);
+    await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "failed", from_status: transaction?.status, to_status: transaction?.status, provider_object_id: intent.id, message: intent.last_payment_error?.message ?? "Payment needs a new method. The order was not cancelled." });
+    return;
+  }
+
+  if (intent.status === "canceled" && canApplyTransactionStatus(transaction?.status, "cancelled")) {
+    const paymentUpdate = await supabase.from("escrow_payments").update({ status: "cancelled", failure_code: intent.last_payment_error?.code ?? null }).eq("provider_payment_id", intent.id);
+    if (paymentUpdate.error) throw new Error(paymentUpdate.error.message);
+    const transactionUpdate = await supabase.from("transactions").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", transactionId);
+    if (transactionUpdate.error) throw new Error(transactionUpdate.error.message);
+    await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "failed", from_status: transaction?.status, to_status: "cancelled", provider_object_id: intent.id, message: intent.last_payment_error?.message ?? "Payment was canceled." });
   }
 }
 
@@ -130,7 +142,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid Stripe webhook signature." }, { status: 400 });
   }
 
-  const expectedLivemode = env.STRIPE_SECRET_KEY.startsWith("sk_live_");
+  const expectedLivemode = stripeSecretIsLive(env.STRIPE_SECRET_KEY);
   if (event.livemode !== expectedLivemode) {
     return NextResponse.json({ error: "Stripe webhook livemode does not match configured Stripe key." }, { status: 400 });
   }
@@ -160,7 +172,8 @@ export async function POST(request: Request) {
       default:
         break;
     }
-    await supabase.from("stripe_webhook_events").update({ processed_at: new Date().toISOString(), processing_error: null }).eq("id", event.id);
+    const processed = await supabase.from("stripe_webhook_events").update({ processed_at: new Date().toISOString(), processing_error: null }).eq("id", event.id);
+    if (processed.error) throw new Error(processed.error.message);
   } catch (error) {
     await supabase.from("stripe_webhook_events").update({ processing_error: error instanceof Error ? error.message : "Unknown webhook error" }).eq("id", event.id);
     return NextResponse.json({ error: "Webhook processing failed." }, { status: 500 });

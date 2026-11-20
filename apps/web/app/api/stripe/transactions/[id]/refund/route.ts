@@ -32,6 +32,25 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!payment) return NextResponse.json({ error: "Payment not found." }, { status: 404 });
   if (!["authorized", "held"].includes(payment.status)) return NextResponse.json({ error: "Payment is not refundable in its current state." }, { status: 409 });
 
+  if (payment.status === "authorized") {
+    await getStripe().paymentIntents.cancel(payment.provider_payment_id, {}, {
+      idempotencyKey: request.headers.get("idempotency-key") ?? `cancel:${transactionId.data}:${payment.id}`
+    });
+    await supabase.from("escrow_payments").update({ status: "cancelled" }).eq("id", payment.id);
+    await supabase.from("transactions").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", transactionId.data);
+    if (transaction.listing_id) await supabase.from("listings").update({ status: "active" }).eq("id", transaction.listing_id).eq("status", "reserved");
+    await recordTransactionEvent(supabase, {
+      transaction_id: transactionId.data,
+      actor_id: auth.user.id,
+      type: "cancelled",
+      from_status: transaction.status,
+      to_status: "cancelled",
+      provider_object_id: payment.provider_payment_id,
+      message: "Uncaptured authorization was cancelled instead of refunded."
+    });
+    return NextResponse.json({ status: "cancelled", captureReleased: true });
+  }
+
   const refundedAmount = Number(payment.refunded_amount ?? 0);
   const remainingCents = dollarsToCents(Number(payment.amount) - refundedAmount);
   const amount = payload.data.amountCents ?? remainingCents;

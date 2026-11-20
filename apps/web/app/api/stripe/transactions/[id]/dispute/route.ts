@@ -23,6 +23,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const supabase = createAdminClient() as any;
   const { data: transaction } = await supabase.from("transactions").select("*").eq("id", transactionId.data).single();
   if (!transaction || ![transaction.buyer_id, transaction.seller_id].includes(auth.user.id)) return NextResponse.json({ error: "Transaction not found." }, { status: 404 });
+  if (!["paid", "escrowed", "shipped", "delivered"].includes(transaction.status)) {
+    return NextResponse.json({ error: "This order cannot be disputed in its current state." }, { status: 409 });
+  }
   const { data: existingDispute } = await supabase
     .from("disputes")
     .select("id,status")

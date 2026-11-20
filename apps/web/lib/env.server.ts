@@ -1,4 +1,5 @@
 import { formatEnvError, isNextBuildPhase, shouldUseLocalDevelopmentEnv } from "@/lib/env.shared";
+import { stripeSecretMode } from "@/lib/payments/stripe-mode";
 import { localDevelopmentEnv, serverEnvSchema, type ServerEnv } from "@/lib/env.server-schema";
 
 if (typeof window !== "undefined") {
@@ -56,7 +57,7 @@ export function validateServerEnv(input: NodeJS.ProcessEnv = process.env): Serve
         invalid.push(`${name} contains a placeholder value.`);
       }
     }
-    const secretMode = parsed.STRIPE_SECRET_KEY.startsWith("sk_live_") ? "live" : parsed.STRIPE_SECRET_KEY.startsWith("sk_test_") ? "test" : "invalid";
+    const secretMode = stripeSecretMode(parsed.STRIPE_SECRET_KEY);
     const publicMode = parsed.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.startsWith("pk_live_") ? "live" : parsed.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.startsWith("pk_test_") ? "test" : "invalid";
     if (secretMode === "invalid" || secretMode !== publicMode) invalid.push("Stripe public and secret keys must use the same valid mode.");
     if (invalid.length) throw new Error(["Invalid production environment.", ...invalid.map((issue) => `- ${issue}`)].join("\n"));
