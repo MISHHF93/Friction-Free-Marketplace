@@ -1,8 +1,14 @@
+import { redirect } from "next/navigation";
 import { CreditCard, Landmark, ShieldCheck } from "lucide-react";
 import { SellerOnboardingCard } from "@/components/payments/seller-onboarding-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createClient } from "@/lib/supabase/server";
 
-export default function PaymentsDashboardPage() {
+export default async function PaymentsDashboardPage() {
+  const supabase = createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/login?next=/dashboard/payments");
+
   return (
     <section className="mx-auto max-w-6xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
       <div>

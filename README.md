@@ -142,6 +142,14 @@ npm run platform:build  # Build shared code, hosted web, and portable mobile bri
 npm run platform:sync   # Verify and sync Capacitor Android/iOS projects
 ```
 
+## Vercel layout
+
+`vercel.json` lives at the repository root and runs `npm ci` and `npm run web:build` from that root. Set the Vercel project's Root Directory to the repository root, not `apps/web`. A root of `apps/web` would not see this file, and the old `cd ../..` commands only made sense if the file itself lived in `apps/web`.
+
+Scheduled routes are Vercel Cron GET requests. Set `CRON_SECRET` (sent as `Authorization: Bearer`) or the route's own bearer secret (`SCHEDULED_JOB_SECRET` for notifications and offer expiry, `SEARCH_SYNC_SECRET` for search sync). A missing secret returns 503.
+
+Public image build arguments are required. Pass `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` to `docker build`. The image does not bake placeholder values for those variables.
+
 ## Production deployment
 
 The full Next.js application can deploy from GitHub to Vercel or as the included Docker image. Android and iOS projects live in `apps/mobile`; they require a deployed HTTPS web origin and store credentials. See [docs/production-release.md](docs/production-release.md) for the complete web, Play Store, and App Store procedure.

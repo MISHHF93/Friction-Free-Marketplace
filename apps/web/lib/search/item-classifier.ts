@@ -74,7 +74,10 @@ export function classifyMarketplaceItem(query: string): ItemClassification {
   const range = normalized.match(/(?:between|from)\s*[$€£¥]?\s*([\d,.]+)\s*(?:and|to|-)\s*[$€£¥]?\s*([\d,.]+)/);
   const maximum = normalized.match(/(?:under|below|less than|up to|maximum|max)\s*[$€£¥]?\s*([\d,.]+)/);
   const minimum = normalized.match(/(?:over|above|more than|at least|minimum|min)\s*[$€£¥]?\s*([\d,.]+)/);
-  const condition = conditionAliases.find((entry) => entry.phrases.some((phrase) => normalized.includes(phrase)))?.value;
+  const condition = conditionAliases
+    .flatMap((entry) => entry.phrases.map((phrase) => ({ phrase, value: entry.value })))
+    .sort((left, right) => right.phrase.length - left.phrase.length)
+    .find((entry) => new RegExp(`(?:^|\\s)${entry.phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:$|\\s)`).test(normalized))?.value;
   const fulfillment = normalized.includes("pickup")
     ? "pickup" as const
     : normalized.includes("delivery") || normalized.includes("shipped") || normalized.includes("shipping")

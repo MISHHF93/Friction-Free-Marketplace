@@ -5,7 +5,8 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/payments/auth";
 import { recordTransactionEvent } from "@/lib/payments/audit";
-import { calculatePlatformFeeCents, centsToDollars, dollarsToCents, normalizeCurrency } from "@/lib/payments/money";
+import { centsToDollars, normalizeCurrency } from "@/lib/payments/money";
+import { clientChargesMatchQuote, quoteCheckoutAmounts } from "@/lib/payments/quote";
 import { checkoutStripeIdempotencyKey, parseIdempotencyKey } from "@/lib/payments/idempotency";
 import { enqueueTemplateNotification } from "@/lib/notifications/service";
 import { getStripe } from "@/lib/stripe/server";
@@ -13,8 +14,8 @@ import { isTrustedMutationOrigin } from "@/lib/security/request-origin";
 
 const paymentIntentRequestSchema = z.object({
   listingId: z.string().uuid(),
-  shippingCents: z.number().int().min(0).max(25_000_00).default(0),
-  taxCents: z.number().int().min(0).max(25_000_00).default(0)
+  shippingCents: z.number().int().min(0).max(25_000_00).optional(),
+  taxCents: z.number().int().min(0).max(25_000_00).optional()
 });
 
 export async function POST(request: Request) {
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
   const supabase = createAdminClient() as any;
   const { data: listing, error: listingError } = await supabase
     .from("listings")
-    .select("id,title,seller_id,price_amount,currency,status,quantity")
+    .select("id,title,seller_id,price_amount,currency,status,quantity,metadata")
     .eq("id", payload.data.listingId)
     .is("deleted_at", null)
     .single();
@@ -58,16 +59,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Seller has not completed Stripe Connect onboarding." }, { status: 409 });
   }
 
-  const itemCents = dollarsToCents(Number(listing.price_amount));
-  const platformFeeCents = calculatePlatformFeeCents(itemCents + payload.data.shippingCents + payload.data.taxCents);
-  const totalCents = itemCents + payload.data.shippingCents + payload.data.taxCents + platformFeeCents;
+  const quote = quoteCheckoutAmounts({ priceAmount: Number(listing.price_amount), metadata: listing.metadata });
+  if (!clientChargesMatchQuote(quote, payload.data)) {
+    return NextResponse.json({
+      error: "Shipping or tax does not match the server quote.",
+      shippingCents: quote.shippingCents,
+      taxCents: quote.taxCents
+    }, { status: 400 });
+  }
+  const platformFeeCents = quote.platformFeeCents;
+  const totalCents = quote.totalCents;
   const currency = normalizeCurrency(listing.currency);
 
   const expectedAmounts = {
-    item: centsToDollars(itemCents),
-    shipping: centsToDollars(payload.data.shippingCents),
-    tax: centsToDollars(payload.data.taxCents),
-    fee: centsToDollars(platformFeeCents),
+    item: quote.itemAmount,
+    shipping: quote.shippingAmount,
+    tax: quote.taxAmount,
+    fee: quote.platformFeeAmount,
   };
   let { data: transaction } = await supabase
     .from("transactions")

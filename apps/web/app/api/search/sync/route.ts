@@ -3,7 +3,7 @@ import { z } from "zod";
 import { env } from "@/lib/env.server";
 import { configureDiscoveryIndex } from "@/lib/search/meilisearch";
 import { indexListingsById, rebuildDiscoveryIndex, removeListingFromSearch, syncListingToSearch } from "@/lib/search/discovery";
-import { hasValidBearerSecret } from "@/lib/security/secrets";
+import { authorizeJobRequest } from "@/lib/security/secrets";
 
 const syncRequestSchema = z.object({
   mode: z.enum(["configure", "listing", "batch", "rebuild"]).default("rebuild"),
@@ -14,22 +14,11 @@ const syncRequestSchema = z.object({
   remove: z.boolean().default(false),
 });
 
-function authorized(request: Request) {
-  if (!env.SEARCH_SYNC_SECRET) return process.env.NODE_ENV !== "production";
-  return hasValidBearerSecret(request, env.SEARCH_SYNC_SECRET);
-}
+async function syncSearch(request: Request, body: unknown) {
+  const authorization = authorizeJobRequest(request, env.SEARCH_SYNC_SECRET, "Unauthorized search sync request.");
+  if (!authorization.ok) return NextResponse.json({ error: authorization.error }, { status: authorization.status });
 
-export async function POST(request: Request) {
-  if (!authorized(request)) return NextResponse.json({ error: "Unauthorized search sync request." }, { status: 401 });
-  const bodyText = await request.text();
-  let body: unknown = {};
-  try {
-    body = bodyText ? JSON.parse(bodyText) : {};
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
-  }
-
-  const parsed = syncRequestSchema.safeParse(body);
+  const parsed = syncRequestSchema.safeParse(body ?? {});
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   const input = parsed.data;
 
@@ -54,4 +43,21 @@ export async function POST(request: Request) {
 
   const result = await rebuildDiscoveryIndex(input.limit, { waitForTasks: input.wait });
   return NextResponse.json({ ok: true, ...result });
+}
+
+export async function POST(request: Request) {
+  const bodyText = await request.text();
+  if (!bodyText) return syncSearch(request, {});
+  try {
+    return await syncSearch(request, JSON.parse(bodyText));
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
+    }
+    throw error;
+  }
+}
+
+export function GET(request: Request) {
+  return syncSearch(request, { mode: "rebuild", limit: 500 });
 }

@@ -5,9 +5,9 @@ import Link from "next/link";
 import { ShieldCheck, LockKeyhole, ReceiptText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { publicEnv } from "@/lib/env";
+import { centsToDollars } from "@/lib/payments/money";
+import { quoteCheckoutAmounts } from "@/lib/payments/quote";
 
 type StripeJs = {
   elements: () => { create: (type: "card", options?: Record<string, unknown>) => { mount: (selector: string) => void; destroy: () => void } };
@@ -24,15 +24,15 @@ type CheckoutCardProps = {
   listingId: string;
   priceAmount: number;
   currency: string;
+  shippingCents?: number;
   disabled?: boolean;
 };
 
-export function CheckoutCard({ listingId, priceAmount, currency, disabled = false }: CheckoutCardProps) {
+export function CheckoutCard({ listingId, priceAmount, currency, shippingCents = 0, disabled = false }: CheckoutCardProps) {
   const stripeKey = publicEnv.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
   const checkoutConfigured = Boolean(stripeKey && !stripeKey.includes("placeholder"));
   const [stripe, setStripe] = useState<StripeJs | null>(null);
   const [cardReady, setCardReady] = useState(false);
-  const [shipping, setShipping] = useState(0);
   const [status, setStatus] = useState(checkoutConfigured ? "Ready for protected checkout." : "Checkout is not configured yet.");
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,9 +68,7 @@ export function CheckoutCard({ listingId, priceAmount, currency, disabled = fals
     return () => cardRef.current?.destroy();
   }, [checkoutConfigured, stripeKey]);
 
-  const feeBase = priceAmount + shipping;
-  const platformFee = Math.max(0.99, feeBase * 0.05);
-  const total = feeBase + platformFee;
+  const quote = quoteCheckoutAmounts({ priceAmount, metadata: { shipping_cents: shippingCents } });
 
   async function startCheckout() {
     if (!stripe || !cardRef.current) return;
@@ -87,7 +85,8 @@ export function CheckoutCard({ listingId, priceAmount, currency, disabled = fals
         },
         body: JSON.stringify({
           listingId,
-          shippingCents: Math.round(shipping * 100)
+          shippingCents: quote.shippingCents,
+          taxCents: quote.taxCents
         })
       });
       const payment = await response.json();
@@ -114,20 +113,16 @@ export function CheckoutCard({ listingId, priceAmount, currency, disabled = fals
         <CardTitle className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-primary" /> Protected checkout</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 p-4 pt-0 sm:p-6 sm:pt-0">
-        <div className="grid gap-3">
-          <div>
-            <Label htmlFor="shipping">Shipping estimate</Label>
-            <Input id="shipping" type="number" min="0" step="0.01" value={shipping} onChange={(event) => setShipping(Number(event.target.value))} />
-          </div>
-        </div>
         <div className="rounded-xl border border-primary/20 bg-background p-3 text-xs leading-5 text-muted-foreground">
-          Protected checkout authorizes the full item price plus shipping and platform fee. Reservation deposits stay inside offer scheduling, not buy-now checkout.
+          Shipping and tax are calculated on the server from the listing. The amount you authorize is the server quote, not a value typed in the browser.
         </div>
         <div className="rounded-xl border border-border bg-background p-3" id="stripe-card-element" />
         <div className="space-y-1 rounded-xl bg-background p-3 text-sm">
-          <p className="flex flex-wrap justify-between gap-2"><span>Item and shipping</span><strong>{currency} ${feeBase.toFixed(2)}</strong></p>
-          <p className="flex flex-wrap justify-between gap-2"><span>Protection fee</span><strong>{currency} ${platformFee.toFixed(2)}</strong></p>
-          <p className="flex flex-wrap justify-between gap-2 text-base"><span>Total authorized</span><strong>{currency} ${total.toFixed(2)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2"><span>Item</span><strong>{currency} ${centsToDollars(quote.itemCents).toFixed(2)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2"><span>Shipping</span><strong>{currency} ${centsToDollars(quote.shippingCents).toFixed(2)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2"><span>Tax</span><strong>{currency} ${centsToDollars(quote.taxCents).toFixed(2)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2"><span>Protection fee</span><strong>{currency} ${centsToDollars(quote.platformFeeCents).toFixed(2)}</strong></p>
+          <p className="flex flex-wrap justify-between gap-2 text-base"><span>Total authorized</span><strong>{currency} ${centsToDollars(quote.totalCents).toFixed(2)}</strong></p>
         </div>
         <Button className="w-full" size="lg" onClick={startCheckout} disabled={disabled || !checkoutConfigured || !cardReady || isSubmitting}>
           <ShieldCheck className="h-4 w-4" /> {isSubmitting ? "Authorizing…" : "Authorize payment"}

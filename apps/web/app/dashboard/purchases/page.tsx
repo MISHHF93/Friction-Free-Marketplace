@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { LifeBuoy, PackageCheck, RotateCcw, ShoppingBag } from "lucide-react";
 import { DashboardActionCard, DashboardListItem, DashboardShell, DashboardStatCard } from "@/components/dashboard-shell";
+import { EscrowActions } from "@/components/payments/escrow-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/server";
@@ -53,7 +55,8 @@ async function getBuyerPurchases(userId: string) {
 export default async function PurchasesPage() {
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const purchases = user ? await getBuyerPurchases(user.id) : [];
+  if (!user) redirect("/login?next=/dashboard/purchases");
+  const purchases = await getBuyerPurchases(user.id);
   const active = purchases.filter((purchase) => !["completed", "cancelled", "refunded"].includes(purchase.status));
   const completed = purchases.filter((purchase) => purchase.status === "completed");
   const support = purchases.filter((purchase) => ["disputed", "refunded"].includes(purchase.status));
@@ -71,6 +74,7 @@ export default async function PurchasesPage() {
           {purchases.length ? purchases.map((purchase) => (
             <DashboardListItem key={purchase.id} title={purchase.title} detail={`${money(purchase.total_amount, purchase.currency)} · ${purchaseMilestone(purchase)}`} status={purchase.status}>
               <Button asChild size="sm" variant="outline"><Link href={`/listings/${purchase.listing_id}`}>View listing</Link></Button>
+              <EscrowActions transactionId={purchase.id} role="buyer" status={purchase.status} />
             </DashboardListItem>
           )) : (
             <div className="rounded-2xl border border-dashed border-border bg-secondary/50 p-5 text-sm text-muted-foreground">

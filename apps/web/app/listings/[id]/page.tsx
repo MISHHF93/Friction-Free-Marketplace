@@ -34,6 +34,7 @@ import { createClient } from "@/lib/supabase/server";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { ShareListingButton } from "@/components/listings/share-listing-button";
 import { CheckoutCard } from "@/components/payments/checkout-card";
+import { quoteCheckoutAmounts } from "@/lib/payments/quote";
 import { StartConversationCard } from "@/components/messaging/start-conversation-card";
 import { PriceDisplay, TrustBadge } from "@/components/marketplace-design-system";
 import { PublicListingGrid } from "@/components/public-listing-grid";
@@ -237,6 +238,10 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
   if (!listing) notFound();
 
   const isLiveDatabaseListing = Boolean(dbListing);
+  const checkoutQuote = quoteCheckoutAmounts({
+    priceAmount: Number(listing.price_amount),
+    metadata: dbListing?.metadata ?? null
+  });
   const moderationStatus = typeof dbListing?.metadata?.moderation_status === "string" ? dbListing.metadata.moderation_status : "active";
   const aiListing = recordValue(dbListing?.metadata?.ai_listing);
   const fraudScore = numberValue(aiListing?.fraudRiskScore);
@@ -365,7 +370,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
           <div id="protected-checkout">
             {isLiveDatabaseListing ? (
-              <CheckoutCard listingId={listing.id} priceAmount={Number(listing.price_amount)} currency={listing.currency} />
+              <CheckoutCard listingId={listing.id} priceAmount={Number(listing.price_amount)} currency={listing.currency} shippingCents={checkoutQuote.shippingCents} />
             ) : (
               <Card className="border-primary/20 bg-primary/5">
                 <CardHeader><CardTitle className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-primary" aria-hidden="true" /> Protected checkout</CardTitle></CardHeader>
