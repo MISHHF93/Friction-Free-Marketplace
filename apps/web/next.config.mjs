@@ -65,6 +65,13 @@ const nextConfig = {
         headers: securityHeaders
       }
     ];
+  },
+  async redirects() {
+    return [
+      { source: "/browse", destination: "/search", permanent: false },
+      { source: "/trust-and-safety", destination: "/safety", permanent: false },
+      { source: "/customer-portal", destination: "/dashboard", permanent: false }
+    ];
   }
 };
 
