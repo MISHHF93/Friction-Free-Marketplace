@@ -11,7 +11,8 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const limit = Number(url.searchParams.get("limit") ?? "50");
-  const report = await getLedgerReport(createAdminClient() as any, Number.isFinite(limit) ? limit : 50);
+  const bounded = Math.min(Math.max(Number.isFinite(limit) ? Math.floor(limit) : 50, 1), 200);
+  const report = await getLedgerReport(createAdminClient() as any, bounded);
 
   return NextResponse.json({ ok: true, data: report });
 }

@@ -1,3 +1,5 @@
+// Hand-maintained Supabase types. Regenerate with
+// `supabase gen types typescript --linked` once this fork is linked to a hosted project.
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
@@ -526,6 +528,21 @@ export type Database = {
           credit_total: number | null;
           balance: number | null;
           last_entry_at: string | null;
+        };
+      };
+      public_profiles: {
+        Row: {
+          user_id: string;
+          display_name: string;
+          username: string | null;
+          bio: string | null;
+          avatar_url: string | null;
+          banner_url: string | null;
+          location_label: string | null;
+          website_url: string | null;
+          seller_headline: string | null;
+          response_time_minutes: number | null;
+          created_at: string;
         };
       };
       financial_revenue_summary: {

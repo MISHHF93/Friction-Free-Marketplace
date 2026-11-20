@@ -38,34 +38,40 @@ export async function getAdminOverview(): Promise<AdminOverviewData> {
   };
 }
 
+export function boundedAdminLimit(limit: number) {
+  if (!Number.isFinite(limit)) return 50;
+  return Math.min(Math.max(Math.floor(limit), 1), 200);
+}
+
 export async function getAdminDirectoryRows(kind: string, limit = 50) {
+  const bounded = boundedAdminLimit(limit);
   const supabase = getServiceClient();
 
   switch (kind) {
     case "users":
-      return supabase.from("users").select("id,email,phone,role,status,banned_reason,metadata,created_at,updated_at,trust_scores(score,seller_score,buyer_score,fraud_risk_level)").order("updated_at", { ascending: false }).limit(limit);
+      return supabase.from("users").select("id,email,phone,role,status,banned_reason,metadata,created_at,updated_at,trust_scores(score,seller_score,buyer_score,fraud_risk_level)").order("updated_at", { ascending: false }).limit(bounded);
     case "listings":
-      return supabase.from("listings").select("id,title,status,price_amount,currency,seller_id,metadata,created_at,updated_at,listing_images(id,status,moderation_result)").order("updated_at", { ascending: false }).limit(limit);
+      return supabase.from("listings").select("id,title,status,price_amount,currency,seller_id,metadata,created_at,updated_at,listing_images(id,status,moderation_result)").order("updated_at", { ascending: false }).limit(bounded);
     case "reports":
-      return supabase.from("reports").select("id,reason,description,status,reporter_id,reported_user_id,listing_id,message_id,assigned_admin_id,resolution,metadata,created_at,updated_at,resolved_at").order("created_at", { ascending: false }).limit(limit);
+      return supabase.from("reports").select("id,reason,description,status,reporter_id,reported_user_id,listing_id,message_id,assigned_admin_id,resolution,metadata,created_at,updated_at,resolved_at").order("created_at", { ascending: false }).limit(bounded);
     case "disputes":
-      return supabase.from("disputes").select("id,transaction_id,opened_by_id,assigned_admin_id,reason,description,status,resolution,evidence,opened_at,due_at,resolved_at,created_at,updated_at").order("created_at", { ascending: false }).limit(limit);
+      return supabase.from("disputes").select("id,transaction_id,opened_by_id,assigned_admin_id,reason,description,status,resolution,evidence,opened_at,due_at,resolved_at,created_at,updated_at").order("created_at", { ascending: false }).limit(bounded);
     case "fraud-alerts":
-      return supabase.from("fraud_signals").select("id,user_id,listing_id,transaction_id,signal_type,risk_score,source,payload,reviewed_by,reviewed_at,created_at,users(email,status),listings(title,status,price_amount,currency)").order("risk_score", { ascending: false }).limit(limit);
+      return supabase.from("fraud_signals").select("id,user_id,listing_id,transaction_id,signal_type,risk_score,source,payload,reviewed_by,reviewed_at,created_at,users(email,status),listings(title,status,price_amount,currency)").order("risk_score", { ascending: false }).limit(bounded);
     case "transactions":
-      return supabase.from("transactions").select("id,listing_id,offer_id,buyer_id,seller_id,status,item_amount,shipping_amount,tax_amount,marketplace_fee_amount,total_amount,currency,paid_at,shipped_at,delivered_at,completed_at,cancelled_at,metadata,created_at,updated_at,escrow_payments(status,amount,provider,provider_payment_id),payouts(status,amount,provider_payout_id)").order("updated_at", { ascending: false }).limit(limit);
+      return supabase.from("transactions").select("id,listing_id,offer_id,buyer_id,seller_id,status,item_amount,shipping_amount,tax_amount,marketplace_fee_amount,total_amount,currency,paid_at,shipped_at,delivered_at,completed_at,cancelled_at,metadata,created_at,updated_at,escrow_payments(status,amount,provider,provider_payment_id),payouts(status,amount,provider_payout_id)").order("updated_at", { ascending: false }).limit(bounded);
     case "payments":
-      return supabase.from("escrow_payments").select("id,transaction_id,provider,provider_payment_id,status,amount,currency,authorized_at,captured_at,held_at,released_at,refunded_at,failure_code,metadata,created_at,updated_at").order("updated_at", { ascending: false }).limit(limit);
+      return supabase.from("escrow_payments").select("id,transaction_id,provider,provider_payment_id,status,amount,currency,authorized_at,captured_at,held_at,released_at,refunded_at,failure_code,metadata,created_at,updated_at").order("updated_at", { ascending: false }).limit(bounded);
     case "ai-tasks":
-      return supabase.from("ai_tasks").select("id,agent_id,requested_by,task_type,status,input,output,error_message,scheduled_at,started_at,completed_at,created_at,updated_at,ai_agents(name,agent_type,status)").order("created_at", { ascending: false }).limit(limit);
+      return supabase.from("ai_tasks").select("id,agent_id,requested_by,task_type,status,input,output,error_message,scheduled_at,started_at,completed_at,created_at,updated_at,ai_agents(name,agent_type,status)").order("created_at", { ascending: false }).limit(bounded);
     case "search-analytics":
-      return supabase.from("search_events").select("id,user_id,session_id,query,filters,result_count,clicked_listing_id,created_at").order("created_at", { ascending: false }).limit(limit);
+      return supabase.from("search_events").select("id,user_id,session_id,query,filters,result_count,clicked_listing_id,created_at").order("created_at", { ascending: false }).limit(bounded);
     case "revenue":
-      return supabase.from("transactions").select("id,status,item_amount,shipping_amount,tax_amount,marketplace_fee_amount,total_amount,currency,created_at,completed_at,refunded_at:cancelled_at").order("created_at", { ascending: false }).limit(limit);
+      return supabase.from("transactions").select("id,status,item_amount,shipping_amount,tax_amount,marketplace_fee_amount,total_amount,currency,created_at,completed_at,refunded_at:cancelled_at").order("created_at", { ascending: false }).limit(bounded);
     case "trust-overrides":
-      return supabase.from("trust_score_overrides").select("id,user_id,created_by,approved_by,status,adjustment,reason,expires_at,created_at,updated_at").order("created_at", { ascending: false }).limit(limit);
+      return supabase.from("trust_score_overrides").select("id,user_id,created_by,approved_by,status,adjustment,reason,expires_at,created_at,updated_at").order("created_at", { ascending: false }).limit(bounded);
     case "audit-logs":
-      return supabase.from("audit_logs").select("id,actor_id,actor_type,action,table_name,record_id,ip_hash,user_agent,old_values,new_values,metadata,created_at").order("created_at", { ascending: false }).limit(limit);
+      return supabase.from("audit_logs").select("id,actor_id,actor_type,action,table_name,record_id,ip_hash,user_agent,old_values,new_values,metadata,created_at").order("created_at", { ascending: false }).limit(bounded);
     default:
       return { data: [], error: null };
   }

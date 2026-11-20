@@ -1,6 +1,9 @@
 {
   "name": "friction-free-marketplace",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "workspaces": [
     "apps/web",
     "apps/mobile",
@@ -36,7 +39,17 @@
     "release:check": "npm run platform:verify && npm run text:check && npm run security:audit && npm run security:api && npm run database:verify && npm run shared:typecheck && npm run web:lint && npm run web:typecheck && npm run web:test && npm run web:build && node scripts/scan-artifact-secrets.mjs apps/web/.next/static && npm --workspace @ffm/mobile run build",
     "production:smoke": "node scripts/production-smoke.mjs"
   },
+  "devDependencies": {
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3"
+  },
   "overrides": {
-    "postcss": "8.5.23"
+    "postcss": "8.5.23",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3"
   }
 }
