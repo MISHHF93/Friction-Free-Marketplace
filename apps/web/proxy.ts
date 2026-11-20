@@ -113,7 +113,12 @@ async function refreshSupabaseUser(request: NextRequest, response: NextResponse,
   try {
     const { data, error } = await supabase.auth.getUser();
     if (error) {
-      console.error("Proxy Supabase auth lookup failed", error);
+      const missingSession = error.name === "AuthSessionMissingError"
+        || ("code" in error && error.code === "AuthSessionMissingError")
+        || /auth session missing/i.test(error.message ?? "");
+      if (!missingSession) {
+        console.error("Proxy Supabase auth lookup failed", error);
+      }
       return { user: null as SupabaseUser | null, supabase };
     }
     return { user: data.user?.id ? { id: data.user.id } : null, supabase };
