@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export function PhoneFrame({ children }: { children: ReactNode }) {
   return (
     <div className="app-backdrop min-h-screen">
-      <div className="app-shell relative mx-auto min-h-screen w-full max-w-[480px] bg-background pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-[env(safe-area-inset-top)] shadow-[0_0_48px_rgba(16,21,28,0.08)]">
+      <div className="app-shell relative mx-auto min-h-screen w-full max-w-[480px] bg-background pt-[env(safe-area-inset-top)] shadow-[0_0_24px_rgba(16,21,28,0.06)]">
         {children}
       </div>
     </div>
