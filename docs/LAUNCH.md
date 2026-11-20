@@ -2,13 +2,13 @@
 
 The host runs these steps. This repository does not deploy, change hosting, DNS, or a payment account, and it does not send live charges or real email.
 
-`supabase/migrations` is the only schema history. `database/migrations` is an archived draft and must not be applied. Apply every file in `supabase/migrations` in filename order. The newest launch migration is `20260728150000_launch_blocker_guards.sql`.
+`supabase/migrations` is the only schema history. `database/migrations` is an archived draft and must not be applied. Apply every file in `supabase/migrations` in filename order. The newest migration is `20260728160000_round7_followups.sql`. `20260728150000_launch_blocker_guards.sql` is already part of the schema history on `main`.
 
 `supabase/seed.sql` is not part of this repository. `scripts/prod/reference-data.sql` inserts missing categories and verification levels inside a transaction and does not overwrite rows that already exist. Do not run seed listings or seed users in production.
 
 `scripts/prod/reset-demo-data.sql` ends in `ROLLBACK`. Leave that line until the dry-run counts are expected. It refuses to run unless the session has `select set_config('app.reset_allowed', 'yes', true);`. It deletes seed users (`11111111-1111-4111-8111-111111111111`, `22222222-2222-4222-8222-222222222222`, and `@example.com`), e2e transaction ids `44444444-4444-4444-8444-444444444444`, `55555555-5555-4555-8555-555555555555`, and `66666666-6666-4666-8666-666666666666` (those three are transactions, not users), `is_demo` transactions only when a party is one of those seed users, listings owned by those sellers, and the receipts, payouts, escrow rows, and ledger rows that belong to them. It raises if a seed user still has any other transaction, payment, or ledger row. It does not delete a listing because of its title.
 
-`scripts/prod/preflight.sql` lists every `@example.com` user before a reset would delete them, and counts the same demo transactions. Before applying `20260728150000_launch_blocker_guards.sql`, run the two duplicate-checkout queries in that file. That migration is not merged (it exists only on PR #17 at `dc20ded`). Do not edit it while that commit is under test. If a query returns a row, resolve the duplicate before applying the migration, or the unique-index rebuild aborts. A later migration cannot prevent that abort. Fold the check into `150000` only if that commit is rewritten before anyone applies it.
+`scripts/prod/preflight.sql` lists every `@example.com` user before a reset would delete them, and counts the same demo transactions. Before applying `20260728150000_launch_blocker_guards.sql` on a host that does not already have it, run the two duplicate-checkout queries in that file. If a query returns a row, resolve the duplicate before applying the migration, or the unique-index rebuild aborts. A later migration cannot prevent that abort.
 
 The reset script does not delete Storage objects. SQL removal of `storage.objects` leaves the file bytes behind. After the reset, delete each seed user's files with the Storage API under `listing-images/<user-id>/` and `message-attachments/<user-id>/`.
 
