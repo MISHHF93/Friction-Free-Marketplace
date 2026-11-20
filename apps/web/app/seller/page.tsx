@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getMarketplaceSession } from "@/lib/auth/session";
 import { Bot, ChartNoAxesCombined, PackagePlus, WalletCards } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,9 @@ const modules = [
   { icon: ChartNoAxesCombined, title: "Seller analytics", text: "Track conversion, response time, trust lift, and price benchmarks." }
 ];
 
-export default function SellerDashboardPage() {
+export default async function SellerDashboardPage() {
+  const session = await getMarketplaceSession();
+  if (!session) redirect("/login?next=/seller");
   return (
     <DashboardShell title="Seller dashboard" description="A production shell for listing management, sales, payouts, seller analytics, and AI-assisted operations." links={links}>
       <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">

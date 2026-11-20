@@ -1,7 +1,9 @@
 const isDevelopmentRuntime = process.env.NODE_ENV !== "production";
+// Production script-src is a per-request nonce policy in proxy.ts. It does not
+// include 'unsafe-inline'. Development keeps inline and eval for the dev server.
 const scriptSrc = [
   "'self'",
-  "'unsafe-inline'",
+  isDevelopmentRuntime ? "'unsafe-inline'" : null,
   isDevelopmentRuntime ? "'unsafe-eval'" : null,
   "https://js.stripe.com",
   "https://*.posthog.com"
@@ -13,22 +15,24 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=(self), payment=(self)" },
-  {
-    key: "Content-Security-Policy",
-    value: [
-      "default-src 'self'",
-      "base-uri 'self'",
-      "frame-ancestors 'none'",
-      "object-src 'none'",
-      "form-action 'self'",
-      `script-src ${scriptSrc}`,
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https:",
-      "font-src 'self' data:",
-      "frame-src https://js.stripe.com https://hooks.stripe.com",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.posthog.com"
-    ].join("; ")
-  },
+  ...(isDevelopmentRuntime
+    ? [{
+        key: "Content-Security-Policy",
+        value: [
+          "default-src 'self'",
+          "base-uri 'self'",
+          "frame-ancestors 'none'",
+          "object-src 'none'",
+          "form-action 'self'",
+          `script-src ${scriptSrc}`,
+          "style-src 'self' 'unsafe-inline'",
+          "img-src 'self' data: blob: https:",
+          "font-src 'self' data:",
+          "frame-src https://js.stripe.com https://hooks.stripe.com",
+          "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.posthog.com"
+        ].join("; ")
+      }]
+    : []),
   // Never send HSTS in local development — browsers cache it and then force
   // https://localhost, which has no TLS listener and surfaces as ERR_CONNECTION_REFUSED.
   ...(isDevelopmentRuntime

@@ -9,6 +9,10 @@ export async function GET() {
       auditTrail: "Agent runs are written to ai_tasks, ai_agent_audit_events, and audit_logs when Supabase service credentials are configured.",
       confirmationBoundary: "Write, payment, moderation, account, offer, and publication operations are drafted only until a user or admin confirms."
     },
-    agents: marketplaceAgents
+    agents: marketplaceAgents.map((agent) => {
+      const { systemPrompt, ...publicAgent } = agent;
+      void systemPrompt;
+      return publicAgent;
+    })
   });
 }

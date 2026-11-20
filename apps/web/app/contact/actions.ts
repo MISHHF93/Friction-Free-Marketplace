@@ -1,8 +1,10 @@
 "use server";
 
+import { headers } from "next/headers";
 import { z } from "zod";
 import { sendMarketplaceEmail } from "@/lib/email/resend";
 import { env } from "@/lib/env.server";
+import { consumeRateLimit, RateLimitUnavailableError } from "@/lib/security/rate-limit";
 
 export type ContactActionState = {
   status: "idle" | "success" | "error";
@@ -43,6 +45,20 @@ export async function submitContactAction(_state: ContactActionState, formData: 
 
   if (!parsed.success) {
     return { status: "error", message: "Check the required fields and try again." };
+  }
+
+  const headerStore = await headers();
+  const address = headerStore.get("x-real-ip") || headerStore.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  try {
+    const limit = await consumeRateLimit(`contact:${address}`, { limit: 5, windowMs: 10 * 60 * 1000, policy: "contact" });
+    if (!limit.allowed) {
+      return { status: "error", message: "Too many messages from this network. Please wait and try again." };
+    }
+  } catch (error) {
+    if (error instanceof RateLimitUnavailableError) {
+      return { status: "error", message: "Support is busy right now. Please use the support email shown on this page." };
+    }
+    throw error;
   }
 
   const { name, email, topic, message } = parsed.data;

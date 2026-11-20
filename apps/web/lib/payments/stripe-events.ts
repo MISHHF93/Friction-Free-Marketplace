@@ -233,11 +233,14 @@ export async function ingestStripeEvent(event: Stripe.Event, source: "platform" 
   }
 
   const supabase = createAdminClient() as Supabase as any;
-  const { data: existing, error: existingError } = await supabase.from("stripe_webhook_events").select("id,processed_at").eq("id", event.id).maybeSingle();
-  assertWrite(existingError, "Load webhook event");
-  if (existing?.processed_at) return { status: 200, body: { received: true, duplicate: true } };
-
-  const stored = await supabase.from("stripe_webhook_events").upsert({ id: event.id, type: event.type, api_version: event.api_version, livemode: event.livemode, payload: event as unknown as Record<string, unknown> });
+  const stored = await supabase.from("stripe_webhook_events").insert({
+    id: event.id,
+    type: event.type,
+    api_version: event.api_version,
+    livemode: event.livemode,
+    payload: event as unknown as Record<string, unknown>
+  }).select("id").maybeSingle();
+  if (stored.error?.code === "23505") return { status: 200, body: { received: true, duplicate: true } };
   assertWrite(stored.error, "Store webhook event");
 
   try {
@@ -283,7 +286,7 @@ export async function ingestStripeEvent(event: Stripe.Event, source: "platform" 
   assertWrite(processed.error, "Mark webhook processed");
   return { status: 200, body: { received: true } };
   } catch (error) {
-    await supabase.from("stripe_webhook_events").update({ processing_error: error instanceof Error ? error.message : "Unknown webhook error" }).eq("id", event.id);
+    await supabase.from("stripe_webhook_events").delete().eq("id", event.id).is("processed_at", null);
     throw error;
   }
 }
