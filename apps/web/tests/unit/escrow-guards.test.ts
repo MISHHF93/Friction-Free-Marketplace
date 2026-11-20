@@ -11,6 +11,7 @@ describe("escrow transition allow-list", () => {
     expect(isEscrowTransition("held", "releasing")).toBe(true);
     expect(isEscrowTransition("releasing", "held")).toBe(true);
     expect(isEscrowTransition("held", "refunding")).toBe(true);
+    expect(isEscrowTransition("refunding", "authorized")).toBe(true);
     expect(isEscrowTransition("released", "held")).toBe(false);
     expect(isEscrowTransition("releasing", "refunded")).toBe(false);
   });
@@ -41,6 +42,9 @@ describe("stuck payment reconcile", () => {
     expect(reconcileStuckPayment({ status: "releasing", intentStatus: "succeeded", hasTransfer: true, refundedCents: 0, amountCents: 1000 })).toBe("released");
     expect(reconcileStuckPayment({ status: "releasing", intentStatus: "succeeded", hasTransfer: false, refundedCents: 0, amountCents: 1000 })).toBe("held");
     expect(reconcileStuckPayment({ status: "refunding", intentStatus: "succeeded", hasTransfer: false, refundedCents: 1000, amountCents: 1000 })).toBe("refunded");
+    expect(reconcileStuckPayment({ status: "refunding", intentStatus: "succeeded", hasTransfer: false, refundedCents: 400, amountCents: 1000 })).toBe("held");
+    expect(reconcileStuckPayment({ status: "refunding", intentStatus: "requires_capture", hasTransfer: false, refundedCents: 0, amountCents: 1000 })).toBe("authorized");
+    expect(reconcileStuckPayment({ status: "refunding", intentStatus: "canceled", hasTransfer: false, refundedCents: 0, amountCents: 1000 })).toBe("cancelled");
   });
 });
 

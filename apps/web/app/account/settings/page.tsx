@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
-import { deleteAccountAction, logoutAction } from "@/app/auth/actions";
+import { deleteAccountAction } from "@/app/auth/actions";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { LocaleForm } from "@/components/account/locale-form";
 import { AccountSettingsForm } from "@/components/forms/account-settings-form";
 import { NotificationPreferencesForm } from "@/components/notifications/notification-preferences-form";
@@ -72,11 +73,7 @@ export default async function AccountSettingsPage({ searchParams }: { searchPara
             <CardDescription>End your active Supabase session on this device.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form action={logoutAction}>
-              <Button className="min-h-11 w-full" variant="outline" type="submit">
-                Sign out
-              </Button>
-            </form>
+            <LogoutButton className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-semibold" label="Sign out" />
             <div className="mt-6 border-t border-border pt-6">
               <p className="font-semibold text-destructive">Delete account</p>
               <p className="mt-2 text-xs leading-5 text-muted-foreground">

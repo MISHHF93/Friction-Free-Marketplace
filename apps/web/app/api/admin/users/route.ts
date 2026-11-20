@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const actionPermission = endpoint === "users" ? "users.write" : endpoint === "trust-overrides" ? "trust.override" : endpoint === "listings" ? "listings.moderate" : endpoint === "moderation-workflows" ? "workflows.manage" : permission;
+  const actionPermission = endpoint === "users" ? "users.ban" : endpoint === "trust-overrides" ? "trust.override" : endpoint === "listings" ? "listings.moderate" : endpoint === "moderation-workflows" ? "workflows.manage" : permission;
   const auth = await requireAdminPermission(actionPermission as any);
   if ("error" in auth) return auth.error;
 

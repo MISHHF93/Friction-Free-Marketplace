@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronDown, MapPin, Menu, MessageSquare, Search, UserRound } from "lucide-react";
-import { logoutAction } from "@/app/auth/actions";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { BrandLogo } from "@/components/brand/brand-logo";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Badge } from "@/components/ui/badge";
@@ -107,11 +107,9 @@ async function AuthNav() {
           <Link href="/dashboard/offers" className="block min-h-11 rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Offers</Link>
           <Link href="/account/settings" className="block min-h-11 rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Account settings</Link>
           <Link href="/dashboard/messages" className="block min-h-11 rounded-xl px-3 py-2 text-sm font-medium hover:bg-secondary">Messages</Link>
-          <form action={logoutAction} className="mt-1 border-t border-border pt-1">
-            <button className="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground" type="submit">
-              Log out
-            </button>
-          </form>
+          <div className="mt-1 border-t border-border pt-1">
+            <LogoutButton className="min-h-11 w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground" label="Log out" />
+          </div>
         </div>
       </MenuDisclosure>
     </>

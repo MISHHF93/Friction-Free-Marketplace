@@ -9,7 +9,7 @@ import { centsToDollars, dollarsToCents } from "@/lib/payments/money";
 import { enqueueTemplateNotification } from "@/lib/notifications/service";
 import { buildRefundJournal, postLedgerJournal } from "@/lib/financial/ledger";
 import { claimEscrowPayment, claimTransactionStatus, escrowActionKey } from "@/lib/payments/escrow";
-import { prepareEscrowAction } from "@/lib/payments/resume";
+import { prepareEscrowAction, refundPlan } from "@/lib/payments/resume";
 import { nextRefundedAmount } from "@/lib/payments/refund-amount";
 import { getStripe } from "@/lib/stripe/server";
 
@@ -68,15 +68,31 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const refundedAmount = Number(payment.refunded_amount ?? 0);
   const remainingCents = dollarsToCents(Number(payment.amount) - refundedAmount);
-  const amount = payload.data.amountCents ?? remainingCents;
-  if (!resumingHeldRefund && amount > remainingCents) return NextResponse.json({ error: "Refund amount exceeds the remaining refundable balance." }, { status: 400 });
-  const preparedRefund = resumingHeldRefund ? { payment } : await prepareEscrowAction(supabase, payment, "held", "refunding");
+  const requestedCents = payload.data.amountCents ?? remainingCents;
+  const preparedRefund = await prepareEscrowAction(supabase, payment, "held", "refunding");
   if (!preparedRefund.payment || preparedRefund.payment.status !== "refunding") return NextResponse.json({ error: "This refund is already in progress." }, { status: 409 });
+  const activePayment = preparedRefund.payment;
+  const plan = refundPlan(activePayment, {
+    amountCents: requestedCents,
+    reason: payload.data.reason,
+    idempotencyKey: escrowActionKey("refund", transactionId.data, payment.id, `${requestedCents}:${payload.data.reason}`)
+  });
+  if (plan.amountCents > remainingCents) return NextResponse.json({ error: "Refund amount exceeds the remaining refundable balance." }, { status: 400 });
+  if (!plan.resumed) {
+    await supabase.from("escrow_payments").update({
+      metadata: {
+        ...(activePayment.metadata ?? {}),
+        claim_token: crypto.randomUUID(),
+        refund_in_flight: { amountCents: plan.amountCents, reason: plan.reason, idempotencyKey: plan.idempotencyKey }
+      }
+    }).eq("id", payment.id).eq("status", "refunding");
+  }
+  const amount = plan.amountCents;
   let refund;
   try {
     refund = await getStripe().refunds.create(
-      { payment_intent: payment.provider_payment_id, amount, reason: payload.data.reason, metadata: { transaction_id: transactionId.data } },
-      { idempotencyKey: escrowActionKey("refund", transactionId.data, payment.id, `${amount}:${payload.data.reason}`) }
+      { payment_intent: payment.provider_payment_id, amount, reason: plan.reason as "duplicate" | "fraudulent" | "requested_by_customer", metadata: { transaction_id: transactionId.data } },
+      { idempotencyKey: plan.idempotencyKey }
     );
   } catch (error) {
     await claimEscrowPayment(supabase, payment.id, "refunding", "held");

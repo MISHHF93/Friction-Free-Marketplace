@@ -5,15 +5,33 @@ export const authSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters.")
 });
 
+export function displayNameError(value: string) {
+  const name = value.trim();
+  if (name.length < 2) return "Display name must be at least 2 characters.";
+  if (name.length > 80) return "Display name must be 80 characters or fewer.";
+  if (name.includes("@") || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(name)) return "Use a name, not an email address.";
+  if (/(^|[^a-z])(admin|support)([^a-z]|$)/i.test(name)) return "That name is reserved.";
+  return null;
+}
+
+export function memberDisplayName(userId: string) {
+  return `Member ${userId.replace(/-/g, "").slice(0, 4).toUpperCase()}`;
+}
+
+const displayNameSchema = z.string().trim().superRefine((value, context) => {
+  const message = displayNameError(value);
+  if (message) context.addIssue({ code: "custom", message });
+});
+
 export const signupSchema = authSchema.extend({
-  displayName: z.string().trim().min(2, "Display name must be at least 2 characters.").max(80, "Display name must be 80 characters or fewer.")
+  displayName: displayNameSchema
 });
 
 const optionalTrimmedString = (max: number, message: string) =>
   z.string().trim().max(max, message).optional().or(z.literal(""));
 
 export const profileSettingsSchema = z.object({
-  displayName: z.string().trim().min(2, "Display name must be at least 2 characters.").max(80, "Display name must be 80 characters or fewer."),
+  displayName: displayNameSchema,
   username: z
     .string()
     .trim()

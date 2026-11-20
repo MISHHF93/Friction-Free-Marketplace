@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { canRestrictUser } from "@/lib/admin/permissions";
 import { recordAdminAction } from "@/lib/admin/queries";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { syncListingToSearch } from "@/lib/search/discovery";
@@ -65,13 +66,27 @@ export async function applyAdminMutation(input: {
   let update;
 
   switch (input.endpoint) {
-    case "users":
-      update = await supabase.from("users").update({
-        status: action === "reinstate" ? "active" : action === "ban" ? "banned" : "suspended",
-        banned_reason: action === "ban" ? reason ?? "Banned by an administrator." : null
-      }).eq("id", targetId).select("id,status").maybeSingle();
-      if (!update.error && update.data && action !== "reinstate") await restrictMarketplaceUser(supabase, targetId);
+    case "users": {
+      if (!reason) return { response: NextResponse.json({ error: "A reason is required to change an account." }, { status: 400 }) };
+      const target = await supabase.from("users").select("id,role,metadata,status").eq("id", targetId).maybeSingle();
+      const actor = await supabase.from("users").select("id,role,metadata,status").eq("id", input.adminId).maybeSingle();
+      if (!target.data || !actor.data || !canRestrictUser(actor.data, target.data)) {
+        return { response: NextResponse.json({ error: "You cannot change this account." }, { status: 403 }) };
+      }
+      const nextStatus = action === "reinstate" ? "active" : action === "ban" ? "banned" : "suspended";
+      const changed = await supabase.rpc("admin_set_user_status", {
+        p_admin_id: input.adminId,
+        p_user_id: targetId,
+        p_status: nextStatus,
+        p_reason: reason
+      });
+      if (changed.error) return { response: NextResponse.json({ error: changed.error.message }, { status: 403 }) };
+      update = await supabase.from("users").select("id,status").eq("id", targetId).maybeSingle();
+      if (action !== "reinstate") await restrictMarketplaceUser(supabase, targetId);
+      const touched = await supabase.from("listings").select("id").eq("seller_id", targetId).in("status", ["paused", "active"]);
+      await Promise.all((touched.data ?? []).map((listing: { id: string }) => syncListingToSearch(listing.id).catch(() => null)));
       break;
+    }
     case "listings":
       update = await supabase.from("listings").update({
         status: action === "approve" ? "active" : action === "reject" ? "removed" : "paused"
@@ -102,7 +117,19 @@ export async function applyAdminMutation(input: {
         payload: { ...(signal.data?.payload ?? {}), resolution: action, reason: reason ?? null }
       }).eq("id", targetId).select("id,reviewed_at,payload").maybeSingle();
       if (!update.error && action === "confirm" && signal.data?.user_id) {
-        await supabase.from("users").update({ status: "suspended", banned_reason: reason ?? "Confirmed fraud signal." }).eq("id", signal.data.user_id).eq("status", "active");
+        if (!reason) return { response: NextResponse.json({ error: "A reason is required to suspend the account." }, { status: 400 }) };
+        const target = await supabase.from("users").select("id,role,metadata,status").eq("id", signal.data.user_id).maybeSingle();
+        const actor = await supabase.from("users").select("id,role,metadata,status").eq("id", input.adminId).maybeSingle();
+        if (!target.data || !actor.data || !canRestrictUser(actor.data, target.data)) {
+          return { response: NextResponse.json({ error: "You cannot change this account." }, { status: 403 }) };
+        }
+        const changed = await supabase.rpc("admin_set_user_status", {
+          p_admin_id: input.adminId,
+          p_user_id: signal.data.user_id,
+          p_status: "suspended",
+          p_reason: reason
+        });
+        if (changed.error) return { response: NextResponse.json({ error: changed.error.message }, { status: 403 }) };
         await restrictMarketplaceUser(supabase, signal.data.user_id);
       }
       break;

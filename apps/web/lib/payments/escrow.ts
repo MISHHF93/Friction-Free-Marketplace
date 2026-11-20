@@ -8,7 +8,7 @@ const escrowTransitions: Record<string, readonly string[]> = {
   capturing: ["held", "authorized"],
   held: ["releasing", "refunding"],
   releasing: ["released", "held"],
-  refunding: ["refunded", "held", "cancelled"]
+  refunding: ["refunded", "held", "cancelled", "authorized"]
 };
 
 export function isEscrowTransition(from: string, to: string) {

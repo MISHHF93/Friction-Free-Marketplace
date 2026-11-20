@@ -81,6 +81,26 @@ export function getAdminRole(user: Pick<UserRow, "role" | "metadata"> | null | u
   return "admin";
 }
 
+const adminRank: Record<string, number> = {
+  support: 1,
+  analyst: 1,
+  moderator: 2,
+  finance: 2,
+  risk: 3,
+  admin: 4,
+  super_admin: 5
+};
+
+export function adminRankFor(user: { role?: string | null; metadata?: unknown } | null | undefined) {
+  const resolved = getAdminRole(user as Pick<UserRow, "role" | "metadata"> | null);
+  return resolved ? adminRank[resolved] ?? 0 : 0;
+}
+
+export function canRestrictUser(actor: { id: string; role?: string | null; metadata?: unknown }, target: { id: string; role?: string | null; metadata?: unknown }) {
+  if (!actor.id || actor.id === target.id) return false;
+  return adminRankFor(actor) > adminRankFor(target);
+}
+
 export function can(role: AdminRole | null, permission: AdminPermission) {
   return !!role && rolePermissions[role].includes(permission);
 }

@@ -41,6 +41,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "An open dispute already exists for this transaction.", disputeId: existingDispute.id }, { status: 409 });
   }
 
+  if (["releasing", "released"].includes(payment.status)) return NextResponse.json({ error: "This payment can no longer be disputed." }, { status: 409 });
+  if (payment.status === "held") {
+    const guard = await supabase.rpc("guard_dispute_payment", { p_transaction_id: transactionId.data });
+    if (guard.error || guard.data !== true) return NextResponse.json({ error: "This payment can no longer be disputed." }, { status: 409 });
+  }
+
   const { data: dispute, error } = await supabase.from("disputes").insert({
     transaction_id: transactionId.data,
     opened_by_id: auth.user.id,
