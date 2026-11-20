@@ -66,7 +66,8 @@ function visiblePageTitle() {
   if (explicitTitle) return explicitTitle;
   const heading = document.querySelector("main h1");
   if (heading?.textContent?.trim()) return heading.textContent.trim();
-  return document.title.replace(/\s*[·|—-]\s*.*$/, "").trim();
+  // Require spaces around the separator so "Friction-Free Marketplace" is not cut at its hyphen.
+  return document.title.replace(/\s+[·|—-]\s+.*$/, "").trim();
 }
 
 export function PageTitleMirror() {
