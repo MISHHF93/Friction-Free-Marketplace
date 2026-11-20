@@ -15,7 +15,6 @@ import {
   Info,
   LockKeyhole,
   MapPin,
-  MessageSquare,
   ScanSearch,
   ShieldAlert,
   ShieldCheck,
@@ -33,7 +32,7 @@ import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form"
 import { ShareListingButton } from "@/components/listings/share-listing-button";
 import { CheckoutCard } from "@/components/payments/checkout-card";
 import { isDemoMarketplaceDataEnabled } from "@/lib/marketplace/demo-mode";
-import { ListingBuyBar, OpenCheckoutButton } from "@/components/payments/listing-buy-bar";
+import { ListingBuyBar } from "@/components/payments/listing-buy-bar";
 import { StripeJsScript } from "@/components/security/nonce-script";
 import { quoteCheckoutAmounts } from "@/lib/payments/quote";
 import { normalizeCurrency } from "@/lib/payments/money";
@@ -285,6 +284,7 @@ export default async function ListingDetailPage({ params, searchParams }: { para
   if (!listing) notFound();
 
   const isLiveDatabaseListing = Boolean(dbListing);
+  const isOwner = Boolean(user && user.id === listing.seller_id);
   const payableOffer = await loadPayableOffer(offerId, dbListing?.id, user?.id, listing.currency);
   const checkoutPrice = payableOffer ? Number(payableOffer.amount) : Number(listing.price_amount);
   const checkoutQuote = quoteCheckoutAmounts({
@@ -337,17 +337,7 @@ export default async function ListingDetailPage({ params, searchParams }: { para
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">Use protected checkout when available. Ask for receipts or serial numbers before pickup.</p>
               </div>
 
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <MakeOfferSheet
-                  listingId={listing.id}
-                  currency={listing.currency}
-                  signedOut={!user}
-                  isOwner={Boolean(user && user.id === listing.seller_id)}
-                  disabled={!isLiveDatabaseListing}
-                  className="w-full"
-                />
-                <OpenCheckoutButton className="w-full sm:w-auto" variant="trust">Buy now</OpenCheckoutButton>
-                <Button asChild size="lg" variant="outline"><Link href="#message-seller"><MessageSquare className="h-4 w-4" aria-hidden="true" /> Message seller</Link></Button>
+              <div className="grid gap-2">
                 <FavoriteToggleForm listingId={listing.id} isFavorited={favoriteIds.has(listing.id)} variant="outline" size="lg" className="w-full" />
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
@@ -361,7 +351,25 @@ export default async function ListingDetailPage({ params, searchParams }: { para
 
           <SellerTrustCard listing={listing} fraudScore={fraudScore} />
 
-          <ListingBuyBar amount={checkoutPrice} currency={listing.currency} label={payableOffer ? "Accepted offer" : "List price"}>
+          <ListingBuyBar
+            amount={checkoutPrice}
+            currency={listing.currency}
+            label={payableOffer ? "Accepted offer" : "List price"}
+            isOwner={isOwner}
+            ownerEditHref={isOwner && isLiveDatabaseListing ? `/dashboard/listings/${listing.id}/edit` : undefined}
+            offerAction={
+              <MakeOfferSheet
+                listingId={listing.id}
+                currency={listing.currency}
+                signedOut={!user}
+                isOwner={isOwner}
+                disabled={!isLiveDatabaseListing}
+                triggerLabel="Offer"
+                variant="outline"
+                className="min-h-11"
+              />
+            }
+          >
             {payableOffer ? null : offerId ? <p className="mb-3 text-sm text-muted-foreground">That offer cannot be paid. Checkout uses the list price only when you are the buyer on an accepted, unexpired offer in the same currency.</p> : null}
             {isLiveDatabaseListing ? (
               <CheckoutCard listingId={listing.id} offerId={payableOffer?.id} priceAmount={checkoutPrice} currency={listing.currency} shippingCents={checkoutQuote.shippingCents} />

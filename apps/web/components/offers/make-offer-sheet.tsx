@@ -18,6 +18,7 @@ export function MakeOfferSheet({
   signedOut = false,
   isOwner = false,
   disabled = false,
+  variant = "default",
   className
 }: {
   listingId: string;
@@ -28,6 +29,7 @@ export function MakeOfferSheet({
   signedOut?: boolean;
   isOwner?: boolean;
   disabled?: boolean;
+  variant?: "default" | "outline";
   className?: string;
 }) {
   const router = useRouter();
@@ -42,8 +44,8 @@ export function MakeOfferSheet({
 
   if (signedOut) {
     return (
-      <Button asChild size="lg" className={className}>
-        <Link href={`/login?next=${encodeURIComponent(`/listings/${listingId}`)}`}>Make offer</Link>
+      <Button asChild size="lg" variant={variant} className={className}>
+        <Link href={`/login?next=${encodeURIComponent(`/listings/${listingId}`)}`}>{triggerLabel}</Link>
       </Button>
     );
   }
@@ -83,7 +85,7 @@ export function MakeOfferSheet({
 
   return (
     <>
-      <Button type="button" size="lg" className={className} disabled={disabled || isPending} onClick={() => setOpen(true)}>
+      <Button type="button" size="lg" variant={variant} className={className} disabled={disabled || isPending} onClick={() => setOpen(true)}>
         {triggerLabel}
       </Button>
       {open ? (
@@ -126,7 +128,7 @@ export function MakeOfferSheet({
               <div className="grid grid-cols-2 gap-2">
                 <Button type="button" variant="outline" onClick={close} disabled={isPending}>Cancel</Button>
                 <Button type="button" disabled={!amount || isPending} onClick={submit}>
-                  {isPending ? "Sending…" : triggerLabel}
+                  {isPending ? "Sending…" : "Send offer"}
                 </Button>
               </div>
             </div>
