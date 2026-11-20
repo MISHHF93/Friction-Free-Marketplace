@@ -13,8 +13,9 @@ const forwardStatuses = ["pending_payment", "paid", "escrowed", "shipped", "deli
 /** Later checkout states must not be overwritten by an older webhook. */
 export function canApplyTransactionStatus(current: string | null | undefined, next: string) {
   if (!current || current === next) return true;
-  if (next === "refunded") return current !== "cancelled" && current !== "refunded" && current !== "completed";
-  if (["cancelled", "refunded", "disputed", "completed"].includes(current)) return false;
+  if (current === "resolving") return false;
+  if (next === "refunded") return current !== "cancelled" && current !== "refunded" && current !== "completed" && current !== "resolving";
+  if (["cancelled", "refunded", "disputed", "completed", "resolving"].includes(current)) return false;
   const from = forwardStatuses.indexOf(current as (typeof forwardStatuses)[number]);
   const to = forwardStatuses.indexOf(next as (typeof forwardStatuses)[number]);
   if (from === -1 || to === -1) return next === "cancelled" || next === "refunded" || next === "disputed";

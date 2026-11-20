@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { env } from "@/lib/env.server";
 import { authorizeJobRequest } from "@/lib/security/secrets";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { AUTO_RELEASE_AFTER_MS, AUTO_RELEASE_SHIPPED_MS, autoReleaseEligible, isOpenDisputeStatus } from "@/lib/payments/auto-release";
+import { AUTO_RELEASE_AFTER_MS, AUTO_RELEASE_SHIPPED_MS, autoReleaseCandidateFilter, autoReleaseEligible, durableAutoReleaseSkip, isOpenDisputeStatus } from "@/lib/payments/auto-release";
 import { releaseHeldEscrow } from "@/lib/payments/release-held";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ async function loadCandidates(supabase: any, status: "delivered" | "shipped", co
     .select("id,listing_id,buyer_id,seller_id,status,delivered_at,shipped_at,metadata")
     .eq("status", status)
     .lte(column, cutoff)
-    .not("metadata->>auto_release_ineligible", "eq", "true")
+    .or(autoReleaseCandidateFilter)
     .order(column, { ascending: true })
     .limit(25);
 }
@@ -38,6 +38,14 @@ async function autoRelease(request: Request) {
       const { data: payment } = await supabase.from("escrow_payments").select("*").eq("transaction_id", transaction.id).maybeSingle();
       const { data: disputes } = await supabase.from("disputes").select("status").eq("transaction_id", transaction.id);
       const hasOpenDispute = (disputes ?? []).some((dispute: { status?: string }) => isOpenDisputeStatus(dispute.status) || dispute.status === "resolving");
+      const durableSkip = durableAutoReleaseSkip(payment?.status);
+      if (durableSkip) {
+        await supabase.from("transactions").update({
+          metadata: { ...(transaction.metadata ?? {}), auto_release_ineligible: true, auto_release_skip_reason: durableSkip }
+        }).eq("id", transaction.id);
+        skipped += 1;
+        continue;
+      }
       if (!payment || !autoReleaseEligible({
         transactionStatus: transaction.status,
         deliveredAt: transaction.delivered_at,
@@ -46,9 +54,6 @@ async function autoRelease(request: Request) {
         hasOpenDispute,
         now
       })) {
-        await supabase.from("transactions").update({
-          metadata: { ...(transaction.metadata ?? {}), auto_release_ineligible: true }
-        }).eq("id", transaction.id);
         skipped += 1;
         continue;
       }

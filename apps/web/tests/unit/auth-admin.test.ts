@@ -34,12 +34,18 @@ describe("admin permissions", () => {
     expect(can(null, "admin.access")).toBe(false);
   });
 
-  it("uses the users.role column and ignores metadata.admin_role", () => {
-    const role = getAdminRole({ role: "admin", metadata: { admin_role: "moderator" } });
+  it("keeps privilege on users.role and only lets metadata narrow an admin", () => {
+    const moderator = getAdminRole({ role: "admin", metadata: { admin_role: "moderator" } });
+    const buyer = getAdminRole({ role: "buyer", metadata: { admin_role: "super_admin" } });
+    const unchanged = getAdminRole({ role: "admin", metadata: { admin_role: "super_admin" } });
 
-    expect(role).toBe("admin");
-    expect(can(role, "listings.moderate")).toBe(true);
-    expect(can(role, "payments.monitor")).toBe(true);
+    expect(moderator).toBe("moderator");
+    expect(can(moderator, "listings.moderate")).toBe(true);
+    expect(can(moderator, "users.ban")).toBe(false);
+    expect(can(moderator, "payments.monitor")).toBe(false);
+    expect(buyer).toBeNull();
+    expect(unchanged).toBe("admin");
+    expect(can(unchanged, "users.ban")).toBe(true);
   });
 
   it("grants super admins every admin permission", () => {

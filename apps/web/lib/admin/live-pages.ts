@@ -89,14 +89,20 @@ function mapDisputes(rows: Row[]): AdminTableRow[] {
   return rows.map((row) => {
     const status = text(row.status);
     const transaction = Array.isArray(row.transactions) ? row.transactions[0] as Row | undefined : row.transactions as Row | undefined;
+    const payment = Array.isArray(transaction?.escrow_payments) ? transaction?.escrow_payments[0] as Row | undefined : transaction?.escrow_payments as Row | undefined;
+    const currency = text(payment?.currency ?? transaction?.currency, "USD");
+    const heldAmount = payment?.amount ?? transaction?.total_amount;
+    const sellerNet = payment?.seller_net_amount ?? transaction?.total_amount;
     return {
       id: text(row.id, ""),
       subject: text(row.reason, shortId(row.id)),
       buyer: shortId(transaction?.buyer_id ?? row.opened_by_id),
       seller: shortId(transaction?.seller_id),
-      amount: money(transaction?.total_amount, text(transaction?.currency, "USD")),
-      heldCents: String(Math.round(Number(transaction?.total_amount ?? 0) * 100)),
-      sellerNetCents: String(Math.round(Number(transaction?.seller_net_amount ?? transaction?.total_amount ?? 0) * 100)),
+      amount: money(heldAmount, currency),
+      currency,
+      heldCents: String(Math.round(Number(heldAmount ?? 0) * 100)),
+      sellerNetCents: String(Math.round(Number(sellerNet ?? 0) * 100)),
+      priorRefundedCents: String(Math.round(Number(payment?.refunded_amount ?? 0) * 100)),
       action: "Review dispute",
       severity: severity(status)
     };

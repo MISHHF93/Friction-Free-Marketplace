@@ -314,7 +314,7 @@ export async function getSellerProfile(id: string): Promise<{ seller: SellerProf
 
 export async function getTrustSafetyStats(): Promise<TrustSafetyStats> {
   if (isDemoMarketplaceDataEnabled()) {
-    return { source: "demo", activeListings: (await loadDemoListings()).length, trustedSellers: 3, completedTransactions: 86, lowRiskRate: 98 };
+    return { source: "demo", activeListings: (await loadDemoListings()).length, trustedSellers: 0, completedTransactions: 0, lowRiskRate: 0 };
   }
 
   if (!isLiveDatabaseConfigured()) {

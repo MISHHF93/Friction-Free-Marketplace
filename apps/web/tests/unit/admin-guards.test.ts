@@ -21,12 +21,13 @@ describe("account restriction hierarchy", () => {
   const buyer = { id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", role: "buyer", metadata: { admin_role: "super_admin" } };
   const superAdmin = { id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", role: "super_admin", metadata: {} };
 
-  it("ranks only users.role and refuses self or equal ranks", () => {
-    expect(canRestrictUser(admin, buyer)).toBe(true);
+  it("lets a full admin restrict a buyer and refuses limited staff, self, and metadata escalation", () => {
+    expect(canRestrictUser(otherAdmin, buyer)).toBe(true);
+    expect(canRestrictUser(admin, buyer)).toBe(false);
     expect(canRestrictUser(admin, admin)).toBe(false);
     expect(canRestrictUser(admin, otherAdmin)).toBe(false);
-    expect(canRestrictUser(superAdmin, admin)).toBe(true);
-    expect(canRestrictUser(buyer, admin)).toBe(false);
+    expect(canRestrictUser(superAdmin, otherAdmin)).toBe(true);
+    expect(canRestrictUser(buyer, otherAdmin)).toBe(false);
   });
 });
 

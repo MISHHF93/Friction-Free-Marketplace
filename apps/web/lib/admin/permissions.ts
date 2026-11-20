@@ -72,10 +72,18 @@ type AdminAuthorizationFailure = {
   permission: AdminPermission;
 };
 
+const limitedStaffRoles = new Set<AdminRole>(["support", "moderator", "risk", "finance", "analyst"]);
+
+function narrowedStaffRole(metadata: UserRow["metadata"]): AdminRole | null {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return null;
+  const requested = (metadata as { admin_role?: unknown }).admin_role;
+  return typeof requested === "string" && limitedStaffRoles.has(requested as AdminRole) ? requested as AdminRole : null;
+}
+
 export function getAdminRole(user: Pick<UserRow, "role" | "metadata"> | null | undefined): AdminRole | null {
   if (!user || (user.role !== "admin" && user.role !== "super_admin")) return null;
   if (user.role === "super_admin") return "super_admin";
-  return "admin";
+  return narrowedStaffRole(user.metadata) ?? "admin";
 }
 
 const adminRank: Record<string, number> = {
@@ -95,6 +103,8 @@ export function adminRankFor(user: { role?: string | null; metadata?: unknown } 
 
 export function canRestrictUser(actor: { id: string; role?: string | null; metadata?: unknown }, target: { id: string; role?: string | null; metadata?: unknown }) {
   if (!actor.id || actor.id === target.id) return false;
+  const role = getAdminRole(actor as Pick<UserRow, "role" | "metadata">);
+  if (!can(role, "users.ban")) return false;
   return adminRankFor(actor) > adminRankFor(target);
 }
 

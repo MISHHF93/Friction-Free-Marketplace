@@ -126,12 +126,13 @@ export async function applyAdminMutation(input: {
         if (!reason || !outcome) return { response: NextResponse.json({ error: "Closing a dispute requires a reason and an outcome." }, { status: 400 }) };
         const settled = await settleDispute(supabase, { disputeId: targetId, outcome, actorId: input.adminId, reason });
         if ("error" in settled && settled.error) return { response: NextResponse.json({ error: settled.error }, { status: settled.statusCode ?? 409 }) };
+        update = await supabase.from("disputes").select("id,status").eq("id", targetId).maybeSingle();
+        break;
       }
       update = await supabase.from("disputes").update({
-        status: action === "review" ? "under_review" : "closed",
-        resolution: action === "close" ? `${outcome}: ${reason}` : reason ?? null,
-        assigned_admin_id: input.adminId,
-        resolved_at: action === "close" ? new Date().toISOString() : null
+        status: "under_review",
+        resolution: reason ?? null,
+        assigned_admin_id: input.adminId
       }).eq("id", targetId).select("id,status").maybeSingle();
       break;
     }

@@ -61,7 +61,7 @@ export async function getAdminDirectoryRows(kind: string, limit = 50, cursor?: s
     case "reports":
       return page(supabase.from("reports").select("id,reason,description,status,reporter_id,reported_user_id,listing_id,message_id,assigned_admin_id,resolution,metadata,created_at,updated_at,resolved_at"), "created_at");
     case "disputes":
-      return page(supabase.from("disputes").select("id,transaction_id,opened_by_id,assigned_admin_id,reason,description,status,resolution,evidence,opened_at,due_at,resolved_at,created_at,updated_at,transactions(buyer_id,seller_id,total_amount,currency)"), "created_at");
+      return page(supabase.from("disputes").select("id,transaction_id,opened_by_id,assigned_admin_id,reason,description,status,resolution,evidence,opened_at,due_at,resolved_at,created_at,updated_at,transactions(buyer_id,seller_id,total_amount,currency,escrow_payments(amount,seller_net_amount,refunded_amount,currency))"), "created_at");
     case "fraud-alerts":
       return page(supabase.from("fraud_signals").select("id,user_id,listing_id,transaction_id,signal_type,risk_score,source,payload,reviewed_by,reviewed_at,created_at,users(email,status),listings(title,status,price_amount,currency)"), "created_at");
     case "transactions":

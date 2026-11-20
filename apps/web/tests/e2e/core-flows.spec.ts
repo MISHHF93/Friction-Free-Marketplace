@@ -75,9 +75,8 @@ test.describe("core marketplace flows", () => {
     const script = page.locator("script[src='https://js.stripe.com/v3/']");
     await expect(script).toHaveCount(1);
     const nonce = await script.evaluate((element) => (element as HTMLScriptElement).nonce || element.getAttribute("nonce") || "");
-    const pageNonce = await page.locator("html").getAttribute("data-nonce");
-    expect(pageNonce && pageNonce.length > 0).toBe(true);
-    expect(nonce).toBe(pageNonce);
+    expect(nonce.length > 0).toBe(true);
+    expect(await page.locator("html").getAttribute("data-nonce")).toBeNull();
     await stripeScript;
   });
 

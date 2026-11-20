@@ -16,7 +16,7 @@ export const serverEnvSchema = publicEnvSchema.extend({
   ADMIN_WORKER_SECRET: z.string().trim().min(1).optional(),
   SCHEDULED_JOB_SECRET: z.string().trim().min(1).optional(),
   RESEND_API_KEY: z.string().trim().min(1).optional(),
-  RESEND_FROM_EMAIL: z.string().trim().min(3).default("Friction-Free Marketplace <hello@example.com>"),
+  RESEND_FROM_EMAIL: requiredString("RESEND_FROM_EMAIL"),
   SUPPORT_EMAIL: requiredString("SUPPORT_EMAIL"),
   POSTHOG_KEY: z.string().trim().min(1).optional(),
   POSTHOG_HOST: z.string().trim().url().default("https://app.posthog.com"),

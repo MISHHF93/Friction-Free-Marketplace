@@ -93,9 +93,9 @@ export default async function HomePage() {
               <CardDescription className="text-slate-300">Clear listings, responsive people, and safer transactions—visible at a glance.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2">
-              <HeroMetric label="Active listings" value={stats.activeListings.toLocaleString()} />
-              <HeroMetric label="Trusted sellers" value={stats.trustedSellers.toLocaleString()} />
-              <HeroMetric label="Completed trades" value={stats.completedTransactions.toLocaleString()} />
+              <HeroMetric label="Active listings" value={stats.activeListings.toLocaleString("en-US")} />
+              <HeroMetric label="Trusted sellers" value={stats.trustedSellers.toLocaleString("en-US")} />
+              <HeroMetric label="Completed trades" value={stats.completedTransactions.toLocaleString("en-US")} />
               <HeroMetric label="Low-risk mix" value={`${stats.lowRiskRate}%`} />
             </CardContent>
           </Card>
@@ -124,7 +124,7 @@ export default async function HomePage() {
               <h3 className="mt-5 text-xl font-black tracking-tight">{category.title}</h3>
               <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">{category.description}</p>
               <div className="mt-5 flex items-center justify-between gap-3">
-                <Badge variant="trust">{(countBySlug.get(category.slug) ?? 0).toLocaleString()} live</Badge>
+                <Badge variant="trust">{(countBySlug.get(category.slug) ?? 0).toLocaleString("en-US")} live</Badge>
                 <span className="inline-flex items-center gap-1 text-sm font-bold text-primary">
                   Explore <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </span>

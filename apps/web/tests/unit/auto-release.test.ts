@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AUTO_RELEASE_AFTER_MS, AUTO_RELEASE_SHIPPED_MS, autoReleaseEligible } from "@/lib/payments/auto-release";
+import { AUTO_RELEASE_AFTER_MS, AUTO_RELEASE_SHIPPED_MS, autoReleaseCandidateFilter, autoReleaseEligible, durableAutoReleaseSkip } from "@/lib/payments/auto-release";
 import { buildSettlementPlan, planFromStored, settlementLegs } from "@/lib/payments/settlement-plan";
 import { isEscrowTransition } from "@/lib/payments/escrow";
 
@@ -12,6 +12,10 @@ describe("auto release", () => {
     expect(autoReleaseEligible({ transactionStatus: "delivered", deliveredAt, paymentStatus: "held", hasOpenDispute: true })).toBe(false);
     expect(autoReleaseEligible({ transactionStatus: "shipped", shippedAt, paymentStatus: "held", hasOpenDispute: false })).toBe(true);
     expect(autoReleaseEligible({ transactionStatus: "shipped", shippedAt: new Date().toISOString(), paymentStatus: "held", hasOpenDispute: false })).toBe(false);
+    expect(autoReleaseCandidateFilter).toContain("is.null");
+    expect(durableAutoReleaseSkip("refunded")).toBe("refunded");
+    expect(durableAutoReleaseSkip("held")).toBeNull();
+    expect(durableAutoReleaseSkip(null)).toBeNull();
   });
 });
 
@@ -29,6 +33,9 @@ describe("dispute settlement plan", () => {
     expect(settlementLegs(first, { refundIds: [], payoutKeys: [] })).toEqual({ refund: true, release: true });
     expect(settlementLegs(first, { refundIds: [first.refundKey], payoutKeys: [] })).toEqual({ refund: false, release: true });
     expect(settlementLegs(first, { refundIds: [first.refundKey], payoutKeys: [first.releaseKey] })).toEqual({ refund: false, release: false });
+    const odd = buildSettlementPlan({ disputeId, outcome: "split", originalAmountCents: 101, originalSellerNetCents: 101, priorRefundedCents: 0 });
+    expect(odd.refundCents + odd.releaseCents).toBe(101);
+    expect(planFromStored({ ...first, refundCents: 900, releaseCents: 200 })).toBeNull();
   });
 
   it("allows the settlement release only after the dispute claim, not while disputed", () => {
