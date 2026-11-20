@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 
 const routes = [
   { path: "/", heading: /buy and sell locally with protected payment/i },
-  { path: "/browse", heading: /find trusted listings/i },
-  { path: "/search", heading: /find trusted listings/i },
+  { path: "/browse", heading: /search listings/i },
+  { path: "/search", heading: /search listings/i },
   { path: "/login", heading: /log in to your account/i },
   { path: "/signup", heading: /create account/i },
   { path: "/privacy", heading: /privacy policy/i },

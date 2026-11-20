@@ -163,10 +163,6 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
             <EmptyResultsRecommendations modeHref={modeHref} recommendations={emptyRecommendations} unavailable={results.source === "unavailable"} />
           )}
 
-          <AiAssistantPanel params={params} modeHref={modeHref} />
-          <DiscoveryRail title="Recommended for this buyer" icon={<Sparkles className="h-5 w-5" />} listings={recommended.listings} />
-          <DiscoveryRail title="Trending listings" icon={<Flame className="h-5 w-5" />} listings={trending.listings} />
-          <DiscoveryRail title="Recently viewed" icon={<Clock className="h-5 w-5" />} listings={results.listings.slice(0, 3)} />
         </div>
       </div>
     </section>
@@ -185,29 +181,17 @@ function SearchHeader({ mode, params, resultsTotal, source, priceStats, categori
 
   return (
     <div className="overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-soft sm:rounded-[2rem]">
-      <div className="bg-premium-dark p-4 text-white sm:p-6 lg:p-8">
-        <Badge variant="dark">{mode === "search" ? "AI search" : "Marketplace discovery"}</Badge>
-        <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,23rem)] lg:items-end">
-          <div>
-            <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">Find trusted listings faster</h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">Search, browse, filter, save, and compare listings with AI ranking, trust signals, protected payment cues, and fast marketplace controls.</p>
-          </div>
-          <div className="rounded-2xl border border-white/20 bg-[#2f3642] p-4 text-sm text-white">
-            <p className="font-bold text-white">{sourceLabel}</p>
-            <p>{resultsTotal.toLocaleString()} matching listings across verified seller, payment, fulfillment, and category filters.</p>
-            {priceStats ? <p className="mt-2">Indexed price range: ${Math.round(priceStats.min).toLocaleString()}-{Math.round(priceStats.max).toLocaleString()}</p> : null}
-          </div>
-        </div>
+      <div className="p-4 sm:p-6">
+        <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Search listings</h1>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">{resultsTotal.toLocaleString()} matching listings.</p>
       </div>
-      <form className="grid gap-3 p-3 sm:p-4 md:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_12rem_10rem_auto]" action={modeHref}>
-        {hiddenInputs(params, ["q", "location", "radiusMiles", "page"])}
+      <form className="grid gap-3 px-3 pb-3 sm:px-4 sm:pb-4 md:grid-cols-[minmax(0,1fr)_auto]" action={modeHref}>
+        {hiddenInputs(params, ["q", "page"])}
         <div className="relative">
           <Search className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" aria-hidden="true" />
-          <Input className="pl-10" name="q" defaultValue={params.q} placeholder="Search bikes, sofas, camera kits..." />
+          <Input className="pl-10" name="q" defaultValue={params.q} placeholder="Search listings" />
         </div>
-        <Input name="location" defaultValue={params.location} placeholder="Austin, TX" />
-        <Input name="radiusMiles" defaultValue={params.radiusMiles} placeholder="Radius" type="number" min="1" />
-        <Button variant="trust" className="md:col-span-2 lg:col-span-1"><SlidersHorizontal className="h-4 w-4" aria-hidden="true" /> Search</Button>
+        <Button variant="trust"><SlidersHorizontal className="h-4 w-4" aria-hidden="true" /> Search</Button>
       </form>
       {categories.length ? (
         <div className="flex gap-2 overflow-x-auto px-3 pb-3 sm:px-4" aria-label="Categories">
