@@ -29,7 +29,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { createMediaViewerItem, MediaViewer, type MediaViewerItem } from "@/components/media/media-viewer";
+import { MediaViewer, type MediaViewerItem } from "@/components/media/media-viewer";
 import { createClient } from "@/lib/supabase/server";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { ShareListingButton } from "@/components/listings/share-listing-button";
@@ -427,7 +427,7 @@ function DetailMetric({ icon, label, value }: { icon: React.ReactNode; label: st
 }
 
 function ListingGallery({ title, images }: { title: string; images: Array<{ src: string; alt: string }> }) {
-  const mediaItems: MediaViewerItem[] = images.map((image, index) => createMediaViewerItem({
+  const mediaItems: MediaViewerItem[] = images.map((image, index) => ({
     id: `${image.src}-${index}`,
     src: image.src,
     type: "image",
