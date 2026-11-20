@@ -23,6 +23,7 @@ export async function releaseHeldEscrow(supabase: any, input: {
   }
   const prepared = await prepareEscrowAction(supabase, payment, "held", "releasing");
   if (!prepared.payment || prepared.payment.status !== "releasing") {
+    if (prepared.payment?.status === "released") return { status: "completed" as const, alreadyReleased: true };
     return { error: "This release is already in progress.", statusCode: 409 as const };
   }
   const refundedCents = dollarsToCents(Number(payment.refunded_amount ?? 0));
@@ -56,8 +57,29 @@ export async function releaseHeldEscrow(supabase: any, input: {
     paid_at: new Date().toISOString(),
     metadata: { transfer_group: transfer.transfer_group, transfer_cents: amount, settlement_key: input.payoutKey ?? null }
   });
+  await supabase.from("transaction_receipts").upsert({
+    transaction_id: transaction.id,
+    buyer_id: transaction.buyer_id,
+    seller_id: transaction.seller_id,
+    provider: "stripe",
+    provider_payment_id: payment.provider_payment_id,
+    provider_charge_id: payment.provider_charge_id,
+    subtotal_amount: transaction.item_amount,
+    shipping_amount: transaction.shipping_amount,
+    tax_amount: transaction.tax_amount,
+    platform_fee_amount: payment.platform_fee_amount,
+    seller_net_amount: transferred,
+    total_amount: payment.amount,
+    currency: payment.currency,
+    metadata: { transfer_id: transfer.id }
+  });
   const releasedPayment = await supabase.from("escrow_payments").update({ status: "released", released_at: new Date().toISOString() }).eq("id", payment.id).eq("status", "releasing").select("id");
-  if (releasedPayment.error || !releasedPayment.data?.length) return { error: "Release could not be recorded.", statusCode: 409 as const };
+  if (releasedPayment.error) return { error: "Release could not be recorded.", statusCode: 409 as const };
+  if (!releasedPayment.data?.length) {
+    const { data: current } = await supabase.from("escrow_payments").select("status").eq("id", payment.id).maybeSingle();
+    if (current?.status === "released") return { status: "completed" as const, alreadyReleased: true };
+    return { error: "Release could not be recorded.", statusCode: 409 as const };
+  }
   await claimTransactionStatus(supabase, transaction.id, transaction.status, "completed", { completed_at: new Date().toISOString() });
   if (transaction.listing_id) await supabase.from("listings").update({ status: "sold", quantity: 0 }).eq("id", transaction.listing_id);
   if (!input.skipJournal) await postLedgerJournal(supabase, buildReleaseJournal({
@@ -83,5 +105,5 @@ export async function releaseHeldEscrow(supabase: any, input: {
     currency: payment.currency,
     message: "Held funds released to the seller connected account."
   });
-  return { status: "completed" as const, transferId: transfer.id as string };
+  return { status: "completed" as const, transferId: transfer.id as string, transferredAmount: transferred };
 }

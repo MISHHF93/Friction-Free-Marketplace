@@ -4,13 +4,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireUser } from "@/lib/payments/auth";
-import { recordTransactionEvent } from "@/lib/payments/audit";
-import { dollarsToCents } from "@/lib/payments/money";
 import { enqueueTemplateNotification } from "@/lib/notifications/service";
-import { buildReleaseJournal, postLedgerJournal } from "@/lib/financial/ledger";
-import { claimEscrowPayment, claimTransactionStatus, escrowActionKey } from "@/lib/payments/escrow";
-import { prepareEscrowAction } from "@/lib/payments/resume";
-import { getStripe } from "@/lib/stripe/server";
+import { releaseHeldEscrow } from "@/lib/payments/release-held";
 
 const transactionIdSchema = z.string().uuid();
 
@@ -36,96 +31,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { data: seller } = await supabase.from("users").select("status").eq("id", transaction.seller_id).maybeSingle();
   if (seller && ["suspended", "banned"].includes(seller.status)) return NextResponse.json({ error: "Payout is frozen while the seller account is restricted." }, { status: 409 });
 
-  const prepared = await prepareEscrowAction(supabase, payment, "held", "releasing");
-  if (!prepared.payment || prepared.payment.status !== "releasing") {
-    if (prepared.payment?.status === "released") return NextResponse.json({ status: "completed", alreadyReleased: true });
-    return NextResponse.json({ error: "This release is already in progress." }, { status: 409 });
-  }
-
-  let transfer;
-  try {
-    transfer = await getStripe().transfers.create({
-      amount: dollarsToCents(Number(payment.seller_net_amount)),
-      currency: payment.currency.toLowerCase(),
-      destination: sellerAccount.stripe_account_id,
-      source_transaction: payment.provider_charge_id ?? undefined,
-      transfer_group: `transaction_${transactionId.data}`,
-      metadata: { transaction_id: transactionId.data, escrow_payment_id: payment.id }
-    }, {
-      idempotencyKey: escrowActionKey("release", transactionId.data, payment.id)
-    });
-  } catch (error) {
-    await claimEscrowPayment(supabase, payment.id, "releasing", "held");
-    const message = error instanceof Error ? error.message : "Stripe release failed.";
-    return NextResponse.json({ error: message }, { status: 502 });
-  }
-
-  await supabase.from("payouts").insert({
-    transaction_id: transactionId.data,
-    seller_id: transaction.seller_id,
-    provider: "stripe",
-    provider_transfer_id: transfer.id,
-    status: "paid",
-    amount: Number(payment.seller_net_amount),
-    currency: payment.currency,
-    paid_at: new Date().toISOString(),
-    metadata: { transfer_group: transfer.transfer_group }
+  const result = await releaseHeldEscrow(supabase, {
+    transaction,
+    payment,
+    sellerAccountId: sellerAccount.stripe_account_id,
+    actorId: auth.user.id
   });
-
-  await supabase.from("transaction_receipts").upsert({
-    transaction_id: transactionId.data,
-    buyer_id: transaction.buyer_id,
-    seller_id: transaction.seller_id,
-    provider: "stripe",
-    provider_payment_id: payment.provider_payment_id,
-    provider_charge_id: payment.provider_charge_id,
-    subtotal_amount: transaction.item_amount,
-    shipping_amount: transaction.shipping_amount,
-    tax_amount: transaction.tax_amount,
-    platform_fee_amount: payment.platform_fee_amount,
-    seller_net_amount: payment.seller_net_amount,
-    total_amount: payment.amount,
-    currency: payment.currency,
-    metadata: { transfer_id: transfer.id }
-  });
-
-  const releasedPayment = await supabase.from("escrow_payments").update({ status: "released", released_at: new Date().toISOString() }).eq("id", payment.id).eq("status", "releasing").select("id");
-  if (releasedPayment.error) return NextResponse.json({ error: "Release could not be recorded." }, { status: 409 });
-  if (!releasedPayment.data?.length) {
-    const { data: current } = await supabase.from("escrow_payments").select("status").eq("id", payment.id).maybeSingle();
-    if (current?.status === "released") return NextResponse.json({ status: "completed", alreadyReleased: true });
-    return NextResponse.json({ error: "Release could not be recorded." }, { status: 409 });
-  }
-  const completed = await claimTransactionStatus(supabase, transactionId.data, transaction.status, "completed", { completed_at: new Date().toISOString() });
-  if (!completed) {
-    const { data: currentTransaction } = await supabase.from("transactions").select("status").eq("id", transactionId.data).maybeSingle();
-    if (currentTransaction?.status !== "completed") return NextResponse.json({ error: "Transaction was no longer ready for release." }, { status: 409 });
-  }
-  await supabase.from("listings").update({ status: "sold", quantity: 0 }).eq("id", transaction.listing_id);
-  await postLedgerJournal(supabase, buildReleaseJournal({
-    transactionId: transactionId.data,
-    totalAmount: Number(payment.amount),
-    sellerNetAmount: Number(payment.seller_net_amount),
-    platformFeeAmount: Number(payment.platform_fee_amount),
-    currency: payment.currency,
-    buyerId: transaction.buyer_id,
-    sellerId: transaction.seller_id,
-    providerPaymentId: payment.provider_payment_id,
-    providerChargeId: payment.provider_charge_id,
-    providerTransferId: transfer.id,
-  }));
-
-  await recordTransactionEvent(supabase, {
-    transaction_id: transactionId.data,
-    actor_id: auth.user.id,
-    type: "seller_payout_paid",
-    from_status: transaction.status,
-    to_status: "completed",
-    provider_object_id: transfer.id,
-    amount: Number(payment.seller_net_amount),
-    currency: payment.currency,
-    message: "Held funds released to the seller connected account."
-  });
+  if ("error" in result && result.error) return NextResponse.json({ error: result.error }, { status: result.statusCode });
+  if ("alreadyReleased" in result && result.alreadyReleased) return NextResponse.json({ status: "completed", alreadyReleased: true });
+  const transfer = { id: (result as { transferId: string }).transferId };
+  const transferredAmount = (result as { transferredAmount: number }).transferredAmount;
 
   await Promise.all([
     enqueueTemplateNotification({
@@ -138,7 +53,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     enqueueTemplateNotification({
       userId: transaction.seller_id,
       template: "payment_released",
-      input: { amount: payment.seller_net_amount, currency: payment.currency, actionUrl: "/dashboard/sales" },
+      input: { amount: transferredAmount, currency: payment.currency, actionUrl: "/dashboard/sales" },
       payload: { transaction_id: transactionId.data, escrow_payment_id: payment.id, transfer_id: transfer.id },
       supabase
     })
