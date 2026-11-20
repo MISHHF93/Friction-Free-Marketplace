@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test.describe("marketplace assistant experience", () => {
   test("opens from the header, traps interaction, and restores focus", async ({ page }) => {
     await page.goto("/");
-    const launcher = page.getByRole("button", { name: "Open marketplace AI assistant" });
+    const launcher = page.getByRole("button", { name: /open marketplace assistant/i });
     await launcher.click();
 
     await expect(page.getByRole("dialog", { name: "Marketplace copilot" })).toBeVisible();
@@ -14,6 +14,7 @@ test.describe("marketplace assistant experience", () => {
   });
 
   test("renders every scoped assistant and an accessible request composer", async ({ page }) => {
+    await page.context().addCookies([{ name: "ffm-e2e-user", value: "alice", url: "http://127.0.0.1:3001" }]);
     await page.goto("/assistant");
 
     await expect(page.getByRole("heading", { name: "AI help with clear limits." })).toBeVisible();
@@ -45,6 +46,7 @@ test.describe("marketplace assistant experience", () => {
       });
     });
 
+    await page.context().addCookies([{ name: "ffm-e2e-user", value: "alice", url: "http://127.0.0.1:3001" }]);
     await page.goto("/assistant");
     await page.getByLabel("Request").fill("Help me compare two camera listings.");
     await page.getByRole("button", { name: /run assistant/i }).click();

@@ -8,16 +8,17 @@ test.describe("marketplace discovery and listing surfaces", () => {
 
     await expect(page.getByRole("heading", { name: /find trusted listings faster/i })).toBeVisible();
     await expect(page.getByPlaceholder(/search bikes/i)).toHaveValue("camera");
-    await expect(page.getByText("Query: camera")).toBeVisible();
+    await expect(page.getByText("Search: camera")).toBeVisible();
     await expect(page.getByText("Category: Electronics")).toBeVisible();
-    await expect(page.getByText("Seller trust: 80+")).toBeVisible();
+    await expect(page.getByText("Trust: 80+")).toBeVisible();
   });
 
   test("listing detail exposes favorites and checkout affordances", async ({ page }) => {
     await page.goto("/listings/verified-road-bike");
 
     await expect(page.getByRole("button", { name: /live favorite|save listing|saved/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /checkout is available on live listings/i })).toBeDisabled();
+    await page.getByRole("button", { name: "Buy", exact: true }).click();
+    await expect(page.getByRole("button", { name: /preview test authorization/i })).toBeVisible();
     await expect(page.getByText(/sign in as a buyer to message this seller/i)).toBeVisible();
   });
 

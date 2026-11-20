@@ -30,7 +30,8 @@ test.describe("accessibility", () => {
     await context.addCookies([{ name: "ffm-e2e-user", value: "alice", url: "http://127.0.0.1:3001" }]);
     const page = await context.newPage();
     for (const route of signedInRoutes) {
-      await page.goto(route);
+      await page.goto(route, { waitUntil: "domcontentloaded" });
+      await page.getByRole("heading").first().waitFor();
       await expectNoSeriousViolations(page);
     }
     await context.close();

@@ -6,7 +6,7 @@ test("home page exposes marketplace navigation", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /browse like a person, not a database/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: /fresh finds, clearly presented/i })).toBeVisible();
   await expect(page.getByRole("main").getByRole("link", { name: /browse marketplace/i }).first()).toBeVisible();
-  await expect(page.getByRole("banner").getByRole("link", { name: /sell/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Sell", exact: true })).toBeVisible();
 });
 
 test("keyboard users can bypass navigation", async ({ page }) => {
