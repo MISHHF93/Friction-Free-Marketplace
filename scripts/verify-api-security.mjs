@@ -18,6 +18,7 @@ const serverRoutes = [
   ["apps/web/app/api/admin/trust-safety/workers/route.ts", ["hasValidBearerSecret", "ADMIN_WORKER_SECRET"]],
   ["apps/web/app/api/notifications/dispatch/route.ts", ["authorizeJobRequest", "SCHEDULED_JOB_SECRET"]],
   ["apps/web/app/api/offers/expire/route.ts", ["authorizeJobRequest", "SCHEDULED_JOB_SECRET"]],
+  ["apps/web/app/api/payments/expire-checkouts/route.ts", ["authorizeJobRequest", "SCHEDULED_JOB_SECRET"]],
 ];
 
 for (const [path, markers] of serverRoutes) {

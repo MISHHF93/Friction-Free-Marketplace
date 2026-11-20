@@ -5,6 +5,7 @@
     { "path": "/api/offers/expire", "schedule": "15 * * * *" },
     { "path": "/api/search/sync", "schedule": "30 * * * *" },
     { "path": "/api/payments/reconcile", "schedule": "10 * * * *" },
+    { "path": "/api/payments/expire-checkouts", "schedule": "5,35 * * * *" },
     { "path": "/api/payments/auto-release", "schedule": "40 * * * *" }
   ]
 }

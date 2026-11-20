@@ -22,6 +22,7 @@ const serverMutationPrefixes = [
   "/api/offers/expire",
   "/api/payments/reconcile",
   "/api/payments/auto-release",
+  "/api/payments/expire-checkouts",
   "/api/mcp",
 ] as const;
 const mutationMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
