@@ -26,7 +26,7 @@ test("homepage search suggestions stay inside the search panel", async ({ page }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
 
-  const search = page.getByRole("search").filter({ has: page.getByLabel("Search marketplace") });
+  const search = page.getByRole("search").filter({ has: page.getByLabel("Search listings") });
   const panelBox = await search.boundingBox();
   expect(panelBox).not.toBeNull();
 

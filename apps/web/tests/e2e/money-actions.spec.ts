@@ -21,7 +21,7 @@ test.describe("money actions", () => {
     await context.route("**/api/stripe/transactions/**/refund", (route) => route.fulfill({ json: { status: "refunded" } }));
     const page = await context.newPage();
     await page.goto("/dashboard/sales");
-    await page.getByRole("button", { name: "Mark shipped" }).click();
+    await page.getByRole("button", { name: "Ship" }).click();
     await page.getByLabel("Carrier").fill("UPS");
     await page.getByLabel("Tracking number").fill("1Z999");
     await page.getByRole("button", { name: "Confirm shipment" }).click();

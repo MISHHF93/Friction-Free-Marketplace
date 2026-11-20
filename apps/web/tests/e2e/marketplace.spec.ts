@@ -6,8 +6,8 @@ test.describe("marketplace discovery and listing surfaces", () => {
   test("listing search renders filters and active query chips", async ({ page }) => {
     await page.goto("/search?q=camera&category=electronics&minSellerTrust=80");
 
-    await expect(page.getByRole("heading", { name: /find trusted listings faster/i })).toBeVisible();
-    await expect(page.getByPlaceholder(/search bikes/i)).toHaveValue("camera");
+    await expect(page.getByRole("heading", { name: /search listings/i })).toBeVisible();
+    await expect(page.getByPlaceholder(/search listings/i)).toHaveValue("camera");
     await expect(page.getByText("Search: camera")).toBeVisible();
     await expect(page.getByText("Category: Electronics")).toBeVisible();
     await expect(page.getByText("Trust: 80+")).toBeVisible();
@@ -19,7 +19,7 @@ test.describe("marketplace discovery and listing surfaces", () => {
     await expect(page.getByRole("button", { name: /live favorite|save listing|saved/i })).toBeVisible();
     await page.getByRole("button", { name: "Buy", exact: true }).click();
     await expect(page.getByRole("button", { name: /preview test authorization/i })).toBeVisible();
-    await expect(page.getByText(/sign in as a buyer to message this seller/i)).toBeVisible();
+    await expect(page.getByRole("link", { name: /log in to message/i })).toBeVisible();
   });
 
   test("unauthenticated favorites API is blocked", async ({ request }) => {

@@ -141,7 +141,18 @@ export function EscrowActions({ transactionId, role, status, amount, currency = 
             onSubmit={(event) => {
               event.preventDefault();
               const reason = String(new FormData(event.currentTarget).get("reason") ?? "");
-              void run("Dispute", `${base}/dispute`, { reason });
+              void (async () => {
+                setPending("Dispute");
+                setMessage(null);
+                try {
+                  const payload = await postAction(`${base}/dispute`, { reason });
+                  setMessage(typeof payload.message === "string" && payload.message ? payload.message : "Dispute submitted.");
+                } catch (error) {
+                  setMessage(error instanceof Error ? error.message : "The payment action did not complete.");
+                } finally {
+                  setPending(null);
+                }
+              })();
             }}
           >
             <label className="grid gap-1 text-xs font-medium" htmlFor={`dispute-${transactionId}`}>

@@ -32,7 +32,7 @@ test.describe("phone layout", () => {
     await page.goto("/listings/verified-road-bike");
     await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
     await page.screenshot({ path: screenshotFile(testInfo, "mobile-listing-390.png"), fullPage: false });
-    await page.getByRole("button", { name: "Buy" }).click();
+    await page.getByRole("button", { name: "Buy", exact: true }).click();
     await expect(page.getByRole("button", { name: "Preview test authorization" })).toBeVisible();
     await page.screenshot({ path: screenshotFile(testInfo, "mobile-checkout-390.png"), fullPage: false });
     await page.context().addCookies([{ name: "ffm-e2e-user", value: "alice", url: "http://127.0.0.1:3001" }]);
