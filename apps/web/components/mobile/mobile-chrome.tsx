@@ -26,9 +26,11 @@ const tabs = [
 
 const rootPaths = new Set(["/", "/browse", "/search", "/login", "/signup"]);
 
-function parentPath(pathname: string) {
+function parentPath(pathname: string, search = "") {
   if (pathname.startsWith("/listings/")) return "/browse";
-  if (pathname.startsWith("/dashboard/messages")) return "/dashboard";
+  if (pathname.startsWith("/dashboard/messages")) {
+    return new URLSearchParams(search).has("conversation") ? "/dashboard/messages" : "/dashboard";
+  }
   if (pathname.startsWith("/dashboard/listings/")) return "/dashboard/listings";
   if (pathname.startsWith("/dashboard/purchases") || pathname.startsWith("/dashboard/sales")) return "/dashboard";
   if (pathname.startsWith("/dashboard/")) return "/dashboard";
@@ -49,7 +51,7 @@ export function MobileBackBar() {
       aria-label="Back"
       onClick={() => {
         if (window.history.length > 1) router.back();
-        else router.push(parentPath(pathname));
+        else router.push(parentPath(pathname, window.location.search));
       }}
     >
       <ArrowLeft className="h-5 w-5" aria-hidden="true" />
@@ -58,12 +60,26 @@ export function MobileBackBar() {
   );
 }
 
+function visiblePageTitle() {
+  const explicit = document.querySelector("[data-page-title]");
+  const explicitTitle = explicit?.getAttribute("data-page-title")?.trim() || explicit?.textContent?.trim();
+  if (explicitTitle) return explicitTitle;
+  const heading = document.querySelector("main h1");
+  if (heading?.textContent?.trim()) return heading.textContent.trim();
+  return document.title.replace(/\s*[·|—-]\s*.*$/, "").trim();
+}
+
 export function PageTitleMirror() {
   const pathname = usePathname();
   const titleRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => {
-    const heading = document.querySelector("main h1");
-    if (titleRef.current) titleRef.current.textContent = heading?.textContent?.trim() ?? "";
+    const apply = () => {
+      if (titleRef.current) titleRef.current.textContent = visiblePageTitle();
+    };
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+    return () => observer.disconnect();
   }, [pathname]);
   return <p ref={titleRef} className="truncate text-sm font-black" aria-hidden="true" />;
 }

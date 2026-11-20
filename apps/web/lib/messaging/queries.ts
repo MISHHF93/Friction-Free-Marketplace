@@ -78,10 +78,20 @@ async function applyPublicProfiles(supabase: SupabaseClient<any>, summaries: Con
   if (!ids.length) return summaries;
   const { data } = await supabase.from("public_profiles").select("user_id,display_name,avatar_url").in("user_id", ids);
   const profiles = new Map(((data ?? []) as Array<{ user_id: string; display_name: string; avatar_url: string | null }>).map((profile) => [profile.user_id, profile]));
+  const withPublicProfile = (existing: { user_id: string; display_name: string; avatar_url: string | null } | null, userId: string | null) => {
+    if (!userId) return existing;
+    const profile = profiles.get(userId);
+    if (!existing && !profile) return existing;
+    return {
+      user_id: userId,
+      display_name: profile?.display_name ?? existing?.display_name ?? "Marketplace user",
+      avatar_url: profile?.avatar_url ?? existing?.avatar_url ?? null
+    };
+  };
   return summaries.map((summary) => ({
     ...summary,
-    buyer: summary.buyer ? { ...summary.buyer, display_name: profiles.get(summary.buyer.user_id)?.display_name ?? summary.buyer.display_name, avatar_url: profiles.get(summary.buyer.user_id)?.avatar_url ?? summary.buyer.avatar_url } : summary.buyer,
-    seller: summary.seller ? { ...summary.seller, display_name: profiles.get(summary.seller.user_id)?.display_name ?? summary.seller.display_name, avatar_url: profiles.get(summary.seller.user_id)?.avatar_url ?? summary.seller.avatar_url } : summary.seller
+    buyer: withPublicProfile(summary.buyer, summary.buyer_id),
+    seller: withPublicProfile(summary.seller, summary.seller_id)
   }));
 }
 
