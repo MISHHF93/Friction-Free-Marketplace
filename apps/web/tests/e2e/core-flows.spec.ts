@@ -72,6 +72,7 @@ test.describe("core marketplace flows", () => {
     const response = await page.goto("/listings/verified-road-bike");
     const policy = response?.headers()["content-security-policy"] ?? "";
     expect(policy).toContain("https://js.stripe.com");
+    await expect(page.getByRole("heading", { name: /road bike/i })).toBeVisible();
     const script = page.locator("script[src='https://js.stripe.com/v3/']");
     await expect(script).toHaveCount(1);
     const nonce = await script.evaluate((element) => (element as HTMLScriptElement).nonce || element.getAttribute("nonce") || "");

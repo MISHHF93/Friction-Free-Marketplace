@@ -7,7 +7,7 @@ test.describe("marketplace discovery and listing surfaces", () => {
     await page.goto("/search?q=camera&category=electronics&minSellerTrust=80");
 
     await expect(page.getByRole("heading", { name: /search listings/i })).toBeVisible();
-    await expect(page.getByPlaceholder(/search listings/i)).toHaveValue("camera");
+    await expect(page.locator("#main-content").getByPlaceholder(/search listings/i)).toHaveValue("camera");
     await expect(page.getByText("Search: camera")).toBeVisible();
     await expect(page.getByText("Category: Electronics")).toBeVisible();
     await expect(page.getByText("Trust: 80+")).toBeVisible();
