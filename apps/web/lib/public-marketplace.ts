@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { listings as demoListings } from "@/lib/marketplace-data";
+import { loadDemoListings } from "@/lib/dev/load-demo-catalog";
 import { rowToDiscoveryDocument, searchMarketplace, type DiscoveryResult } from "@/lib/search/discovery";
 import type { DiscoveryDocument } from "@/lib/search/schema";
 import { recordReliabilityEvent } from "@/lib/observability/reliability";
@@ -60,7 +60,8 @@ function recordPublicDataFailure(operation: string) {
   });
 }
 
-function demoCategoryRows(): PublicCategory[] {
+async function demoCategoryRows(): Promise<PublicCategory[]> {
+  const demoListings = await loadDemoListings();
   const counts = new Map<string, number>();
   for (const listing of demoListings) {
     const slug = listing.category.toLowerCase().replace(/\s+/g, "-");
@@ -82,6 +83,7 @@ export async function getFeaturedListings(limit = 6): Promise<DiscoveryResult> {
 
 export async function getPublicListingParams(limit = 50): Promise<Array<{ id: string }>> {
   if (isDemoMarketplaceDataEnabled()) {
+    const demoListings = await loadDemoListings();
     return demoListings.slice(0, limit).map((listing) => ({ id: listing.id }));
   }
 
@@ -115,6 +117,7 @@ export async function getPublicListingParams(limit = 50): Promise<Array<{ id: st
 
 export async function getPublicSellerParams(limit = 50): Promise<Array<{ id: string }>> {
   if (isDemoMarketplaceDataEnabled()) {
+    const demoListings = await loadDemoListings();
     const seen = new Set<string>();
     return demoListings.flatMap((listing, index) => {
       const id = `demo-seller-${index}`;
@@ -161,7 +164,7 @@ export async function getPublicSellerParams(limit = 50): Promise<Array<{ id: str
 
 export async function getPublicCategories(limit = 8): Promise<{ categories: PublicCategory[]; source: "database" | "demo" | "unavailable" }> {
   if (isDemoMarketplaceDataEnabled()) {
-    return { categories: demoCategoryRows().slice(0, limit), source: "demo" };
+    return { categories: (await demoCategoryRows()).slice(0, limit), source: "demo" };
   }
 
   if (!isLiveDatabaseConfigured()) {
@@ -311,7 +314,7 @@ export async function getSellerProfile(id: string): Promise<{ seller: SellerProf
 
 export async function getTrustSafetyStats(): Promise<TrustSafetyStats> {
   if (isDemoMarketplaceDataEnabled()) {
-    return { source: "demo", activeListings: demoListings.length, trustedSellers: 3, completedTransactions: 86, lowRiskRate: 98 };
+    return { source: "demo", activeListings: (await loadDemoListings()).length, trustedSellers: 3, completedTransactions: 86, lowRiskRate: 98 };
   }
 
   if (!isLiveDatabaseConfigured()) {

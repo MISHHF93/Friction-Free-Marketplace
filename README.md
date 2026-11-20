@@ -31,6 +31,8 @@ GitHub repository
 └── .github         Web, Android, and iOS CI/release workflows
 ```
 
+Production launch steps, required environment names, and the host-only reset scripts are in [docs/LAUNCH.md](docs/LAUNCH.md).
+
 The web deployment is authoritative for marketplace data and server APIs. Both native applications securely load that HTTPS origin and add native behavior through Capacitor. Server secrets remain only in the hosted web/backend environment.
 
 The canonical native identity is:

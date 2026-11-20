@@ -4,10 +4,19 @@ import { Badge } from "@/components/ui/badge";
 import { TrustScoreBadge } from "@/components/trust-safety/trust-badges";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { listings } from "@/lib/marketplace-data";
 import { formatMoney } from "@/lib/i18n/format";
 
-export function ListingCard({ listing }: { listing: (typeof listings)[number] }) {
+type CatalogListing = {
+  id: string;
+  title: string;
+  price: number;
+  location: string;
+  category: string;
+  condition: string;
+  trustScore: number;
+};
+
+export function ListingCard({ listing }: { listing: CatalogListing }) {
   return (
     <Card className="overflow-hidden">
       <div className="h-44 bg-secondary" />

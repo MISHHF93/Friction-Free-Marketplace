@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { OrderFollowUpForms } from "@/components/orders/order-actions";
 import { getMarketplaceSession } from "@/lib/auth/session";
+import { loadE2EPurchases } from "@/lib/dev/e2e-fixtures";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, formatMoney } from "@/lib/i18n/format";
 
@@ -57,10 +58,7 @@ async function getBuyerPurchases(userId: string) {
 export default async function PurchasesPage() {
   const session = await getMarketplaceSession();
   if (!session) redirect("/login?next=/dashboard/purchases");
-  const purchases = session.source === "supabase" ? await getBuyerPurchases(session.id) : session.source === "e2e" ? [
-    { id: "44444444-4444-4444-8444-444444444444", listing_id: "verified-road-bike", status: "completed", total_amount: 20, currency: "USD", created_at: new Date().toISOString(), updated_at: new Date().toISOString(), paid_at: new Date().toISOString(), delivered_at: null, completed_at: new Date().toISOString(), title: "Preview completed order" },
-    { id: "55555555-5555-4555-8555-555555555555", listing_id: "verified-road-bike", status: "escrowed", total_amount: 40, currency: "USD", created_at: new Date().toISOString(), updated_at: new Date().toISOString(), paid_at: new Date().toISOString(), delivered_at: null, completed_at: null, title: "Preview escrow order" }
-  ] : [];
+  const purchases = session.source === "supabase" ? await getBuyerPurchases(session.id) : session.source === "e2e" ? await loadE2EPurchases(session.id) : [];
   const active = purchases.filter((purchase) => !["completed", "cancelled", "refunded"].includes(purchase.status));
   const completed = purchases.filter((purchase) => purchase.status === "completed");
   const support = purchases.filter((purchase) => ["disputed", "refunded"].includes(purchase.status));
