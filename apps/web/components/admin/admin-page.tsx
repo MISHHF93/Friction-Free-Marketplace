@@ -9,23 +9,25 @@ import { adminLinks } from "@/lib/admin/navigation";
 import { can, permissionLabels, requireAdminPagePermission, rolePermissions, type AdminRole } from "@/lib/admin/permissions";
 import { adminMutationsFor } from "@/lib/admin/mutations";
 import { AdminRowActionMenu } from "@/components/admin/admin-row-actions";
+import { getAdminPageConfig } from "@/lib/admin/platform";
 import { getLiveAdminPage } from "@/lib/admin/live-pages";
 import type { AdminPageConfig } from "@/lib/admin/platform";
 import { cn } from "@/lib/utils";
 
-export async function AuthorizedAdminFeaturePage({ slug }: { slug: string }) {
-  const config = await getLiveAdminPage(slug);
-  if (!config) notFound();
-
-  const auth = await requireAdminPagePermission(config.permission, {
-    loginNext: `/admin/${config.slug}`,
+export async function AuthorizedAdminFeaturePage({ slug, cursor }: { slug: string; cursor?: string }) {
+  const base = getAdminPageConfig(slug);
+  if (!base) notFound();
+  const auth = await requireAdminPagePermission(base.permission, {
+    loginNext: `/admin/${base.slug}`,
     deniedPath: "/admin"
   });
+  const page = await getLiveAdminPage(slug, cursor);
+  if (!page) notFound();
 
-  return <AdminFeaturePage config={config} adminRole={auth.role} />;
+  return <AdminFeaturePage config={page.config} adminRole={auth.role} nextCursor={page.nextCursor} loadError={page.loadError} />;
 }
 
-export function AdminFeaturePage({ config, adminRole }: { config: AdminPageConfig; adminRole?: AdminRole }) {
+export function AdminFeaturePage({ config, adminRole, nextCursor = null, loadError = null }: { config: AdminPageConfig; adminRole?: AdminRole; nextCursor?: string | null; loadError?: string | null }) {
   const Icon = config.icon;
   const visiblePermissions = adminRole ? rolePermissions[adminRole].length : null;
 
@@ -108,10 +110,12 @@ export function AdminFeaturePage({ config, adminRole }: { config: AdminPageConfi
                     {column.key === "subject" ? <SeverityBadge severity={row.severity} value={row[column.key]} /> : column.key === "status" ? <StatusBadge value={row[column.key]} severity={row.severity} /> : <span className="text-muted-foreground">{row[column.key]}</span>}
                   </p>
                 ))}
-                <RiskScoreIndicator severity={row.severity} seed={index} score={row.score || row.trust} />
-                <AdminRowActionMenu subject={row.subject} primaryAction={row.action ?? config.primaryAction} mutable={adminMutationsFor(config.slug).length > 0} />
+                <RiskScoreIndicator score={row.score || row.trust} />
+                <AdminRowActionMenu slug={config.slug} targetId={row.id} subject={row.subject} primaryAction={row.action ?? config.primaryAction} actions={[...adminMutationsFor(config.slug)]} />
               </article>
             ))}
+            {nextCursor ? <Button asChild variant="outline"><Link href={`/admin/${config.slug}?cursor=${encodeURIComponent(nextCursor)}`}>Next page</Link></Button> : null}
+            {loadError ? <p className="text-sm text-destructive" role="alert">{loadError}</p> : null}
           </CardContent>
         </Card>
 
@@ -193,9 +197,9 @@ function StatusBadge({ value, severity }: { value: string; severity?: string }) 
   return <Badge variant={variant}>{value}</Badge>;
 }
 
-function RiskScoreIndicator({ severity, seed, score }: { severity?: string; seed: number; score?: string }) {
-  const parsed = Number(score);
-  const value = Number.isFinite(parsed) && score ? parsed : severity === "critical" ? 90 : severity === "high" ? 75 : severity === "medium" ? 50 : severity === "positive" ? 20 : 10 + seed;
+function RiskScoreIndicator({ score }: { score?: string }) {
+  const value = Number(score);
+  if (!score || !Number.isFinite(value)) return <p className="text-xs text-muted-foreground">No score</p>;
   const color = value >= 85 ? "bg-safety-risk" : value >= 70 ? "bg-safety-warning" : value >= 45 ? "bg-ai" : "bg-trust";
   return (
     <div className="min-w-28">

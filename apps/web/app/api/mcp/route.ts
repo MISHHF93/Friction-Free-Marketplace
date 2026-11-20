@@ -38,7 +38,9 @@ async function handle(request: Request) {
   if (!mcpEnabled()) {
     return NextResponse.json({ error: "Marketplace MCP is disabled." }, { status: 404 });
   }
-  const address = request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const hops = Number(process.env.FFM_TRUSTED_PROXY_HOPS ?? "0");
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",").map((part) => part.trim()).filter(Boolean) ?? [];
+  const address = Number.isInteger(hops) && hops > 0 ? forwarded[Math.max(0, forwarded.length - hops)] || "shared" : "shared";
   try {
     const limit = await consumeRateLimit(`mcp:${address}`, { limit: 30, windowMs: 60_000, policy: "mcp" });
     if (!limit.allowed) return NextResponse.json({ error: "Too many MCP requests." }, { status: 429 });

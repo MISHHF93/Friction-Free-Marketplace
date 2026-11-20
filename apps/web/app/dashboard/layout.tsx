@@ -74,7 +74,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
                 </span>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-bold">{displayName}</p>
-                  <p className="truncate text-xs text-slate-300">{session.email || "Authenticated account"}</p>
+                  <p className="truncate text-xs text-white">{session.email || "Authenticated account"}</p>
                 </div>
               </div>
             </div>

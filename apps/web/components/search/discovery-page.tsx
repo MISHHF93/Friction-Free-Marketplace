@@ -190,7 +190,7 @@ function SearchHeader({ mode, params, resultsTotal, source, priceStats }: { mode
             <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">Find trusted listings faster</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">Search, browse, filter, save, and compare listings with AI ranking, trust signals, protected payment cues, and fast marketplace controls.</p>
           </div>
-          <div className="rounded-2xl border border-brand-steel bg-brand-slate p-4 text-sm text-slate-200">
+          <div className="rounded-2xl border border-white/20 bg-[#2f3642] p-4 text-sm text-white">
             <p className="font-bold text-white">{sourceLabel}</p>
             <p>{resultsTotal.toLocaleString()} matching listings across verified seller, payment, fulfillment, and category filters.</p>
             {priceStats ? <p className="mt-2">Indexed price range: ${Math.round(priceStats.min).toLocaleString()}-{Math.round(priceStats.max).toLocaleString()}</p> : null}

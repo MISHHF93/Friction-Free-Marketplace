@@ -1,4 +1,4 @@
-import { getAdminDirectoryRows } from "@/lib/admin/queries";
+import { getAdminAggregateMetrics, getAdminDirectoryRows } from "@/lib/admin/queries";
 import { getAdminPageConfig, type AdminMetric, type AdminPageConfig, type AdminTableRow } from "@/lib/admin/platform";
 
 type Row = Record<string, unknown>;
@@ -88,11 +88,13 @@ function mapReports(rows: Row[]): AdminTableRow[] {
 function mapDisputes(rows: Row[]): AdminTableRow[] {
   return rows.map((row) => {
     const status = text(row.status);
+    const transaction = Array.isArray(row.transactions) ? row.transactions[0] as Row | undefined : row.transactions as Row | undefined;
     return {
+      id: text(row.id, ""),
       subject: text(row.reason, shortId(row.id)),
-      buyer: shortId(row.opened_by_id),
-      seller: shortId(row.transaction_id),
-      amount: status,
+      buyer: shortId(transaction?.buyer_id ?? row.opened_by_id),
+      seller: shortId(transaction?.seller_id),
+      amount: money(transaction?.total_amount, text(transaction?.currency, "USD")),
       action: "Review dispute",
       severity: severity(status)
     };
@@ -177,7 +179,8 @@ function mapRevenue(rows: Row[]): AdminTableRow[] {
       subject: shortId(row.id),
       gmv: money(row.total_amount, currency),
       fees: money(row.marketplace_fee_amount, currency),
-      refunds: row.cancelled_at ? money(row.total_amount, currency) : money(0, currency),
+      id: text(row.id, ""),
+      refunds: row.status === "refunded" ? money(row.total_amount, currency) : money(0, currency),
       action: "Review order",
       severity: severity(status)
     };
@@ -262,16 +265,35 @@ function withoutSampleData(config: AdminPageConfig): AdminPageConfig {
   };
 }
 
-export async function getLiveAdminPage(slug: string) {
+export async function getLiveAdminPage(slug: string, cursor?: string) {
   const config = getAdminPageConfig(slug);
   if (!config) return undefined;
-  if (slug === "settings") return withoutSampleData(config);
+  if (slug === "settings") return { config: withoutSampleData(config), nextCursor: null as string | null, loadError: null as string | null };
   try {
-    const result = await getAdminDirectoryRows(slug, 25);
-    if (result.error) return withoutSampleData(config);
+    const result = await getAdminDirectoryRows(slug, 25, cursor);
+    if (result.error) {
+      return {
+        config: {
+          ...withoutSampleData(config),
+          metrics: [{ label: "Could not load", value: "—", detail: result.error.message }]
+        },
+        nextCursor: null,
+        loadError: result.error.message as string
+      };
+    }
     const source = rowsOf(result.data);
-    return { ...config, rows: adminTableRows(slug, source), metrics: metricsFor(slug, source) };
-  } catch {
-    return withoutSampleData(config);
+    const last = source.at(-1);
+    const nextCursor = source.length === 25 ? String(last?.updated_at ?? last?.created_at ?? "") || null : null;
+    const aggregate = await getAdminAggregateMetrics(slug);
+    const metrics = aggregate && "metrics" in aggregate && aggregate.metrics ? aggregate.metrics : metricsFor(slug, source);
+    const loadError = aggregate && "error" in aggregate ? aggregate.error : null;
+    return { config: { ...config, rows: adminTableRows(slug, source).map((row, index) => ({ ...row, id: row.id || text(source[index]?.id, "") })), metrics }, nextCursor, loadError };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "The admin queue could not be loaded.";
+    return {
+      config: { ...withoutSampleData(config), metrics: [{ label: "Could not load", value: "—", detail: message }] },
+      nextCursor: null,
+      loadError: message
+    };
   }
 }

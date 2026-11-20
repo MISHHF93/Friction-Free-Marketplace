@@ -10,6 +10,7 @@ import { RemoteImage } from "@/components/ui/remote-image";
 import { PriceDisplay, TrustBadge, UserAvatar } from "@/components/marketplace-design-system";
 import { PublicListingGrid } from "@/components/public-listing-grid";
 import { getPublicSellerParams, getSellerProfile } from "@/lib/public-marketplace";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +45,13 @@ export default async function SellerProfilePage({ params }: { params: Promise<{ 
   const { id } = await params;
   const { seller, listings } = await getSellerProfile(id);
   if (!seller) notFound();
+  let reviews: Array<{ id: string; rating: number; title: string | null; body: string | null }> = [];
+  try {
+    const result = await (createAdminClient() as any).from("reviews").select("id,rating,title,body").eq("reviewee_id", seller.id).eq("is_public", true).eq("status", "published").order("created_at", { ascending: false }).limit(8);
+    reviews = result.data ?? [];
+  } catch {
+    reviews = [];
+  }
 
   const inventoryValue = listings.reduce((sum, listing) => sum + Number(listing.price_amount), 0);
 
@@ -80,6 +88,15 @@ export default async function SellerProfilePage({ params }: { params: Promise<{ 
         </div>
       </div>
 
+      <section className="mt-8 grid gap-3">
+        <h2 className="text-2xl font-bold">Reviews</h2>
+        {reviews.length === 0 ? <p className="text-sm text-muted-foreground">No public reviews yet.</p> : reviews.map((review) => (
+          <article key={review.id} className="rounded-2xl border p-4">
+            <p className="font-semibold">{review.rating} of 5{review.title ? ` · ${review.title}` : ""}</p>
+            {review.body ? <p className="mt-2 text-sm text-muted-foreground">{review.body}</p> : null}
+          </article>
+        ))}
+      </section>
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_320px]">
         <div>
           <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">

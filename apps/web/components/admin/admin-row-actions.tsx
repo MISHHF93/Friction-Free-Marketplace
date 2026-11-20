@@ -4,9 +4,11 @@ import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function AdminRowActionMenu({ subject, primaryAction, mutable }: { subject: string; primaryAction: string; mutable: boolean }) {
+export function AdminRowActionMenu({ slug, targetId, subject, primaryAction, actions }: { slug: string; targetId?: string; subject: string; primaryAction: string; actions: string[] }) {
   const [reason, setReason] = useState("");
-  const ready = reason.trim().length >= 3;
+  const [status, setStatus] = useState<string | null>(null);
+  const ready = reason.trim().length >= 3 && Boolean(targetId) && actions.length > 0;
+  const action = actions[0];
   return (
     <details className="relative">
       <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold [&::-webkit-details-marker]:hidden" aria-label={`Open actions for ${subject}`}>
@@ -19,8 +21,17 @@ export function AdminRowActionMenu({ subject, primaryAction, mutable }: { subjec
           Reason
           <textarea id={`reason-${subject}`} required minLength={3} value={reason} onChange={(event) => setReason(event.target.value)} className="min-h-24 rounded-xl border border-border px-3 py-2" placeholder="Why is this action needed?" />
         </label>
-        <Button type="button" className="min-h-11" disabled={!mutable || !ready} title={!ready ? "Enter a reason of at least 3 characters." : undefined}>{primaryAction}</Button>
-        <p className="text-xs text-muted-foreground">{mutable ? "The action stays disabled until a reason is entered." : "This queue does not change marketplace records."}</p>
+        <Button type="button" className="min-h-11" disabled={!ready} title={!ready ? "Enter a reason of at least 3 characters." : undefined} onClick={async () => {
+          const response = await fetch(`/api/admin/${slug}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action, target_id: targetId, reason: reason.trim() })
+          });
+          const body = await response.json().catch(() => ({}));
+          setStatus(response.ok ? `${primaryAction} saved.` : String(body.error ?? "The action was not saved."));
+        }}>{primaryAction}</Button>
+        {status ? <p className="text-xs" role="status">{status}</p> : null}
+        <p className="text-xs text-muted-foreground">{actions.length ? "The action stays disabled until a reason is entered." : "This queue does not change marketplace records."}</p>
       </div>
     </details>
   );

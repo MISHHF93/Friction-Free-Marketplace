@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { getDevBypassSession } from "@/lib/auth/dev-bypass-session";
 import { e2eUserFromCookie } from "@/lib/auth/e2e-session";
@@ -11,7 +12,7 @@ export type MarketplaceSession = {
   source: "supabase" | "development" | "e2e";
 };
 
-export async function getMarketplaceSession(): Promise<MarketplaceSession | null> {
+export const getMarketplaceSession = cache(async function getMarketplaceSession(): Promise<MarketplaceSession | null> {
   const headerStore = await headers();
   const cookieStore = await cookies();
   const host = headerStore.get("host");
@@ -48,4 +49,4 @@ export async function getMarketplaceSession(): Promise<MarketplaceSession | null
     locale: profile?.locale || "en",
     source: "supabase"
   };
-}
+});

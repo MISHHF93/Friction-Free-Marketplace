@@ -16,7 +16,6 @@ import type { ConversationMessage, ConversationOffer, ConversationSummary, Messa
 import { displayOfferStatus, isOfferExpired } from "@/lib/offers/state-machine";
 import {
   blockUserAction,
-  createReservationDepositAction,
   getConversationSummaryAction,
   makeOfferAction,
   markConversationReadAction,
@@ -70,7 +69,6 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
   const [offerAmount, setOfferAmount] = useState("");
   const [offerMessage, setOfferMessage] = useState("");
   const [offerExpiresAt, setOfferExpiresAt] = useState("");
-  const [depositAmount, setDepositAmount] = useState("");
   const [pickupStartsAt, setPickupStartsAt] = useState("");
   const [pickupLocation, setPickupLocation] = useState("");
   const [reportReason, setReportReason] = useState("");
@@ -391,7 +389,7 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
               <Input id="offerAmount" value={offerAmount} onChange={(event) => setOfferAmount(event.target.value)} type="number" min="1" step="0.01" placeholder={canCounterPendingOffer ? "Counter amount" : "Offer amount"} />
               <Input value={offerExpiresAt} onChange={(event) => setOfferExpiresAt(event.target.value)} type="datetime-local" aria-label="Offer expiration" />
               <Textarea value={offerMessage} onChange={(event) => setOfferMessage(event.target.value)} placeholder="Terms, timing, or counter-offer note" />
-              <Button disabled={!offerAmount || isPending || (!canMakeFirstOffer && !canCounterPendingOffer)} onClick={() => runAction(() => makeOfferAction({ conversationId: activeConversation.id, amount: offerAmount, message: offerMessage, parentOfferId: canCounterPendingOffer ? pendingOffer?.id : undefined, depositAmount: depositAmount ? Number(depositAmount) : 0, expiresAt: offerExpiresAt ? new Date(offerExpiresAt).toISOString() : undefined }), () => { setOfferAmount(""); setOfferMessage(""); setOfferExpiresAt(""); })}>
+              <Button disabled={!offerAmount || isPending || (!canMakeFirstOffer && !canCounterPendingOffer)} onClick={() => runAction(() => makeOfferAction({ conversationId: activeConversation.id, amount: offerAmount, message: offerMessage, parentOfferId: canCounterPendingOffer ? pendingOffer?.id : undefined, expiresAt: offerExpiresAt ? new Date(offerExpiresAt).toISOString() : undefined }), () => { setOfferAmount(""); setOfferMessage(""); setOfferExpiresAt(""); })}>
                 {canCounterPendingOffer ? "Send counter" : "Make offer"}
               </Button>
               <div className="grid gap-2 sm:grid-cols-3 2xl:grid-cols-1">
@@ -430,8 +428,7 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
             <CardHeader><CardTitle className="flex items-center gap-2"><ShieldAlert className="h-5 w-5" />Trust controls</CardTitle><CardDescription>Deposits, anti-ghosting, reports, and blocking.</CardDescription></CardHeader>
             <CardContent className="grid gap-3">
               {latestDeposit && <div className="rounded-xl bg-secondary p-3 text-sm">Deposit: {money(latestDeposit.amount, latestDeposit.currency)} · {latestDeposit.status}</div>}
-              <Input value={depositAmount} onChange={(event) => setDepositAmount(event.target.value)} type="number" min="1" step="0.01" placeholder="Reservation deposit" />
-              <Button disabled={!depositAmount || isPending} onClick={() => runAction(() => createReservationDepositAction({ conversationId: activeConversation.id, offerId: pendingOffer?.id, amount: depositAmount }), () => setDepositAmount(""))}><Bell className="mr-2 h-4 w-4" />Request deposit</Button>
+              <p className="text-xs text-muted-foreground">Payments stay in protected checkout. Chat does not collect a deposit.</p>
               <Textarea value={reportReason} onChange={(event) => setReportReason(event.target.value)} placeholder="Report details for this message or user" />
               <Button disabled={!otherParticipantId || isPending} onClick={() => otherParticipantId && runAction(() => reportUserAction({ conversationId: activeConversation.id, reportedUserId: otherParticipantId, reason: reportReason || "Unsafe or suspicious user" }), () => setReportReason(""))}><Flag className="mr-2 h-4 w-4" />Report user</Button>
               <p className="text-xs text-muted-foreground">Anti-ghosting penalties are created when pickup no-shows or forfeited deposits are reviewed by trust & safety.</p>
