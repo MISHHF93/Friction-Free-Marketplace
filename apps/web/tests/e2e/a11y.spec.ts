@@ -64,6 +64,8 @@ test.describe("accessibility", () => {
   }
 
   test("signed-in routes have no serious axe violations", async ({ browser }) => {
+    // One test walks every signed-in route, so it needs more than the 30s per-test default.
+    test.setTimeout(signedInRoutes.length * 30_000);
     const context = await browser.newContext();
     await context.addCookies([{ name: "ffm-e2e-user", value: "alice", url: "http://127.0.0.1:3001" }]);
     const page = await context.newPage();

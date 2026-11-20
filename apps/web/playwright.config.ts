@@ -15,7 +15,8 @@ export default defineConfig({
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3001",
     trace: "on-first-retry",
     serviceWorkers: "block",
-    navigationTimeout: 15_000
+    // The dev server compiles routes on first hit and the inert test env waits on unreachable services, so allow more time there.
+    navigationTimeout: process.env.PLAYWRIGHT_USE_PROD === "true" ? 15_000 : 30_000
   },
   webServer: process.env.PLAYWRIGHT_SKIP_WEB_SERVER
     ? undefined
