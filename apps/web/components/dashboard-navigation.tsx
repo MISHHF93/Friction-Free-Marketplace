@@ -53,8 +53,8 @@ export function DashboardSidebar({
   links,
   user,
   eyebrow = "User dashboard",
-  title = "Your marketplace command center",
-  description = "Manage buying, selling, trust, verification, and account preferences from one protected workspace."
+  title = "Your account",
+  description = "Manage your listings, messages, orders, payments, and account."
 }: {
   links: DashboardLink[];
   user?: { name: string; email: string; location: string };

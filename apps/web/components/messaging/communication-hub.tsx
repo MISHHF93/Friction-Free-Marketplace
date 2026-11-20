@@ -63,6 +63,7 @@ function attachmentViewerItem(attachment: MessageAttachment) {
 export function CommunicationHub({ userId, initialConversations, initialConversationId }: { userId: string; initialConversations: ConversationSummary[]; initialConversationId?: string }) {
   const [conversations, setConversations] = useState(initialConversations);
   const [activeId, setActiveId] = useState(initialConversationId ?? initialConversations[0]?.id ?? "");
+  const [conversationFilter, setConversationFilter] = useState<"all" | "offers">("all");
   const [body, setBody] = useState("");
   const [attachmentUrl, setAttachmentUrl] = useState("");
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
@@ -265,8 +266,12 @@ export function CommunicationHub({ userId, initialConversations, initialConversa
           <CardTitle>Conversations</CardTitle>
           <CardDescription>Supabase Realtime keeps every thread, receipt, and negotiation update live.</CardDescription>
         </CardHeader>
+        <div className="flex gap-2 px-6 pb-2">
+          <Button type="button" size="sm" variant={conversationFilter === "all" ? "trust" : "outline"} onClick={() => setConversationFilter("all")}>All</Button>
+          <Button type="button" size="sm" variant={conversationFilter === "offers" ? "trust" : "outline"} onClick={() => setConversationFilter("offers")}>Offers</Button>
+        </div>
         <CardContent className="grid max-h-72 gap-2 overflow-y-auto p-3 xl:max-h-[calc(100vh-14rem)]">
-          {sortedConversations.map((conversation) => {
+          {(conversationFilter === "offers" ? sortedConversations.filter((conversation) => (conversation.offers?.length ?? 0) > 0) : sortedConversations).map((conversation) => {
             const participant = conversation.buyer_id === userId ? conversation.seller : conversation.buyer;
             const latestMessage = conversation.messages[conversation.messages.length - 1];
             const unreadCount = conversation.messages.filter((message) => message.sender_id !== userId && !message.read_at).length;

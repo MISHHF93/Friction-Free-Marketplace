@@ -109,7 +109,7 @@ const quickActions = [
 const recommendedActions = [
   { icon: UserCheck, title: "Finish verification", description: "Raise transaction limits and show stronger seller signals where they matter.", href: "/dashboard/verification", label: "Verify account" },
   { icon: Sparkles, title: "Use listing assistant", description: "Create a clear listing draft from photos, category, condition, and safety notes.", href: "/dashboard/ai-listing-creator", label: "Open assistant" },
-  { icon: LineChart, title: "Review seller performance", description: "Check listing quality, response speed, pricing, and buyer interest in your seller workspace.", href: "/dashboard/seller", label: "Seller tools" }
+  { icon: LineChart, title: "Review seller performance", description: "Check listing quality, response speed, pricing, and buyer interest in your seller workspace.", href: "/dashboard/listings", label: "Listings" }
 ];
 
 export default async function DashboardPage() {
