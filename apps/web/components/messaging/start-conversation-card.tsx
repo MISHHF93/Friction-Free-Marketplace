@@ -1,17 +1,47 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MessageSquare, Send } from "lucide-react";
 import { createConversationAction } from "@/app/dashboard/messages/actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
-export function StartConversationCard({ listingId, disabled = false }: { listingId: string; disabled?: boolean }) {
+export function StartConversationCard({
+  listingId,
+  signedOut = false,
+  isOwner = false,
+  editHref,
+  disabled = false
+}: {
+  listingId: string;
+  signedOut?: boolean;
+  isOwner?: boolean;
+  editHref?: string;
+  disabled?: boolean;
+}) {
   const router = useRouter();
   const [openingMessage, setOpeningMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  if (signedOut) {
+    return (
+      <Button asChild size="lg">
+        <Link href={`/login?next=${encodeURIComponent(`/listings/${listingId}`)}`}>Log in to message</Link>
+      </Button>
+    );
+  }
+
+  if (isOwner) {
+    return (
+      <div className="grid gap-2 rounded-2xl border border-border bg-background p-3">
+        <p className="text-sm font-semibold">This is your listing</p>
+        {editHref ? <Button asChild variant="outline"><Link href={editHref}>Edit</Link></Button> : null}
+      </div>
+    );
+  }
 
   function startConversation() {
     setError(null);
@@ -42,7 +72,6 @@ export function StartConversationCard({ listingId, disabled = false }: { listing
         {isPending ? <Send className="h-4 w-4 animate-pulse" /> : <MessageSquare className="h-4 w-4" />}
         Message seller
       </Button>
-      {disabled && <p className="text-xs text-muted-foreground">Sign in as a buyer to message this seller.</p>}
     </div>
   );
 }

@@ -1,8 +1,39 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/i18n/format";
+
+export const OPEN_CHECKOUT_EVENT = "ffm:open-checkout";
+
+export function openCheckoutSheet() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(OPEN_CHECKOUT_EVENT));
+}
+
+function shouldOpenCheckout() {
+  if (typeof window === "undefined") return false;
+  const url = new URL(window.location.href);
+  return url.hash === "#protected-checkout" || url.searchParams.has("offer");
+}
+
+export function OpenCheckoutButton({
+  children,
+  className,
+  variant = "trust",
+  size = "lg"
+}: {
+  children: ReactNode;
+  className?: string;
+  variant?: "trust" | "premium" | "outline";
+  size?: "lg" | "sm" | "default";
+}) {
+  return (
+    <Button type="button" size={size} variant={variant} className={className} onClick={() => openCheckoutSheet()}>
+      {children}
+    </Button>
+  );
+}
 
 export function ListingBuyBar({
   amount,
@@ -16,6 +47,19 @@ export function ListingBuyBar({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const openIfNeeded = () => setOpen(true);
+    if (shouldOpenCheckout()) setOpen(true);
+    window.addEventListener(OPEN_CHECKOUT_EVENT, openIfNeeded);
+    window.addEventListener("hashchange", () => {
+      if (shouldOpenCheckout()) setOpen(true);
+    });
+    return () => {
+      window.removeEventListener(OPEN_CHECKOUT_EVENT, openIfNeeded);
+    };
+  }, []);
+
   return (
     <>
       <div className="fixed inset-x-0 z-30 mx-auto flex w-full max-w-[480px] items-center justify-between gap-3 border-t border-border bg-background px-4 py-2" style={{ bottom: "calc(4.25rem + env(safe-area-inset-bottom))" }}>

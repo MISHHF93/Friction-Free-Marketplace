@@ -35,7 +35,7 @@ import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form"
 import { ShareListingButton } from "@/components/listings/share-listing-button";
 import { CheckoutCard } from "@/components/payments/checkout-card";
 import { isDemoMarketplaceDataEnabled } from "@/lib/marketplace/demo-mode";
-import { ListingBuyBar } from "@/components/payments/listing-buy-bar";
+import { ListingBuyBar, OpenCheckoutButton } from "@/components/payments/listing-buy-bar";
 import { StripeJsScript } from "@/components/security/nonce-script";
 import { quoteCheckoutAmounts } from "@/lib/payments/quote";
 import { normalizeCurrency } from "@/lib/payments/money";
@@ -201,7 +201,7 @@ function buildAiInsights(listing: DiscoveryDocument, aiListing: Record<string, u
       : "Price confidence is limited. Ask for receipts, serial numbers, or proof of condition.";
   const fraudInsight = fraudScore === null
     ? `${Math.round(listing.safety_score || listing.seller_trust_score)}% safety score based on public seller and listing signals.`
-    : `Risk score is ${fraudScore}/100. Lower scores mean fewer warning signs were found.`;
+    : "Review seller and payment signals before you pay.";
 
   return [
     generatedSummary ?? `${listing.condition} ${listing.category_name.toLowerCase()} listing from ${listing.seller_display_name}.`,
@@ -332,8 +332,8 @@ export default async function ListingDetailPage({ params, searchParams }: { para
               </div>
 
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                <Button asChild size="lg" variant="premium"><Link href="#make-offer">Make offer</Link></Button>
-                <Button asChild size="lg" variant="trust"><Link href="#protected-checkout">Buy now</Link></Button>
+                <Button asChild size="lg" variant="premium"><Link href="#message-seller">Make offer</Link></Button>
+                <OpenCheckoutButton className="w-full sm:w-auto" variant="trust">Buy now</OpenCheckoutButton>
                 <Button asChild size="lg" variant="outline"><Link href="#message-seller"><MessageSquare className="h-4 w-4" aria-hidden="true" /> Message seller</Link></Button>
                 <FavoriteToggleForm listingId={listing.id} isFavorited={favoriteIds.has(listing.id)} variant="outline" size="lg" className="w-full" />
               </div>
@@ -347,19 +347,6 @@ export default async function ListingDetailPage({ params, searchParams }: { para
           </Card>
 
           <SellerTrustCard listing={listing} fraudScore={fraudScore} />
-
-          <Card id="make-offer">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><WalletCards className="h-5 w-5 text-primary" aria-hidden="true" /> Offers and checkout</CardTitle>
-              <CardDescription>Start with an offer or move to protected payment when the listing supports it.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button asChild variant="premium" size="lg" className="w-full">
-                <Link href="#message-seller">Make an offer through seller chat</Link>
-              </Button>
-              <p className="text-xs leading-5 text-muted-foreground">Offers stay inside marketplace messaging so the deal history is available if support is needed.</p>
-            </CardContent>
-          </Card>
 
           <ListingBuyBar amount={checkoutPrice} currency={listing.currency} label={payableOffer ? "Accepted offer" : "List price"}>
             {payableOffer ? null : offerId ? <p className="mb-3 text-sm text-muted-foreground">That offer cannot be paid. Checkout uses the list price only when you are the buyer on an accepted, unexpired offer in the same currency.</p> : null}
@@ -376,7 +363,7 @@ export default async function ListingDetailPage({ params, searchParams }: { para
               <CardDescription>Ask about availability, condition, pickup, shipping, or offer terms.</CardDescription>
             </CardHeader>
             <CardContent>
-              <StartConversationCard listingId={listing.id} disabled={!user || user.id === listing.seller_id || !isLiveDatabaseListing} />
+              <StartConversationCard listingId={listing.id} signedOut={!user} isOwner={Boolean(user && user.id === listing.seller_id)} editHref={user && user.id === listing.seller_id ? `/dashboard/listings/${listing.id}/edit` : undefined} disabled={!isLiveDatabaseListing} />
             </CardContent>
           </Card>
         </aside>
@@ -384,8 +371,6 @@ export default async function ListingDetailPage({ params, searchParams }: { para
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <DetailMetric icon={<Store className="h-4 w-4" aria-hidden="true" />} label="Category" value={listing.category_name} />
             <DetailMetric icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />} label="Published" value={formatDate(listing.published_at)} />
-            <DetailMetric icon={<Eye className="h-4 w-4" aria-hidden="true" />} label="Views" value={listing.view_count.toLocaleString()} />
-            <DetailMetric icon={<Heart className="h-4 w-4" aria-hidden="true" />} label="Saves" value={listing.saved_count.toLocaleString()} />
           </div>
 
           <Card>
@@ -403,13 +388,15 @@ export default async function ListingDetailPage({ params, searchParams }: { para
 
           <div className="grid gap-4 xl:grid-cols-2">
             <AiInsightsCard insights={aiInsights} fraudScore={fraudScore} />
-            <SafetyWarningsCard warnings={safetyWarnings} />
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-2">
-            <PaymentProtectionCard />
-            <SafePickupCard pickupAvailable={listing.pickup_available} shipsTo={listing.ships_to} location={listing.location_label} />
-          </div>
+          <details className="rounded-2xl border border-border bg-card p-4">
+            <summary className="cursor-pointer text-base font-bold">Safety and pickup</summary>
+            <div className="mt-4 grid gap-4">
+              <PaymentProtectionCard />
+              <SafePickupCard pickupAvailable={listing.pickup_available} shipsTo={listing.ships_to} location={listing.location_label} />
+              </div>
+          </details>
 
           {recommendations.length ? (
             <section className="space-y-5" aria-labelledby="similar-listings-title">
@@ -523,9 +510,6 @@ function AiInsightsCard({ insights, fraudScore }: { insights: string[]; fraudSco
             {insight}
           </p>
         ))}
-        <Badge variant={fraudScore !== null && fraudScore >= 70 ? "warning" : "trust"}>
-          {fraudScore === null ? "Public trust analysis" : `Risk score ${fraudScore}/100`}
-        </Badge>
       </CardContent>
     </Card>
   );
