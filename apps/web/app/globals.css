@@ -833,6 +833,11 @@ html:not(.dark) {
   --muted-foreground: 215 28% 18%;
 }
 
+html:not(.dark) .text-primary,
+html:not(.dark) .status-trust {
+  color: #0c3f66;
+}
+
 html:not(.dark) .ui-button-primary,
 html:not(.dark) .ui-button-trust,
 html:not(.dark) a.ui-button-trust,

@@ -3,8 +3,9 @@ import { env } from "@/lib/env.server";
 import { authorizeJobRequest } from "@/lib/security/secrets";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/server";
-import { centsToDollars, dollarsToCents } from "@/lib/payments/money";
+import { dollarsToCents } from "@/lib/payments/money";
 import { claimEscrowPayment } from "@/lib/payments/escrow";
+import { recordReconciledPayment } from "@/lib/payments/record-outcome";
 import { reconcileStuckPayment } from "@/lib/payments/webhook-guards";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ async function reconcile(request: Request) {
   const cutoff = new Date(Date.now() - STUCK_MS).toISOString();
   const { data: rows, error } = await supabase
     .from("escrow_payments")
-    .select("id,status,provider_payment_id,transaction_id,amount,currency")
+    .select("id,status,provider_payment_id,provider_charge_id,transaction_id,amount,seller_net_amount,platform_fee_amount,currency,metadata")
     .in("status", ["capturing", "releasing", "refunding"])
     .lt("updated_at", cutoff)
     .limit(50);
@@ -45,13 +46,8 @@ async function reconcile(request: Request) {
     if (!next || next === row.status) continue;
     const claimed = await claimEscrowPayment(supabase, row.id, row.status, next);
     if (!claimed) continue;
-    if (refundedCents > 0) {
-      await supabase.from("escrow_payments").update({ refunded_amount: centsToDollars(refundedCents) }).eq("id", row.id);
-    }
-    if (next === "held") await supabase.from("transactions").update({ status: "escrowed" }).eq("id", row.transaction_id).eq("status", "paid");
-    if (next === "released") await supabase.from("transactions").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", row.transaction_id).in("status", ["escrowed", "shipped", "delivered"]);
-    if (next === "refunded") await supabase.from("transactions").update({ status: "refunded" }).eq("id", row.transaction_id).in("status", ["paid", "escrowed", "shipped", "delivered", "disputed"]);
-    if (next === "cancelled") await supabase.from("transactions").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", row.transaction_id).in("status", ["pending_payment", "paid"]);
+    const transfer = transfers.data.find((item: { id?: string; reversed?: boolean | null }) => !item.reversed);
+    await recordReconciledPayment(supabase, { payment: row, next, refundedCents, transferId: transfer?.id ?? null });
     repaired += 1;
   }
 

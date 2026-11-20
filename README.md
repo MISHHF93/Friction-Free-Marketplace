@@ -144,7 +144,7 @@ npm run platform:sync   # Verify and sync Capacitor Android/iOS projects
 
 ## Vercel layout
 
-`vercel.json` lives at the repository root and runs `npm ci` and `npm run web:build` from that root. Set the Vercel project's Root Directory to the repository root, not `apps/web`. A root of `apps/web` would not see this file, and the old `cd ../..` commands only made sense if the file itself lived in `apps/web`.
+`vercel.json` lives at the repository root and runs `npm ci` and `npm run web:build` from that root. Set the Vercel project's Root Directory to the repository root, not `apps/web`. A root of `apps/web` would not see the root file. `apps/web/vercel.json` repeats the same cron paths so a project rooted at `apps/web` still schedules reconcile and auto-release.
 
 Scheduled routes are Vercel Cron GET requests. Set `CRON_SECRET` (sent as `Authorization: Bearer`) or the route's own bearer secret (`SCHEDULED_JOB_SECRET` for notifications, offer expiry, and `/api/payments/reconcile`, `SEARCH_SYNC_SECRET` for search sync). A missing secret returns 503. Reconcile repairs escrow rows stuck in capturing, releasing, or refunding for more than 10 minutes.
 

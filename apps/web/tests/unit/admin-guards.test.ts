@@ -16,16 +16,17 @@ describe("admin row actions", () => {
 });
 
 describe("account restriction hierarchy", () => {
-  const admin = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", role: "admin", metadata: {} };
-  const support = { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", role: "admin", metadata: { admin_role: "support" } };
-  const buyer = { id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", role: "buyer", metadata: {} };
+  const admin = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", role: "admin", metadata: { admin_role: "support" } };
+  const otherAdmin = { id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", role: "admin", metadata: {} };
+  const buyer = { id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", role: "buyer", metadata: { admin_role: "super_admin" } };
+  const superAdmin = { id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", role: "super_admin", metadata: {} };
 
-  it("refuses self actions and targets at the same rank or higher", () => {
+  it("ranks only users.role and refuses self or equal ranks", () => {
     expect(canRestrictUser(admin, buyer)).toBe(true);
     expect(canRestrictUser(admin, admin)).toBe(false);
-    expect(canRestrictUser(support, admin)).toBe(false);
-    expect(canRestrictUser(admin, { ...admin, id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd" })).toBe(false);
-    expect(canRestrictUser(admin, support)).toBe(true);
+    expect(canRestrictUser(admin, otherAdmin)).toBe(false);
+    expect(canRestrictUser(superAdmin, admin)).toBe(true);
+    expect(canRestrictUser(buyer, admin)).toBe(false);
   });
 });
 
