@@ -88,22 +88,22 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <ConditionalHeaderSearch />
         </div>
       </header>
-      <main id="main-content" className="px-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))]" tabIndex={-1}>{children}</main>
+      {/* min-h keeps the footer below the fold on short pages, so it never fills the screen above the tab bar. */}
+      <main id="main-content" className="min-h-[100dvh] px-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))]" tabIndex={-1}>{children}</main>
       <MobileTabBar />
-      <footer className="border-t border-border bg-premium-dark px-4 pb-24 pt-6 text-white">
-        <div className="space-y-4">
-          <BrandLogo href="/" size="lg" tone="onDark" showTagline />
-          <p className="max-w-md text-sm leading-6 text-slate-300">{brandProfile.promise}</p>
+      <footer className="border-t border-border bg-secondary px-4 pb-24 pt-4 text-foreground">
+        <div className="space-y-3">
+          <BrandLogo href="/" size="sm" showTagline={false} />
           <nav aria-label="Footer navigation">
-            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-200">
+            <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm font-semibold">
               {footerLinks.map((link) => (
                 <li key={link.href}>
-                  <Link href={link.href} className="hover:text-white">{link.label}</Link>
+                  <Link href={link.href} className="hover:underline">{link.label}</Link>
                 </li>
               ))}
             </ul>
           </nav>
-          <p className="border-t border-white/10 pt-4 text-sm text-slate-300">© {new Date().getFullYear()} Friction-Free Marketplace. Built for safer local buying and selling.</p>
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Friction-Free Marketplace. {brandProfile.promise}</p>
         </div>
       </footer>
     </PhoneFrame>
