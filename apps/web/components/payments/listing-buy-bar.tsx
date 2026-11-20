@@ -23,7 +23,10 @@ export function ListingBuyBar({
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
           <p className="text-lg font-black">{formatMoney(amount, currency)}</p>
         </div>
-        <Button type="button" className="min-h-11" onClick={() => setOpen(true)}>Open checkout</Button>
+        <div className="flex gap-2">
+          <Button asChild type="button" variant="outline" className="min-h-11"><a href="#message-seller">Message</a></Button>
+          <Button type="button" className="min-h-11" onClick={() => setOpen(true)}>{label === "Accepted offer" ? "Pay offer" : "Buy"}</Button>
+        </div>
       </div>
       {open ? (
         <div className="fixed inset-0 z-40 bg-black/40">

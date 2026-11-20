@@ -93,7 +93,7 @@ test.describe("core marketplace flows", () => {
       });
     });
     await page.goto("/listings/verified-road-bike");
-    await page.getByRole("button", { name: "Open checkout" }).click();
+    await page.getByRole("button", { name: "Buy" }).click();
     await page.getByRole("button", { name: "Preview test authorization" }).click();
     await expect(page.getByText("txn_test_escrow")).toBeVisible();
     await expect(page.getByText(/no charge was made/i)).toBeVisible();

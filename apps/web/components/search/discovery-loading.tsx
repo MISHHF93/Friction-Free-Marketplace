@@ -21,7 +21,7 @@ export function DiscoveryLoadingSkeleton() {
         </div>
         <div className="space-y-6">
           <div className="h-16 animate-pulse rounded-3xl border border-border bg-card/80" />
-          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <div className="listing-grid grid gap-2">
             {Array.from({ length: 6 }).map((_, index) => (
               <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm" key={index}>
                 <div className="h-44 animate-pulse bg-secondary" />

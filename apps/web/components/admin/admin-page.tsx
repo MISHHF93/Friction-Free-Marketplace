@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ArrowRight, CheckCircle2, Database, LockKeyhole, MoreHorizontal, Route, SlidersHorizontal, Workflow } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, Database, LockKeyhole, Route, SlidersHorizontal, Workflow } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { adminLinks } from "@/lib/admin/navigation";
 import { can, permissionLabels, requireAdminPagePermission, rolePermissions, type AdminRole } from "@/lib/admin/permissions";
 import { adminMutationsFor } from "@/lib/admin/mutations";
+import { AdminRowActionMenu } from "@/components/admin/admin-row-actions";
 import { getLiveAdminPage } from "@/lib/admin/live-pages";
 import type { AdminPageConfig } from "@/lib/admin/platform";
 import { cn } from "@/lib/utils";
@@ -75,7 +76,9 @@ export function AdminFeaturePage({ config, adminRole }: { config: AdminPageConfi
                 <Button variant="outline">Export</Button>
               </div>
             </div>
-            <form className="grid gap-2 pt-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_11rem_11rem_auto]" aria-label={`${config.title} table filters`}>
+            <details className="pt-3">
+              <summary className="inline-flex min-h-11 cursor-pointer list-none items-center rounded-xl border border-border px-3 text-sm font-bold">Filters</summary>
+            <form className="mt-3 grid gap-2 sm:grid-cols-2" aria-label={`${config.title} table filters`}>
               <input className="form-control min-h-10" placeholder="Search users, listings, payments, or cases..." aria-label="Search admin table" />
               <select className="form-control min-h-10 font-semibold" aria-label="Filter by status">
                 <option>All statuses</option>
@@ -91,37 +94,24 @@ export function AdminFeaturePage({ config, adminRole }: { config: AdminPageConfi
                 <option>Medium</option>
                 <option>Low</option>
               </select>
-              <Button type="button" variant="surface" className="sm:col-span-2 xl:col-span-1">Filter</Button>
+              <Button type="button" variant="surface" className="min-h-11 sm:col-span-2">Filter</Button>
             </form>
+            </details>
           </CardHeader>
-          <CardContent className="table-scroll p-0">
-            <table className="table-base table-density-compact">
-              <thead>
-                <tr>
-                  {config.columns.map((column) => <th key={column.key}>{column.label}</th>)}
-                  <th>Risk</th>
-                  <th>Menu</th>
-                </tr>
-              </thead>
-              <tbody>
-                {config.rows.length === 0 ? (
-                  <tr>
-                    <td colSpan={config.columns.length + 2} className="px-4 py-8 text-sm text-muted-foreground">No records in this queue.</td>
-                  </tr>
-                ) : null}
-                {config.rows.map((row, index) => (
-                  <tr key={`${row.subject}-${index}`}>
-                    {config.columns.map((column) => (
-                      <td className="align-top" key={column.key}>
-                        {column.key === "subject" ? <SeverityBadge severity={row.severity} value={row[column.key]} /> : column.key === "status" ? <StatusBadge value={row[column.key]} severity={row.severity} /> : <span className="text-muted-foreground">{row[column.key]}</span>}
-                      </td>
-                    ))}
-                    <td className="align-top"><RiskScoreIndicator severity={row.severity} seed={index} score={row.score || row.trust} /></td>
-                    <td className="align-top"><AdminRowActionMenu subject={row.subject} primaryAction={row.action ?? config.primaryAction} mutable={adminMutationsFor(config.slug).length > 0} /></td>
-                  </tr>
+          <CardContent className="grid gap-3 p-4">
+            {config.rows.length === 0 ? <p className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">No records in this queue.</p> : null}
+            {config.rows.map((row, index) => (
+              <article key={`${row.subject}-${index}`} className="grid gap-2 rounded-2xl border border-border p-4">
+                {config.columns.map((column) => (
+                  <p key={column.key} className="text-sm">
+                    <span className="font-semibold">{column.label}: </span>
+                    {column.key === "subject" ? <SeverityBadge severity={row.severity} value={row[column.key]} /> : column.key === "status" ? <StatusBadge value={row[column.key]} severity={row.severity} /> : <span className="text-muted-foreground">{row[column.key]}</span>}
+                  </p>
                 ))}
-              </tbody>
-            </table>
+                <RiskScoreIndicator severity={row.severity} seed={index} score={row.score || row.trust} />
+                <AdminRowActionMenu subject={row.subject} primaryAction={row.action ?? config.primaryAction} mutable={adminMutationsFor(config.slug).length > 0} />
+              </article>
+            ))}
           </CardContent>
         </Card>
 
@@ -215,21 +205,3 @@ function RiskScoreIndicator({ severity, seed, score }: { severity?: string; seed
   );
 }
 
-function AdminRowActionMenu({ subject, primaryAction, mutable }: { subject: string; primaryAction: string; mutable: boolean }) {
-  const reason = mutable
-    ? "Use the admin API with the live record id. This menu does not invent a target."
-    : "This queue does not change marketplace records.";
-  return (
-    <details className="relative">
-      <summary className="inline-flex h-9 w-9 cursor-pointer list-none items-center justify-center rounded-xl border border-border bg-card shadow-xs hover:bg-secondary [&::-webkit-details-marker]:hidden" aria-label={`Open actions for ${subject}`}>
-        <MoreHorizontal className="h-4 w-4" />
-      </summary>
-      <div className="absolute right-0 z-30 mt-2 w-64 rounded-2xl border border-border bg-card p-2 shadow-soft">
-        <Button type="button" variant="ghost" size="sm" className="w-full justify-start" disabled>Assign owner</Button>
-        <Button type="button" variant="ghost" size="sm" className="w-full justify-start" disabled>Add internal note</Button>
-        <Button type="button" variant="ghost" size="sm" className="w-full justify-start" disabled title={reason}>{primaryAction}</Button>
-        <p className="px-3 py-2 text-xs leading-5 text-muted-foreground">{reason}</p>
-      </div>
-    </details>
-  );
-}

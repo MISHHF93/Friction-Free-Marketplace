@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const pages = ["/", "/search", "/listings/verified-road-bike", "/login"];
+const pages = ["/", "/browse", "/search", "/listings/verified-road-bike", "/login"];
 
 test.describe("phone layout", () => {
   test.use({ viewport: { width: 360, height: 800 } });
@@ -18,15 +18,23 @@ test.describe("phone layout", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     await page.screenshot({ path: "/opt/cursor/artifacts/mobile-home-390.png", fullPage: false });
+    await page.goto("/browse");
+    await page.screenshot({ path: "/opt/cursor/artifacts/mobile-browse-390.png", fullPage: false });
     await page.goto("/listings/verified-road-bike");
-    await page.getByRole("button", { name: "Open checkout" }).click();
-    await expect(page.getByRole("button", { name: "Preview test authorization" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Back to home" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
     await page.screenshot({ path: "/opt/cursor/artifacts/mobile-listing-390.png", fullPage: false });
-    await page.locator("#protected-checkout").scrollIntoViewIfNeeded();
+    await page.getByRole("button", { name: "Buy" }).click();
+    await expect(page.getByRole("button", { name: "Preview test authorization" })).toBeVisible();
     await page.screenshot({ path: "/opt/cursor/artifacts/mobile-checkout-390.png", fullPage: false });
     await page.context().addCookies([{ name: "ffm-e2e-user", value: "alice", url: "http://127.0.0.1:3001" }]);
     await page.goto("/dashboard/messages");
     await page.screenshot({ path: "/opt/cursor/artifacts/mobile-messages-390.png", fullPage: false });
+    await page.goto("/dashboard/purchases");
+    await page.screenshot({ path: "/opt/cursor/artifacts/mobile-orders-390.png", fullPage: false });
+    await page.context().clearCookies();
+    await page.context().addCookies([{ name: "ffm-e2e-user", value: "bob", url: "http://127.0.0.1:3001" }]);
+    await page.goto("/dashboard/listings/create");
+    await expect(page.getByRole("button", { name: "Photos", exact: true })).toBeVisible();
+    await page.screenshot({ path: "/opt/cursor/artifacts/mobile-sell-390.png", fullPage: false });
   });
 });

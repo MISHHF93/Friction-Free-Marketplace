@@ -1,4 +1,5 @@
 import type React from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Bell,
@@ -19,12 +20,12 @@ import {
   WalletCards,
   X
 } from "lucide-react";
+import { LoadMoreWhenVisible } from "@/components/search/load-more";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { RemoteImage } from "@/components/ui/remote-image";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { SaveSearchForm } from "@/components/saved-searches/save-search-form";
 import { getFavoriteListingIds } from "@/lib/saves/user-saves";
@@ -131,7 +132,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
       <SearchHeader mode={mode} params={params} resultsTotal={results.total} source={results.source} priceStats={priceStats} />
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(15rem,17rem)_minmax(0,1fr)] xl:gap-6 2xl:grid-cols-[18rem_minmax(0,1fr)]">
-        <aside className="hidden space-y-4 lg:sticky lg:top-24 lg:block lg:h-fit">
+        <aside className="hidden">
           <FilterSidebar params={params} modeHref={modeHref} trustStats={trustStats} />
           <FacetPanel facets={results.facets} currentHref={currentHref.toString()} />
           <SavedSearchPanel params={params} userSignedIn={Boolean(user)} modeHref={modeHref} />
@@ -140,7 +141,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
         <div className="space-y-6">
           <div className="grid gap-3 rounded-3xl border border-border/80 bg-white/80 p-3 shadow-md backdrop-blur md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
             <div className="flex flex-wrap gap-2">
-              <MobileFilterDrawer params={params} modeHref={modeHref} trustStats={trustStats} />
+              <MobileFilterDrawer params={params} modeHref={modeHref} trustStats={trustStats} resultCount={results.total} />
               <ListModeIndicator />
               <SavedSearchQuickAction params={params} userSignedIn={Boolean(user)} modeHref={modeHref} />
             </div>
@@ -151,7 +152,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
 
           {results.listings.length ? (
             <>
-              <div className="grid gap-4 md:grid-cols-2 xl:gap-5 2xl:grid-cols-3" aria-label="Listing grid">
+              <div className="listing-grid grid gap-2" aria-label="Listing grid">
                 {results.listings.map((listing, index) => <DiscoveryListingCard key={listing.id} listing={listing} isFavorited={favoriteIds.has(listing.id)} featured={index === 0 && currentPage === 1} />)}
               </div>
               <PaginationControls currentPage={currentPage} totalPages={totalPages} total={results.total} params={params} modeHref={modeHref} />
@@ -245,8 +246,8 @@ function FilterFields({ params, trustStats }: { params: DiscoverySearchParams; t
         <Input name="radiusMiles" defaultValue={params.radiusMiles} type="number" min="1" placeholder="25 miles" />
       </label>
       <div className="grid grid-cols-2 gap-3">
-        <label className="grid gap-2 text-sm font-semibold">Min price<Input name="minPrice" defaultValue={params.minPrice} type="number" min="0" /></label>
-        <label className="grid gap-2 text-sm font-semibold">Max price<Input name="maxPrice" defaultValue={params.maxPrice} type="number" min="0" /></label>
+        <label className="grid gap-2 text-sm font-semibold">Min price<Input name="minPrice" defaultValue={params.minPrice} type="number" inputMode="decimal" min="0" /></label>
+        <label className="grid gap-2 text-sm font-semibold">Max price<Input name="maxPrice" defaultValue={params.maxPrice} type="number" inputMode="decimal" min="0" /></label>
       </div>
       <label className="grid gap-2 text-sm font-semibold">Condition
         <select name="condition" defaultValue={params.condition?.join(",") ?? ""} className="h-11 rounded-xl border border-input bg-card px-3 text-sm shadow-xs">
@@ -278,25 +279,27 @@ function FilterFields({ params, trustStats }: { params: DiscoverySearchParams; t
   );
 }
 
-function MobileFilterDrawer({ params, modeHref, trustStats }: { params: DiscoverySearchParams; modeHref: string; trustStats?: { min: number; max: number } }) {
+function MobileFilterDrawer({ params, modeHref, trustStats, resultCount }: { params: DiscoverySearchParams; modeHref: string; trustStats?: { min: number; max: number }; resultCount: number }) {
   return (
-    <details className="group relative lg:hidden">
-      <summary className="inline-flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm [&::-webkit-details-marker]:hidden">
+    <details className="group relative">
+      <summary className="inline-flex h-11 min-w-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm [&::-webkit-details-marker]:hidden">
         <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
         Filters
       </summary>
-      <div className="fixed inset-0 z-50 bg-slate-950/40 p-2 backdrop-blur-sm sm:p-3">
-        <div className="ml-auto h-full w-full max-w-md overflow-y-auto rounded-3xl border border-border bg-card p-4 shadow-soft motion-mobile-panel">
-          <div className="flex items-center justify-between gap-3">
+      <div className="fixed inset-0 z-50 bg-background">
+        <form className="flex h-full flex-col" action={modeHref}>
+          <div className="flex items-center justify-between gap-3 border-b border-border p-4 pt-[calc(1rem+env(safe-area-inset-top))]">
             <h2 className="text-xl font-black">Filter listings</h2>
             <span className="rounded-xl bg-secondary p-2 text-muted-foreground"><X className="h-4 w-4" aria-hidden="true" /></span>
           </div>
-          <form className="mt-5 space-y-4" action={modeHref}>
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
             {hiddenInputs(params, ["category", "location", "radiusMiles", "minPrice", "maxPrice", "condition", "minSellerTrust", "verifiedOnly", "paymentProtection", "fulfillment", "page"])}
             <FilterFields params={params} trustStats={trustStats} />
-            <Button className="w-full" variant="trust">Apply filters</Button>
-          </form>
-        </div>
+          </div>
+          <div className="sticky bottom-0 border-t border-border bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <Button className="min-h-11 w-full" variant="trust">Apply ({resultCount} results)</Button>
+          </div>
+        </form>
       </div>
     </details>
   );
@@ -369,7 +372,7 @@ function DiscoveryListingCard({ listing, isFavorited, featured = false }: { list
   return (
     <Card className={cn("group overflow-hidden shadow-md transition hover:-translate-y-1 hover:shadow-soft", featured && "border-premium bg-premium-soft/60")}>
       <div className="relative">
-            {listing.image_url ? <RemoteImage src={listing.image_url} alt={listing.title} className="h-40 w-full object-cover transition duration-300 group-hover:scale-105 sm:h-44" /> : <div className="flex h-40 items-center justify-center bg-secondary sm:h-44"><PackageOpen className="h-10 w-10 text-primary" aria-hidden="true" /></div>}
+            {listing.image_url ? <Image src={listing.image_url} alt={listing.title} width={240} height={180} sizes="(max-width: 480px) 50vw" unoptimized className="h-40 w-full object-cover sm:h-44" /> : <div className="flex h-40 items-center justify-center bg-secondary sm:h-44"><PackageOpen className="h-10 w-10 text-primary" aria-hidden="true" /></div>}
         {featured ? <Badge variant="premium" className="absolute left-3 top-3 shadow-md">Top match</Badge> : null}
       </div>
       <CardContent className="space-y-4 p-4 sm:p-5">
@@ -473,12 +476,13 @@ function PaginationControls({ currentPage, totalPages, total, params, modeHref }
   return (
     <nav className="flex flex-col gap-3 rounded-3xl border border-border bg-card/90 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between" aria-label="Search results pagination">
       <p className="text-sm text-muted-foreground">Page {currentPage} of {totalPages} · {total.toLocaleString()} results</p>
+      <LoadMoreWhenVisible href={next} />
       <div className="grid grid-cols-2 gap-2 sm:flex">
         <Button asChild={Boolean(previous)} disabled={!previous} variant="outline">
           {previous ? <Link href={previous}><ChevronLeft className="h-4 w-4" aria-hidden="true" /> Previous</Link> : <span><ChevronLeft className="h-4 w-4" aria-hidden="true" /> Previous</span>}
         </Button>
-        <Button asChild={Boolean(next)} disabled={!next} variant="outline">
-          {next ? <Link href={next}>Next <ChevronRight className="h-4 w-4" aria-hidden="true" /></Link> : <span>Next <ChevronRight className="h-4 w-4" aria-hidden="true" /></span>}
+        <Button asChild={Boolean(next)} disabled={!next} variant="trust">
+          {next ? <Link href={next}>Load more <ChevronRight className="h-4 w-4" aria-hidden="true" /></Link> : <span>Load more <ChevronRight className="h-4 w-4" aria-hidden="true" /></span>}
         </Button>
       </div>
     </nav>
