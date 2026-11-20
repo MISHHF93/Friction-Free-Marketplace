@@ -1,0 +1,79 @@
+import { dollarsToCents } from "@/lib/payments/money";
+import { buildReleaseJournal, postLedgerJournal } from "@/lib/financial/ledger";
+import { claimEscrowPayment, claimTransactionStatus, escrowActionKey } from "@/lib/payments/escrow";
+import { prepareEscrowAction } from "@/lib/payments/resume";
+import { recordTransactionEvent } from "@/lib/payments/audit";
+import { getStripe } from "@/lib/stripe/server";
+
+export async function releaseHeldEscrow(supabase: any, input: {
+  transaction: Record<string, any>;
+  payment: Record<string, any>;
+  sellerAccountId: string;
+  actorId?: string | null;
+  transferCents?: number;
+}) {
+  const { transaction, payment, sellerAccountId } = input;
+  if (payment.status === "released") return { status: "completed" as const, alreadyReleased: true };
+  const seller = await supabase.from("users").select("status").eq("id", transaction.seller_id).maybeSingle();
+  if (seller.data && ["suspended", "banned"].includes(seller.data.status)) {
+    return { error: "Payout is frozen while the seller account is restricted.", statusCode: 409 as const };
+  }
+  const prepared = await prepareEscrowAction(supabase, payment, "held", "releasing");
+  if (!prepared.payment || prepared.payment.status !== "releasing") {
+    return { error: "This release is already in progress.", statusCode: 409 as const };
+  }
+  const amount = input.transferCents ?? dollarsToCents(Number(payment.seller_net_amount));
+  let transfer;
+  try {
+    transfer = await getStripe().transfers.create({
+      amount,
+      currency: String(payment.currency).toLowerCase(),
+      destination: sellerAccountId,
+      source_transaction: payment.provider_charge_id ?? undefined,
+      transfer_group: `transaction_${transaction.id}`,
+      metadata: { transaction_id: transaction.id, escrow_payment_id: payment.id }
+    }, { idempotencyKey: escrowActionKey("release", transaction.id, payment.id, input.transferCents ? `partial:${amount}` : "") });
+  } catch (error) {
+    await claimEscrowPayment(supabase, payment.id, "releasing", "held");
+    return { error: error instanceof Error ? error.message : "Stripe release failed.", statusCode: 502 as const };
+  }
+  await supabase.from("payouts").insert({
+    transaction_id: transaction.id,
+    seller_id: transaction.seller_id,
+    provider: "stripe",
+    provider_transfer_id: transfer.id,
+    status: "paid",
+    amount: Number(payment.seller_net_amount),
+    currency: payment.currency,
+    paid_at: new Date().toISOString(),
+    metadata: { transfer_group: transfer.transfer_group, transfer_cents: amount }
+  });
+  const releasedPayment = await supabase.from("escrow_payments").update({ status: "released", released_at: new Date().toISOString() }).eq("id", payment.id).eq("status", "releasing").select("id");
+  if (releasedPayment.error || !releasedPayment.data?.length) return { error: "Release could not be recorded.", statusCode: 409 as const };
+  await claimTransactionStatus(supabase, transaction.id, transaction.status, "completed", { completed_at: new Date().toISOString() });
+  if (transaction.listing_id) await supabase.from("listings").update({ status: "sold", quantity: 0 }).eq("id", transaction.listing_id);
+  await postLedgerJournal(supabase, buildReleaseJournal({
+    transactionId: transaction.id,
+    totalAmount: Number(payment.amount),
+    sellerNetAmount: Number(payment.seller_net_amount),
+    platformFeeAmount: Number(payment.platform_fee_amount),
+    currency: payment.currency,
+    buyerId: transaction.buyer_id,
+    sellerId: transaction.seller_id,
+    providerPaymentId: payment.provider_payment_id,
+    providerChargeId: payment.provider_charge_id,
+    providerTransferId: transfer.id
+  }));
+  await recordTransactionEvent(supabase, {
+    transaction_id: transaction.id,
+    actor_id: input.actorId ?? null,
+    type: "seller_payout_paid",
+    from_status: transaction.status,
+    to_status: "completed",
+    provider_object_id: transfer.id,
+    amount: Number(payment.seller_net_amount),
+    currency: payment.currency,
+    message: "Held funds released to the seller connected account."
+  });
+  return { status: "completed" as const, transferId: transfer.id as string };
+}

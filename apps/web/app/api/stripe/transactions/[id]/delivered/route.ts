@@ -12,8 +12,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   const { id } = await params;
   const supabase = createAdminClient() as any;
   const { data: transaction } = await supabase.from("transactions").select("id,seller_id,buyer_id,status").eq("id", id).maybeSingle();
-  if (!transaction || ![transaction.buyer_id, transaction.seller_id].includes(auth.user.id)) {
-    return NextResponse.json({ error: "Transaction not found." }, { status: 404 });
+  if (!transaction || transaction.buyer_id !== auth.user.id) {
+    return NextResponse.json({ error: "Only the buyer can confirm delivery." }, { status: transaction ? 403 : 404 });
   }
   if (transaction.status !== "shipped") return NextResponse.json({ error: "Only shipped orders can be marked delivered." }, { status: 409 });
 

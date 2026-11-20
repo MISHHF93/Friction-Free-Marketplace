@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 
 export const destructiveAdminActions = new Set(["suspend", "ban", "reject", "confirm"]);
 
-export function adminActionRequest(action: string, targetId: string, reason: string) {
-  return { action, target_id: targetId, reason };
+export function adminActionRequest(action: string, targetId: string, reason: string, outcome?: string) {
+  return outcome ? { action, target_id: targetId, reason, outcome } : { action, target_id: targetId, reason };
 }
 
 export function adminActionControls(actions: string[]) {
@@ -22,6 +22,7 @@ export function AdminRowActionMenu({ slug, targetId, subject, actions }: { slug:
   const [reason, setReason] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
+  const [outcome, setOutcome] = useState<"refund_buyer" | "release_seller" | "split">("release_seller");
   const reasonRef = useRef<HTMLTextAreaElement>(null);
   const ready = reason.trim().length >= 3 && Boolean(targetId) && actions.length > 0;
   const controls = adminActionControls(actions);
@@ -35,7 +36,7 @@ export function AdminRowActionMenu({ slug, targetId, subject, actions }: { slug:
     const response = await fetch(`/api/admin/${slug}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(adminActionRequest(action, targetId, reason.trim()))
+      body: JSON.stringify(adminActionRequest(action, targetId, reason.trim(), slug === "disputes" && action === "close" ? outcome : undefined))
     });
     const body = await response.json().catch(() => ({}));
     setPending(null);
@@ -54,6 +55,16 @@ export function AdminRowActionMenu({ slug, targetId, subject, actions }: { slug:
           Reason
           <textarea ref={reasonRef} id={`reason-${targetId ?? subject}`} required minLength={3} value={reason} onChange={(event) => setReason(event.target.value)} className="min-h-24 rounded-xl border border-border px-3 py-2" placeholder="Why is this action needed?" />
         </label>
+        {slug === "disputes" ? (
+          <label className="grid gap-1 text-sm font-semibold">
+            Close outcome
+            <select className="min-h-11 rounded-xl border border-border px-3" value={outcome} onChange={(event) => setOutcome(event.target.value as typeof outcome)}>
+              <option value="refund_buyer">Refund buyer</option>
+              <option value="release_seller">Release to seller</option>
+              <option value="split">Split the held funds</option>
+            </select>
+          </label>
+        ) : null}
         {controls.map((control) => (
           <Button key={control.action} type="button" className="min-h-11" disabled={!ready} title={!ready ? "Enter a reason of at least 3 characters." : undefined} onClick={() => void send(control.action)}>
             {pending === control.action ? `Confirm ${control.label}` : control.label}
