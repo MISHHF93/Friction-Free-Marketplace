@@ -1,4 +1,4 @@
-const CACHE_NAME = "ffm-public-v1";
+const CACHE_NAME = "ffm-public-v2";
 const PUBLIC_ASSETS = ["/offline", "/icon.svg", "/icon-1024.png"];
 
 self.addEventListener("install", (event) => {
@@ -26,10 +26,32 @@ function isPublicNavigation(request, url) {
     !url.pathname.startsWith("/auth");
 }
 
+function isImmutableStaticAsset(url) {
+  if (url.pathname.startsWith("/_next/static/")) return true;
+  if (url.pathname.startsWith("/icons/") || url.pathname.startsWith("/brand/")) return true;
+  return /\/(icon-1024\.png|icon\.svg|apple-touch-icon\.png|favicon(?:-\d+)?\.(?:png|ico))$/.test(url.pathname);
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
-  if (request.method !== "GET" || url.origin !== self.location.origin || !isPublicNavigation(request, url)) return;
+  if (request.method !== "GET" || url.origin !== self.location.origin) return;
+
+  if (isImmutableStaticAsset(url)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      const response = await fetch(request);
+      if (response.ok) {
+        await cache.put(request, response.clone());
+      }
+      return response;
+    })());
+    return;
+  }
+
+  if (!isPublicNavigation(request, url)) return;
 
   event.respondWith(
     fetch(request).catch(async () => (await caches.match(request)) ?? (await caches.match("/offline")))

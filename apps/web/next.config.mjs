@@ -49,7 +49,9 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "*.supabase.co" },
       { protocol: "http", hostname: "127.0.0.1", port: "54321", pathname: "/storage/**" },
-      { protocol: "http", hostname: "localhost", port: "54321", pathname: "/storage/**" }
+      { protocol: "http", hostname: "localhost", port: "54321", pathname: "/storage/**" },
+      { protocol: "http", hostname: "127.0.0.1", port: "55321", pathname: "/storage/**" },
+      { protocol: "http", hostname: "localhost", port: "55321", pathname: "/storage/**" }
     ]
   },
   ...(useStandaloneOutput ? { output: "standalone" } : {}),
@@ -59,7 +61,19 @@ const nextConfig = {
   ...(process.env.FFM_HIDE_DEV_INDICATOR === "true" ? { devIndicators: false } : {}),
   allowedDevOrigins: ["127.0.0.1"],
   async headers() {
+    const staticAssetCache = [
+      { key: "Cache-Control", value: "public, max-age=31536000, immutable" }
+    ];
     return [
+      { source: "/_next/static/:path*", headers: staticAssetCache },
+      { source: "/icons/:path*", headers: staticAssetCache },
+      { source: "/brand/:path*", headers: staticAssetCache },
+      { source: "/icon-1024.png", headers: staticAssetCache },
+      { source: "/icon.svg", headers: staticAssetCache },
+      { source: "/apple-touch-icon.png", headers: staticAssetCache },
+      { source: "/favicon.png", headers: staticAssetCache },
+      { source: "/favicon.ico", headers: staticAssetCache },
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "public, max-age=0, must-revalidate" }] },
       {
         source: "/:path*",
         headers: securityHeaders
