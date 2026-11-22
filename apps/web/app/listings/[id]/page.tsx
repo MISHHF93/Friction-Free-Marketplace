@@ -43,6 +43,7 @@ const ListingBuyBar = nextDynamic(() => import("@/components/payments/listing-bu
 const StartConversationCard = nextDynamic(() => import("@/components/messaging/start-conversation-card").then((mod) => mod.StartConversationCard));
 const MakeOfferSheet = nextDynamic(() => import("@/components/offers/make-offer-sheet").then((mod) => mod.MakeOfferSheet));
 import { PriceDisplay, TrustBadge } from "@/components/marketplace-design-system";
+import { AdSlot } from "@/components/ads/ad-slot";
 import { PublicListingGrid } from "@/components/public-listing-grid";
 import { getFeaturedListings, getListingById, getPublicListingParams } from "@/lib/public-marketplace";
 import { getFavoriteListingIds } from "@/lib/saves/user-saves";
@@ -421,6 +422,8 @@ export default async function ListingDetailPage({ params, searchParams }: { para
               <SafePickupCard pickupAvailable={listing.pickup_available} shipsTo={listing.ships_to} location={listing.location_label} />
               </div>
           </details>
+
+          <AdSlot placement="listing_detail_below" categorySlug={listing.category_slug} belowFold />
 
           {recommendations.length ? (
             <section className="space-y-5" aria-labelledby="similar-listings-title">

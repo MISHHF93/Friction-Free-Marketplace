@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getFeaturedListings, getPublicCategories } from "@/lib/public-marketplace";
 import { NoncedJsonLd } from "@/components/security/nonce-script";
 import { marketplaceJsonLd } from "@/lib/public-site";
+import { AdSlot } from "@/components/ads/ad-slot";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,8 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <AdSlot placement="home_top_banner" belowFold={false} className="app-container" />
+
       {categoryResult.categories.length ? (
         <section className="app-container section-y">
           <div className="mb-6">
@@ -78,6 +81,8 @@ export default async function HomePage() {
           </div>
         </section>
       ) : null}
+
+      <AdSlot placement="home_inline" belowFold className="app-container" />
 
       <section className="app-container section-y">
         <div className="mb-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">

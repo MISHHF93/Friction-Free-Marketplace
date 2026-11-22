@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PublicListingGrid } from "@/components/public-listing-grid";
 import { getCategoryPage, getPublicCategories } from "@/lib/public-marketplace";
+import { AdSlot } from "@/components/ads/ad-slot";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           <Button asChild variant="outline"><Link href="/search">Search all listings <ArrowRight className="h-4 w-4" /></Link></Button>
         </div>
       </div>
+
+      <AdSlot placement="category_top" categorySlug={category.slug} belowFold={false} className="mt-8" />
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[260px_1fr]">
         <aside className="space-y-3 lg:sticky lg:top-24 lg:h-fit">

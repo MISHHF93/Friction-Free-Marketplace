@@ -55,16 +55,16 @@ export default defineConfig({
       },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"], launchOptions: chromiumLaunch } },
-    { name: "pixel-7", use: { ...devices["Pixel 7"], deviceScaleFactor: 2, launchOptions: chromiumLaunch }, testMatch: /mobile-layout\.spec\.ts|core-flows\.spec\.ts|a11y\.spec\.ts|money-actions\.spec\.ts/ },
+    { name: "pixel-7", use: { ...devices["Pixel 7"], deviceScaleFactor: 2, launchOptions: chromiumLaunch }, testMatch: /mobile-layout\.spec\.ts|core-flows\.spec\.ts|a11y\.spec\.ts|money-actions\.spec\.ts|ads\.spec\.ts/ },
     {
       name: "iphone-14",
       use: { ...devices["iPhone 14"], browserName: "chromium", defaultBrowserType: "chromium", launchOptions: chromiumLaunch },
-      testMatch: /mobile-layout\.spec\.ts|core-flows\.spec\.ts|a11y\.spec\.ts|money-actions\.spec\.ts/
+      testMatch: /mobile-layout\.spec\.ts|core-flows\.spec\.ts|a11y\.spec\.ts|money-actions\.spec\.ts|ads\.spec\.ts/
     },
     {
       name: "iphone-webkit",
       use: { ...devices["iPhone 14"], browserName: "webkit", defaultBrowserType: "webkit" },
-      testMatch: /a11y\.spec\.ts|money-actions\.spec\.ts/
+      testMatch: /a11y\.spec\.ts|money-actions\.spec\.ts|ads\.spec\.ts/
     }
   ]
 });

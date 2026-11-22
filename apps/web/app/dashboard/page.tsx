@@ -7,6 +7,7 @@ import { MessageSquare, Search, Tags } from "lucide-react";
 import { DashboardListItem, DashboardSectionCard, DashboardShell } from "@/components/dashboard-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AdSlot } from "@/components/ads/ad-slot";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -129,6 +130,7 @@ export default async function DashboardPage() {
         </>
       }
     >
+      <AdSlot placement="dashboard_card" belowFold />
       {hasActivity ? (
         <DashboardSectionCard icon={MessageSquare} title="Needs your attention" description="Unread messages, pending offers, and orders that still need a next step.">
           {unreadMessages ? (

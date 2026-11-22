@@ -20,6 +20,7 @@ export const adminNavigationLinks: AdminNavigationLink[] = [
   { href: "/admin/payouts", label: "Payouts", description: "Seller payables and transfers", permission: "payments.monitor" },
   { href: "/admin/refunds", label: "Refunds", description: "Refund rate and reversals", permission: "payments.monitor" },
   { href: "/admin/reconciliation", label: "Reconciliation", description: "Ledger close readiness", permission: "analytics.revenue" },
+  { href: "/admin/ads", label: "Ads", description: "Sponsored placements and campaign stats", permission: "ads.manage" },
   { href: "/admin/audit-logs", label: "Audit logs", description: "Sensitive action history", permission: "audit.read" },
   { href: "/admin/settings", label: "Settings", description: "Console policy and approval controls", permission: "workflows.manage" }
 ];

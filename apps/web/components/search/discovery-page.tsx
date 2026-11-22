@@ -28,6 +28,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { SaveSearchForm } from "@/components/saved-searches/save-search-form";
+import { AdSlot } from "@/components/ads/ad-slot";
+import { SEARCH_INLINE_EVERY } from "@/lib/ads/placements";
 import { getPublicCategories } from "@/lib/public-marketplace";
 import { getFavoriteListingIds } from "@/lib/saves/user-saves";
 import { searchMarketplace } from "@/lib/search/discovery";
@@ -155,7 +157,13 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
           {results.listings.length ? (
             <>
               <div className="listing-grid grid gap-2" aria-label="Listing grid">
-                {results.listings.map((listing, index) => <DiscoveryListingCard key={listing.id} listing={listing} isFavorited={favoriteIds.has(listing.id)} featured={index === 0 && currentPage === 1} />)}
+                {results.listings.flatMap((listing, index) => {
+                  const items = [<DiscoveryListingCard key={listing.id} listing={listing} isFavorited={favoriteIds.has(listing.id)} featured={index === 0 && currentPage === 1} />];
+                  if ((index + 1) % SEARCH_INLINE_EVERY === 0) {
+                    items.push(<AdSlot key={`ad-${listing.id}`} placement="search_inline" categorySlug={params.category} belowFold />);
+                  }
+                  return items;
+                })}
               </div>
               <PaginationControls currentPage={currentPage} totalPages={totalPages} total={results.total} params={params} modeHref={modeHref} />
             </>
