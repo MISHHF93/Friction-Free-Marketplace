@@ -6,19 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { RemoteImage } from "@/components/ui/remote-image";
 import { getMediaViewerSurfaceConfig, type MediaViewerSurface } from "@/components/media/media-viewer-config";
+import type { MediaViewerItem } from "@/components/media/media-viewer-types";
 import { cn } from "@/lib/utils";
 
-export type MediaViewerItem = {
-  id: string;
-  src: string;
-  type: "image" | "video" | "document" | "unknown";
-  title: string;
-  alt?: string;
-  contentType?: string | null;
-  byteSize?: number | null;
-  poster?: string | null;
-  createdAt?: string | null;
-};
+export type { MediaViewerItem } from "@/components/media/media-viewer-types";
 
 type MediaViewerProps = {
   items: MediaViewerItem[];
@@ -28,6 +19,7 @@ type MediaViewerProps = {
   thumbnailClassName?: string;
   mode?: "gallery" | "button" | "attachment";
   surface?: MediaViewerSurface;
+  startOpen?: boolean;
 };
 
 function formatBytes(value?: number | null) {
@@ -91,10 +83,10 @@ function GalleryImage({ src, alt, onPrevious, onNext }: { src: string; alt: stri
   );
 }
 
-export function MediaViewer({ items, initialIndex = 0, triggerLabel = "Open media viewer", triggerClassName, thumbnailClassName, mode = "button", surface = "listingGallery" }: MediaViewerProps) {
+export function MediaViewer({ items, initialIndex = 0, triggerLabel = "Open media viewer", triggerClassName, thumbnailClassName, mode = "button", surface = "listingGallery", startOpen = false }: MediaViewerProps) {
   const surfaceConfig = getMediaViewerSurfaceConfig(surface);
   const availableItems = useMemo(() => items.filter((item) => item.src), [items]);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(startOpen);
   const [activeIndex, setActiveIndex] = useState(Math.min(initialIndex, Math.max(availableItems.length - 1, 0)));
   const [isPlaying, setIsPlaying] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);

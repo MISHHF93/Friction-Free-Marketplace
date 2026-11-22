@@ -1,4 +1,4 @@
-import type { MediaViewerItem } from "@/components/media/media-viewer";
+import type { MediaViewerItem } from "@/components/media/media-viewer-types";
 
 export type MediaViewerSurface = "listingGallery" | "messageAttachment";
 

@@ -26,19 +26,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MediaViewer, type MediaViewerItem } from "@/components/media/media-viewer";
+import nextDynamic from "next/dynamic";
+import { MediaViewer } from "@/components/media/media-viewer-lazy";
+import type { MediaViewerItem } from "@/components/media/media-viewer-types";
 import { createClient } from "@/lib/supabase/server";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
-import { ShareListingButton } from "@/components/listings/share-listing-button";
-import { CheckoutCard } from "@/components/payments/checkout-card";
 import { isDemoMarketplaceDataEnabled } from "@/lib/marketplace/demo-mode";
-import { ListingBuyBar } from "@/components/payments/listing-buy-bar";
 import { StripeJsScript } from "@/components/security/nonce-script";
 import { quoteCheckoutAmounts } from "@/lib/payments/quote";
 import { normalizeCurrency } from "@/lib/payments/money";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { StartConversationCard } from "@/components/messaging/start-conversation-card";
-import { MakeOfferSheet } from "@/components/offers/make-offer-sheet";
+
+const ShareListingButton = nextDynamic(() => import("@/components/listings/share-listing-button").then((mod) => mod.ShareListingButton));
+const CheckoutCard = nextDynamic(() => import("@/components/payments/checkout-card").then((mod) => mod.CheckoutCard));
+const ListingBuyBar = nextDynamic(() => import("@/components/payments/listing-buy-bar").then((mod) => mod.ListingBuyBar));
+const StartConversationCard = nextDynamic(() => import("@/components/messaging/start-conversation-card").then((mod) => mod.StartConversationCard));
+const MakeOfferSheet = nextDynamic(() => import("@/components/offers/make-offer-sheet").then((mod) => mod.MakeOfferSheet));
 import { PriceDisplay, TrustBadge } from "@/components/marketplace-design-system";
 import { PublicListingGrid } from "@/components/public-listing-grid";
 import { getFeaturedListings, getListingById, getPublicListingParams } from "@/lib/public-marketplace";
