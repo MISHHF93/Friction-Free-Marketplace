@@ -163,3 +163,9 @@ Checked on this branch before the pull request. The host still runs the suite ag
 - Two new migrations: `20261120000000_r10_account_deletion_open_order_guard.sql` (deletion refused while orders are open) and `20261120010000_r10_moderation_and_member_enforcement.sql` (admin holds sellers cannot undo, suspended or banned members cannot write, open orders block sold/archive, offers close with the listing, one admin listing-decision path). Apply with `supabase db push` after a backup.
 - Database checks for these guards: `supabase/tests/r10_lifecycle.sql` (local database only; it rolls back).
 - Sellers must have payouts active before a listing can be published.
+
+## r11 lifecycle and performance (local, not yet deployed)
+
+- No new Vercel cron. `/api/payments/expire-checkouts` (every 30 minutes, already in `vercel.json`) now also reminds sellers 24 hours before the acceptance deadline and auto-cancels uncaptured `paid` authorizations at 72 hours, or sooner if Stripe's `capture_before` is earlier. Open disputes are left alone. It uses the same `CRON_SECRET` / `SCHEDULED_JOB_SECRET`.
+- Sales shows "Accept by {date}" on authorized orders. The "new order, accept by" notice is sent when payment is authorized, not when checkout first opens.
+- Migration `20261122000000_r11_drop_duplicate_notification_triggers.sql` removes the duplicate message and offer notification triggers. Apply with `supabase db push` after a backup.

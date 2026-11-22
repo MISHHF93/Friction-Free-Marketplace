@@ -9,7 +9,6 @@ import { centsToDollars, normalizeCurrency } from "@/lib/payments/money";
 import { openCheckoutStatuses } from "@/lib/payments/open-checkout";
 import { clientChargesMatchQuote, quoteCheckoutAmounts } from "@/lib/payments/quote";
 import { checkoutStripeIdempotencyKey, parseIdempotencyKey } from "@/lib/payments/idempotency";
-import { enqueueTemplateNotification } from "@/lib/notifications/service";
 import { getStripe } from "@/lib/stripe/server";
 import { isTrustedMutationOrigin } from "@/lib/security/request-origin";
 
@@ -249,23 +248,6 @@ export async function POST(request: Request) {
     currency,
     message: "Manual-capture PaymentIntent created. Funds will be authorized before capture."
   });
-
-  await Promise.all([
-    enqueueTemplateNotification({
-      userId: auth.user.id,
-      template: "payment_authorized",
-      input: { listingTitle: listing.title, amount: centsToDollars(totalCents), currency: currency.toUpperCase(), actionUrl: "/dashboard/purchases" },
-      payload: { transaction_id: transaction.id, listing_id: listing.id, payment_intent_id: paymentIntent.id },
-      supabase
-    }),
-    enqueueTemplateNotification({
-      userId: listing.seller_id,
-      template: "payment_authorized",
-      input: { listingTitle: listing.title, amount: centsToDollars(totalCents), currency: currency.toUpperCase(), actionUrl: "/dashboard/sales" },
-      payload: { transaction_id: transaction.id, listing_id: listing.id, payment_intent_id: paymentIntent.id },
-      supabase
-    })
-  ]);
 
   return NextResponse.json({
     clientSecret: paymentIntent.client_secret,

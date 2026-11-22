@@ -25,10 +25,16 @@ describe("order lifecycle notifications", () => {
     expect(renderNotificationTemplate("dispute_resolved", { listingTitle: "Desk", reason: "refund" }).topic).toBe("disputes");
   });
 
-  it("does not claim a payment is authorized when checkout only started", () => {
-    const rendered = renderNotificationTemplate("payment_authorized", { listingTitle: "Desk", amount: 10, currency: "USD" });
-    expect(rendered.title).toBe("Checkout started");
-    expect(rendered.body).toContain("Nothing is charged yet");
+  it("tells the seller when to accept an authorized order, and does not call it checkout started", () => {
+    const authorized = renderNotificationTemplate("payment_authorized", { listingTitle: "Desk", amount: 10, currency: "USD", deadline: "Nov 25, 2026, 6:00 PM" });
+    expect(authorized.title).toBe("Payment authorized");
+    expect(authorized.body).toContain("Nov 25, 2026, 6:00 PM");
+    expect(authorized.body).not.toContain("Checkout started");
+    const waiting = renderNotificationTemplate("order_awaiting_acceptance", { listingTitle: "Desk", amount: 10, currency: "USD", deadline: "Nov 25, 2026, 6:00 PM" });
+    expect(waiting.title).toBe("New order on Desk");
+    expect(waiting.body).toContain("Accept the order by Nov 25, 2026, 6:00 PM");
+    expect(renderNotificationTemplate("order_capture_reminder", { listingTitle: "Desk", deadline: "Nov 25, 2026, 6:00 PM" }).title).toContain("Accept Desk");
+    expect(renderNotificationTemplate("order_authorization_cancelled", { listingTitle: "Desk" }).body).toContain("not charged");
   });
 
   it("notifies the requested parties with role-specific links", async () => {

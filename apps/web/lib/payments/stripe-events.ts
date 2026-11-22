@@ -8,6 +8,8 @@ import { canApplyTransactionStatus } from "@/lib/payments/stripe-mode";
 import { isGenuinePostCompletionRefund, paymentSourcesForIntent, refundMayOverwriteStatus, refundStatusSources } from "@/lib/payments/webhook-guards";
 import { OPEN_DISPUTE_STATUSES } from "@/lib/disputes/status";
 import { closeDisputeForExpiredAuthorization, shouldCloseDisputeForExpiredAuthorization } from "@/lib/payments/expired-authorization-dispute";
+import { notifyTransactionParties } from "@/lib/notifications/transaction-events";
+import { acceptByDeadline, formatAcceptBy } from "@/lib/payments/uncaptured-order";
 import { getStripe } from "@/lib/stripe/server";
 
 type Supabase = ReturnType<typeof createAdminClient>;
@@ -44,9 +46,29 @@ export async function updatePaymentIntent(intent: Stripe.PaymentIntent) {
       await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "payment_authorized", from_status: transaction?.status, to_status: transaction?.status, provider_object_id: intent.id, message: "Ignored a late requires_capture event because the payment was no longer authorizable." });
       return;
     }
-    const transactionUpdate = await supabase.from("transactions").update({ status: "paid", paid_at: new Date().toISOString() }).eq("id", transactionId).in("status", ["pending_payment", "paid"]).select("id");
+    const paidAt = new Date().toISOString();
+    const transactionUpdate = await supabase.from("transactions").update({ status: "paid", paid_at: paidAt }).eq("id", transactionId).in("status", ["pending_payment", "paid"]).select("id");
     assertWrite(transactionUpdate.error, "Mark transaction paid");
     await recordTransactionEvent(supabase, { transaction_id: transactionId, type: "payment_authorized", from_status: transaction?.status, to_status: "paid", provider_object_id: intent.id, amount: centsToDollars(intent.amount), currency: intent.currency, message: "Payment authorized; awaiting manual capture." });
+    const captureBefore = payment?.capture_before
+      ?? ((intent as unknown as { capture_before?: number }).capture_before
+        ? new Date((intent as unknown as { capture_before: number }).capture_before * 1000).toISOString()
+        : null);
+    const deadline = formatAcceptBy(acceptByDeadline(paidAt, captureBefore));
+    if (transactionUpdate.data?.length) {
+      await notifyTransactionParties(supabase, {
+        transactionId,
+        template: "order_awaiting_acceptance",
+        to: ["seller"],
+        input: { deadline }
+      });
+      await notifyTransactionParties(supabase, {
+        transactionId,
+        template: "payment_authorized",
+        to: ["buyer"],
+        input: { deadline }
+      });
+    }
   }
 
   if (intent.status === "succeeded" && canApplyTransactionStatus(transaction?.status, "escrowed")) {

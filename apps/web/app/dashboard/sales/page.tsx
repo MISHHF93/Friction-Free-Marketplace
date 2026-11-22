@@ -9,6 +9,7 @@ import { getMarketplaceSession } from "@/lib/auth/session";
 import { loadE2ESales } from "@/lib/dev/e2e-fixtures";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney } from "@/lib/i18n/format";
+import { acceptByDeadline, formatAcceptBy } from "@/lib/payments/uncaptured-order";
 
 type SaleTransaction = {
   id: string;
@@ -18,6 +19,7 @@ type SaleTransaction = {
   marketplace_fee_amount: number;
   currency: string;
   updated_at: string;
+  paid_at: string | null;
 };
 
 type PayoutRow = {
@@ -31,9 +33,9 @@ function money(amount: number, currency: string) {
   return formatMoney(Number(amount), currency);
 }
 
-function sellerNextStep(status: string) {
+function sellerNextStep(status: string, acceptBy?: string | null) {
   if (status === "pending_payment") return "Waiting on buyer payment authorization.";
-  if (status === "paid") return "Capture or fulfillment action is next.";
+  if (status === "paid") return acceptBy ? `Accept by ${acceptBy}.` : "Accept this order to capture payment.";
   if (status === "escrowed") return "Fulfill the item and keep proof in messages.";
   if (status === "completed") return "Completed and ready for payout reconciliation.";
   if (status === "disputed") return "Dispute open. Respond with evidence.";
@@ -44,22 +46,30 @@ async function getSellerSales(userId: string) {
   const supabase = await createClient();
   const { data } = await (supabase as any)
     .from("transactions")
-    .select("id,listing_id,status,total_amount,marketplace_fee_amount,currency,updated_at")
+    .select("id,listing_id,status,total_amount,marketplace_fee_amount,currency,updated_at,paid_at")
     .eq("seller_id", userId)
     .order("updated_at", { ascending: false })
     .limit(12);
   const transactions = (data ?? []) as SaleTransaction[];
   const transactionIds = transactions.map((transaction) => transaction.id);
   const listingIds = [...new Set(transactions.map((transaction) => transaction.listing_id))];
-  const [{ data: listings }, { data: payouts }, { data: conversations }] = await Promise.all([
+  const [{ data: listings }, { data: payouts }, { data: conversations }, { data: payments }] = await Promise.all([
     listingIds.length ? (supabase as any).from("listings").select("id,title").in("id", listingIds) : Promise.resolve({ data: [] }),
     transactionIds.length ? (supabase as any).from("payouts").select("transaction_id,status,amount,currency").in("transaction_id", transactionIds) : Promise.resolve({ data: [] }),
-    listingIds.length ? (supabase as any).from("conversations").select("id,listing_id").eq("seller_id", userId).in("listing_id", listingIds) : Promise.resolve({ data: [] })
+    listingIds.length ? (supabase as any).from("conversations").select("id,listing_id").eq("seller_id", userId).in("listing_id", listingIds) : Promise.resolve({ data: [] }),
+    transactionIds.length ? (supabase as any).from("escrow_payments").select("transaction_id,capture_before").in("transaction_id", transactionIds) : Promise.resolve({ data: [] })
   ]);
   const titleById = new Map(((listings ?? []) as Array<{ id: string; title: string }>).map((listing) => [listing.id, listing.title]));
   const payoutByTransaction = new Map(((payouts ?? []) as PayoutRow[]).map((payout) => [payout.transaction_id, payout]));
   const conversationByListing = new Map(((conversations ?? []) as Array<{ id: string; listing_id: string }>).map((conversation) => [conversation.listing_id, conversation.id]));
-  return transactions.map((transaction) => ({ ...transaction, title: titleById.get(transaction.listing_id) ?? "Marketplace sale", payout: payoutByTransaction.get(transaction.id), conversationId: conversationByListing.get(transaction.listing_id) }));
+  const captureByTransaction = new Map(((payments ?? []) as Array<{ transaction_id: string; capture_before: string | null }>).map((payment) => [payment.transaction_id, payment.capture_before]));
+  return transactions.map((transaction) => {
+    const captureBefore = captureByTransaction.get(transaction.id) ?? null;
+    const acceptBy = transaction.status === "paid" && transaction.paid_at
+      ? formatAcceptBy(acceptByDeadline(transaction.paid_at, captureBefore))
+      : null;
+    return { ...transaction, title: titleById.get(transaction.listing_id) ?? "Marketplace sale", payout: payoutByTransaction.get(transaction.id), conversationId: conversationByListing.get(transaction.listing_id), acceptBy };
+  });
 }
 
 export default async function SalesPage() {
@@ -82,7 +92,7 @@ export default async function SalesPage() {
         <CardHeader><CardTitle>Seller fulfillment queue</CardTitle></CardHeader>
         <CardContent className="grid gap-3">
           {sales.length ? sales.map((sale) => (
-            <DashboardListItem key={sale.id} title={sale.title} detail={`${money(sale.total_amount, sale.currency)} · ${sellerNextStep(sale.status)}`} status={sale.status}>
+            <DashboardListItem key={sale.id} title={sale.title} detail={`${money(sale.total_amount, sale.currency)} · ${sellerNextStep(sale.status, "acceptBy" in sale ? sale.acceptBy : null)}`} status={sale.status}>
               <Button asChild size="sm"><Link href={"conversationId" in sale && sale.conversationId ? `/dashboard/messages?conversation=${sale.conversationId}` : "/dashboard/messages"}>Manage</Link></Button>
               <EscrowActions transactionId={sale.id} role="seller" status={sale.status} amount={Number(sale.total_amount)} currency={sale.currency} />
             </DashboardListItem>

@@ -53,6 +53,7 @@ vi.mock("@/lib/financial/ledger", () => ({
   postLedgerJournal: vi.fn(async () => undefined)
 }));
 vi.mock("@/lib/payments/connect", () => ({ upsertSellerAccountFromStripe: vi.fn() }));
+vi.mock("@/lib/notifications/transaction-events", () => ({ notifyTransactionParties: vi.fn(async () => true) }));
 
 describe("webhook arriving during an escrow claim", () => {
   beforeEach(() => {

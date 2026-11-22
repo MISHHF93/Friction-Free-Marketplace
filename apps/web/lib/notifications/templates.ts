@@ -11,6 +11,9 @@ export type NotificationTemplateKey =
   | "offer_expired"
   | "offer_withdrawn"
   | "payment_authorized"
+  | "order_awaiting_acceptance"
+  | "order_capture_reminder"
+  | "order_authorization_cancelled"
   | "payment_captured"
   | "payment_released"
   | "payment_refunded"
@@ -33,6 +36,7 @@ export type NotificationTemplateInput = {
   actionUrl?: string | null;
   carrier?: string | null;
   trackingNumber?: string | null;
+  deadline?: string | null;
 };
 
 export type RenderedNotification = {
@@ -107,7 +111,13 @@ export function renderNotificationTemplate(key: NotificationTemplateKey, input: 
     case "offer_withdrawn":
       return render(key, "offers", "Offer withdrawn", `An offer for ${money(input.amount, input.currency ?? "USD")} on ${listingTitle} was withdrawn.`, actionUrl);
     case "payment_authorized":
-      return render(key, "payments", "Checkout started", `Checkout for ${listingTitle} (${money(input.amount, input.currency ?? "USD")}) has started. Nothing is charged yet. We will let you know when the payment is confirmed.`, actionUrl);
+      return render(key, "payments", "Payment authorized", `Payment for ${listingTitle} (${money(input.amount, input.currency ?? "USD")}) is authorized. The seller has until ${input.deadline ?? "the acceptance deadline"} to accept the order. You are not charged until they accept.`, actionUrl);
+    case "order_awaiting_acceptance":
+      return render(key, "payments", `New order on ${listingTitle}`, `A buyer has authorized payment for ${listingTitle} (${money(input.amount, input.currency ?? "USD")}). Accept the order by ${input.deadline ?? "the acceptance deadline"} or the authorization will be cancelled.`, actionUrl);
+    case "order_capture_reminder":
+      return render(key, "payments", `Accept ${listingTitle} by ${input.deadline ?? "the deadline"}`, `This authorized order is still waiting. Accept ${listingTitle} by ${input.deadline ?? "the acceptance deadline"} or the authorization will be cancelled.`, actionUrl);
+    case "order_authorization_cancelled":
+      return render(key, "payments", "Order cancelled", `The authorization for ${listingTitle} was cancelled because the seller did not accept in time. The buyer was not charged.`, actionUrl);
     case "payment_captured":
       return render(key, "payments", "Payment held for completion", `${money(input.amount, input.currency ?? "USD")} is now held for ${listingTitle} until the order is completed.`, actionUrl);
     case "payment_released":
