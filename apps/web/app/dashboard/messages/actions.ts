@@ -282,7 +282,7 @@ export async function makeOfferAction(input: unknown) {
       actionUrl: `/dashboard/messages?conversation=${data.conversation_id ?? ""}`
     },
     payload: { offer_id: data.id, conversation_id: data.conversation_id, listing_id: data.listing_id },
-    channels: ["email"]
+    channels: ["in_app", "email"]
   });
 
   revalidatePath("/dashboard/messages");
@@ -309,7 +309,7 @@ export async function respondToOfferAction(input: unknown) {
       actionUrl: `/dashboard/messages?conversation=${data.conversation_id ?? ""}`
     },
     payload: { offer_id: data.id, conversation_id: data.conversation_id, listing_id: data.listing_id },
-    channels: ["email"]
+    channels: ["in_app", "email"]
   });
   revalidatePath("/dashboard/messages");
   revalidatePath("/dashboard/offers");
