@@ -5,11 +5,16 @@ import { getMarketplaceSession } from "@/lib/auth/session";
 import { documentLocale } from "@/lib/i18n/document-locale";
 import type { ReactNode } from "react";
 import "./globals.css";
+import nextDynamic from "next/dynamic";
 import { SiteShell } from "@/components/site-shell";
 import { publicEnv } from "@/lib/env";
 import { brandChrome, brandProfile } from "@/lib/brand-profile";
 import { PwaRegistrar } from "@/components/pwa-registrar";
-import { NativeBridge } from "@/components/native-bridge";
+
+const NativeBridge = nextDynamic(
+  () => import("@/components/native-bridge").then((mod) => mod.NativeBridge),
+  { ssr: false }
+);
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
