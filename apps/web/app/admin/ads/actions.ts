@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdminPagePermission } from "@/lib/admin/permissions";
-import { AD_CREATIVES_BUCKET, isAdPlacementKey } from "@/lib/ads/placements";
+import { isAdPlacementKey } from "@/lib/ads/placements";
 import { isAllowedAdTarget } from "@/lib/ads/redirect";
 import { publicEnv } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -134,4 +134,3 @@ export async function setAdCampaignActive(formData: FormData) {
   revalidatePath("/admin/ads");
 }
 
-export { AD_CREATIVES_BUCKET };
