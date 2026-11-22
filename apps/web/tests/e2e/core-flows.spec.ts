@@ -23,7 +23,7 @@ test.describe("core marketplace flows", () => {
     const context = await browser.newContext();
     await context.addCookies([{ name: "ffm-e2e-user", value: "bob", url: "http://127.0.0.1:3001" }]);
     const page = await context.newPage();
-    await page.goto("/dashboard/listings/create");
+    await openPath(page, "/dashboard/listings/create");
     await page.getByRole("button", { name: "Details", exact: true }).click();
     await page.getByLabel(/^Title/).fill("Oak writing desk");
     await expect(page.getByLabel(/^Title/)).toHaveValue("Oak writing desk");

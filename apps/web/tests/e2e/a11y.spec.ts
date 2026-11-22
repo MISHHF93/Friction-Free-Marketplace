@@ -9,7 +9,7 @@ async function openPath(page: Page, path: string) {
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
-      await page.goto(path, { waitUntil: "domcontentloaded" });
+      await page.goto(path, { waitUntil: "commit" });
       await waitForAppReady(page);
       return;
     } catch (error) {

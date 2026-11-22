@@ -41,7 +41,10 @@ test.describe("phone layout", () => {
     await page.screenshot({ path: screenshotFile(testInfo, "mobile-messages-390.png"), fullPage: false });
     await openPath(page, "/dashboard/purchases");
     await page.screenshot({ path: screenshotFile(testInfo, "mobile-orders-390.png"), fullPage: false });
-    await page.context().clearCookies();
+  });
+
+  test("keeps the create listing steps reachable", async ({ page }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.context().addCookies([{ name: "ffm-e2e-user", value: "bob", url: "http://127.0.0.1:3001" }]);
     await openPath(page, "/dashboard/listings/create");
     await expect(page.getByRole("button", { name: "Photos", exact: true })).toBeVisible();
