@@ -171,3 +171,4 @@ Checked on this branch before the pull request. The host still runs the suite ag
 - Migration `20261122000000_r11_drop_duplicate_notification_triggers.sql` removes the duplicate message and offer notification triggers. Apply with `supabase db push` after a backup.
 - Two more migrations for sponsored placements: `20261122010000_r11_ads_manage_permission.sql` (adds the `ads.manage` permission) and `20261122020000_r11_ads.sql` (placements, campaigns, daily event totals, and the public `ad-creatives` bucket). No new cron or env var. See `docs/ADS.md`.
 - `/admin/ads` is the admin UI. Public pages hide empty slots, label live units “Sponsored”, and count clicks through `/api/ads/click/[id]` after an https-or-internal allow-list check.
+- Transactional email is sent as soon as the notification is created. `/api/notifications/dispatch` (hourly, already in `vercel.json`) only retries rows that are still `queued` after a transport failure. No new cron or env var.

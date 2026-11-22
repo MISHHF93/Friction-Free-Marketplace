@@ -169,7 +169,14 @@ export async function createNotification({
 
   const { data, error } = await (supabase as any).from("notifications").insert(rows).select("*");
   if (error) throw error;
-  return (data ?? []) as NotificationRow[];
+  const inserted = (data ?? []) as NotificationRow[];
+  const queuedEmail = inserted.filter((notification) => notification.channel === "email" && notification.status === "queued");
+  if (queuedEmail.length) {
+    // Send now so buyers and sellers are not waiting on the hourly cron.
+    // Failures stay queued or marked failed for the dispatcher retry.
+    await Promise.all(queuedEmail.map((notification) => dispatchOneEmailNotification(notification, supabase).catch(() => notification)));
+  }
+  return inserted;
 }
 
 export async function enqueueTemplateNotification({
@@ -211,6 +218,39 @@ async function getRecipientEmail(supabase: Db, userId: string) {
   return typeof data?.email === "string" && data.email.includes("@") ? data.email : null;
 }
 
+export async function dispatchOneEmailNotification(notification: NotificationRow, supabase: Db = adminDb()): Promise<{ id: string; ok: boolean; error?: string }> {
+  const recipient = await getRecipientEmail(supabase, notification.user_id);
+  const payload = isRecord(notification.payload) ? notification.payload : {};
+  if (!recipient) {
+    await (supabase as any).from("notifications").update({ status: "failed", payload: { ...payload, error: "missing_recipient_email" }, updated_at: new Date().toISOString() }).eq("id", notification.id);
+    return { id: notification.id, ok: false, error: "missing_recipient_email" };
+  }
+
+  try {
+    const resend = new Resend(env.RESEND_API_KEY);
+    await resend.emails.send({
+      from: env.RESEND_FROM_EMAIL,
+      to: recipient,
+      subject: typeof payload.email_subject === "string" ? payload.email_subject : notification.title,
+      text: typeof payload.email_text === "string" ? payload.email_text : `${notification.title}\n\n${notification.body ?? ""}`,
+      html: typeof payload.email_html === "string" ? payload.email_html : undefined
+    });
+
+    await (supabase as any)
+      .from("notifications")
+      .update({ status: "sent", sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq("id", notification.id);
+    return { id: notification.id, ok: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "email_send_failed";
+    await (supabase as any)
+      .from("notifications")
+      .update({ status: "queued", payload: { ...payload, last_error: message, last_attempt_at: new Date().toISOString() }, updated_at: new Date().toISOString() })
+      .eq("id", notification.id);
+    return { id: notification.id, ok: false, error: message };
+  }
+}
+
 export async function dispatchQueuedEmailNotifications(limit = 25, supabase: Db = adminDb()) {
   const { data, error } = await (supabase as any)
     .from("notifications")
@@ -221,40 +261,9 @@ export async function dispatchQueuedEmailNotifications(limit = 25, supabase: Db 
     .limit(limit);
   if (error) throw error;
 
-  const resend = new Resend(env.RESEND_API_KEY);
-  const results: Array<{ id: string; ok: boolean; error?: string }> = [];
-
+  const results = [];
   for (const notification of (data ?? []) as NotificationRow[]) {
-    const recipient = await getRecipientEmail(supabase, notification.user_id);
-    if (!recipient) {
-      await (supabase as any).from("notifications").update({ status: "failed", payload: { ...(isRecord(notification.payload) ? notification.payload : {}), error: "missing_recipient_email" } }).eq("id", notification.id);
-      results.push({ id: notification.id, ok: false, error: "missing_recipient_email" });
-      continue;
-    }
-
-    const payload = isRecord(notification.payload) ? notification.payload : {};
-    try {
-      await resend.emails.send({
-        from: env.RESEND_FROM_EMAIL,
-        to: recipient,
-        subject: typeof payload.email_subject === "string" ? payload.email_subject : notification.title,
-        text: typeof payload.email_text === "string" ? payload.email_text : `${notification.title}\n\n${notification.body ?? ""}`,
-        html: typeof payload.email_html === "string" ? payload.email_html : undefined
-      });
-
-      await (supabase as any)
-        .from("notifications")
-        .update({ status: "sent", sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-        .eq("id", notification.id);
-      results.push({ id: notification.id, ok: true });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "email_send_failed";
-      await (supabase as any)
-        .from("notifications")
-        .update({ status: "failed", payload: { ...payload, error: message }, updated_at: new Date().toISOString() })
-        .eq("id", notification.id);
-      results.push({ id: notification.id, ok: false, error: message });
-    }
+    results.push(await dispatchOneEmailNotification(notification, supabase));
   }
 
   return { processed: results.length, sent: results.filter((result) => result.ok).length, failed: results.filter((result) => !result.ok).length, results };
