@@ -1,14 +1,40 @@
 # Ownership handover
 
-Moves Friction-Free Marketplace from its current owner to the new owner's accounts and redeploys it at **https://frictionfree.co**.
+Moves Friction-Free Marketplace from its current owner to the new owner's accounts and redeploys it at **<https://frictionfree.co>**.
 
 The new owner signs in to each service in this list. Nothing here can be created on their behalf: every provider requires its own account, login, and billing. This file says **what** to create and **where each value goes**. The full production rules (required variables, webhook events, cron schedules, migrations) are in [LAUNCH.md](LAUNCH.md).
 
 Order matters: GitHub first, then the database, then the services that need its URL, then Vercel last.
 
+## Owner and accounts
+
+- **Owner:** Garfield
+- **Account email for every service:** `garfieldgarwood45@gmail.com`
+- **GitHub:** `garfieldgarwood45-collab`
+- **Production domain:** `frictionfree.co`
+
+Sign up (or sign in) with that email at each service below, then follow the numbered section for it. Use **Continue with Google** with the same Gmail account wherever it is offered, so every account sits behind one login.
+
+| Service | Sign up | Needed for | Section |
+| --- | --- | --- | --- |
+| GitHub | <https://github.com/signup> (account exists) | Code, CI, releases | 1, 9 |
+| Supabase | <https://supabase.com/dashboard/sign-up> | Database, auth, file storage | 2 |
+| Google Cloud | <https://console.cloud.google.com/> | "Continue with Google" sign-in | 3 |
+| Stripe | <https://dashboard.stripe.com/register> | Payments, seller payouts (Connect) | 4 |
+| Resend | <https://resend.com/signup> | Transactional email from `@frictionfree.co` | 5 |
+| OpenAI | <https://platform.openai.com/signup> | AI listing and assistant features (optional) | 6 |
+| Meilisearch Cloud | <https://cloud.meilisearch.com/register> | Fast search (optional) | 6 |
+| PostHog | <https://app.posthog.com/signup> | Analytics (optional) | 6 |
+| Vercel | <https://vercel.com/signup> | Hosting at frictionfree.co | 7, 8 |
+| Domain registrar | wherever `frictionfree.co` is registered | DNS to Vercel and Resend; transfer the domain to Garfield there | 8 |
+| Apple Developer | <https://developer.apple.com/programs/enroll/> | iOS app (later) | 10 |
+| Google Play Console | <https://play.google.com/console/signup> | Android app (later) | 10 |
+
+Use `garfieldgarwood45@gmail.com` as the Google OAuth consent-screen support email and developer contact (section 3), the Stripe account owner (section 4), and the Vercel account (section 8). For customer-facing `SUPPORT_EMAIL` and `RESEND_FROM_EMAIL`, prefer `support@frictionfree.co` / `no-reply@frictionfree.co` once the domain is verified in Resend; until then `SUPPORT_EMAIL` can be the Gmail address.
+
 ## 1. GitHub repository
 
-1. Current owner: **Settings → General → Danger Zone → Transfer ownership** to the new owner's GitHub account (`garfieldgarwood45-collab`). The recipient must accept the emailed invitation.
+1. Current owner: **Settings → General → Danger Zone → Transfer ownership** to `garfieldgarwood45-collab`. The invitation goes to `garfieldgarwood45@gmail.com` and must be accepted there.
 2. GitHub redirects the old URL, but update local clones: `git remote set-url origin https://github.com/<new-owner>/Friction-Free-Marketplace.git`.
 3. Actions secrets and variables are **not** carried over in a usable way. Recreate them in step 9.
 4. Make sure the new owner's account has GitHub Actions billing enabled. CI cannot start on an account that is locked for billing.
@@ -26,7 +52,7 @@ Order matters: GitHub first, then the database, then the services that need its 
 The login and signup pages show a "Continue with Google" button when `NEXT_PUBLIC_OAUTH_PROVIDERS=google`. The flow is Supabase OAuth: Google → Supabase → `https://frictionfree.co/auth/callback`.
 
 1. In the new owner's [Google Cloud Console](https://console.cloud.google.com/), create a project (e.g. "Friction-Free Marketplace").
-2. **APIs & Services → OAuth consent screen**: External; app name "Friction-Free Marketplace"; support email = the new owner's email; authorized domain `frictionfree.co`; privacy policy `https://frictionfree.co/privacy`; terms `https://frictionfree.co/terms`; scopes `openid`, `email`, `profile`. Publish the app (move it out of *Testing*), or only listed test users can sign in.
+2. **APIs & Services → OAuth consent screen**: External; app name "Friction-Free Marketplace"; user support email and developer contact email = `garfieldgarwood45@gmail.com`; authorized domain `frictionfree.co`; privacy policy `https://frictionfree.co/privacy`; terms `https://frictionfree.co/terms`; scopes `openid`, `email`, `profile`. Publish the app (move it out of *Testing*), or only listed test users can sign in.
 3. **Credentials → Create credentials → OAuth client ID** → *Web application*:
    - Authorized JavaScript origins: `https://frictionfree.co`
    - Authorized redirect URI: `https://<supabase-project-ref>.supabase.co/auth/v1/callback` (copy it from Supabase **Authentication → Providers → Google**)
