@@ -24,7 +24,11 @@ test.describe("core marketplace flows", () => {
     await context.addCookies([{ name: "ffm-e2e-user", value: "bob", url: "http://127.0.0.1:3001" }]);
     const page = await context.newPage();
     await openPath(page, "/dashboard/listings/create");
-    await page.getByRole("button", { name: "Details", exact: true }).click();
+    // A click that lands before hydration is a no-op, so retry until the Details panel opens.
+    await expect(async () => {
+      await page.getByRole("button", { name: "Details", exact: true }).click();
+      await expect(page.getByLabel(/^Title/)).toBeVisible({ timeout: 1_000 });
+    }).toPass();
     await page.getByLabel(/^Title/).fill("Oak writing desk");
     await expect(page.getByLabel(/^Title/)).toHaveValue("Oak writing desk");
     await context.close();
