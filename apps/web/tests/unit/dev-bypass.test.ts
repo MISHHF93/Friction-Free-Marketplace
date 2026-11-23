@@ -1,7 +1,13 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { devBypassCookieSecure, getLocalAuthUser, isDevAuthBypassEnabled } from "@/lib/auth/dev-bypass";
 
 describe("development auth bypass", () => {
+  beforeEach(() => {
+    delete process.env.ALLOW_DEV_AUTH_BYPASS;
+    delete process.env.VERCEL;
+    delete process.env.CI;
+    delete process.env.FFM_BIND_HOST;
+  });
   afterEach(() => {
     delete process.env.ALLOW_DEV_AUTH_BYPASS;
     delete process.env.VERCEL;

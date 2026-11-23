@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { publicEnv } from "@/lib/env";
 import { renderNotificationTemplate } from "@/lib/notifications/templates";
 
 describe("notification templates", () => {
@@ -12,7 +13,7 @@ describe("notification templates", () => {
 
     expect(notification.topic).toBe("messages");
     expect(notification.title).toContain("Vintage Camera");
-    expect(notification.emailText).toContain("http://localhost:3001/dashboard/messages");
+    expect(notification.emailText).toContain(`${publicEnv.NEXT_PUBLIC_APP_URL}/dashboard/messages`);
     expect(notification.emailHtml).toContain("Buyer &lt;script&gt;");
   });
 

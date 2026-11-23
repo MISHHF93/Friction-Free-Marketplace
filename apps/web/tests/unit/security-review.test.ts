@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { offerResponseAllowed } from "@/lib/offers/response-authorization";
 import { openCheckoutStatuses } from "@/lib/payments/open-checkout";
 import { contentSecurityPolicy, scriptSource } from "@/lib/security/csp";
@@ -44,6 +44,20 @@ describe("document locale", () => {
 });
 
 describe("local auth runtime", () => {
+  beforeEach(() => {
+    delete process.env.ALLOW_DEV_AUTH_BYPASS;
+    delete process.env.FFM_E2E_AUTH;
+    delete process.env.FFM_BIND_HOST;
+    delete process.env.VERCEL;
+    delete process.env.CI;
+  });
+  afterEach(() => {
+    delete process.env.ALLOW_DEV_AUTH_BYPASS;
+    delete process.env.FFM_E2E_AUTH;
+    delete process.env.FFM_BIND_HOST;
+    delete process.env.VERCEL;
+    delete process.env.CI;
+  });
   it("treats an unknown NODE_ENV as off and rejects a public remote address", () => {
     process.env.ALLOW_DEV_AUTH_BYPASS = "true";
     process.env.FFM_E2E_AUTH = "true";
