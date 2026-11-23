@@ -68,8 +68,14 @@ test.describe("core marketplace flows", () => {
   });
 
   test("stripe.js loads under the content security policy when checkout opens", async ({ page }) => {
-    const response = await page.goto("/listings/verified-road-bike", { waitUntil: "domcontentloaded" });
-    const policy = response?.headers()["content-security-policy"] ?? "";
+    let policy = "";
+    page.on("response", (response) => {
+      if (response.url().includes("/listings/verified-road-bike")) {
+        const header = response.headers()["content-security-policy"];
+        if (header) policy = header;
+      }
+    });
+    await openPath(page, "/listings/verified-road-bike");
     expect(policy).toContain("https://js.stripe.com");
     await expect(page.getByRole("heading", { name: /road bike/i })).toBeVisible();
     const script = page.locator("script[src='https://js.stripe.com/v3/']");
