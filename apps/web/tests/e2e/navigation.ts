@@ -1,7 +1,9 @@
 import type { Page } from "@playwright/test";
 
 /** Wait until the route loading shell is gone and a real heading is painted. */
-export async function waitForAppReady(page: Page, timeout = 10_000) {
+export async function waitForAppReady(page: Page, timeout = 12_000) {
+  // waitForFunction(fn, arg, options) — the timeout must be the third argument
+  // or this wait inherits the 30s test timeout and burns the whole budget.
   await page.waitForFunction(
     () => {
       if (document.querySelector("[data-ffm-route-loading='true']")) return false;
@@ -9,9 +11,12 @@ export async function waitForAppReady(page: Page, timeout = 10_000) {
         const style = getComputedStyle(element);
         if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) return false;
         const rect = element.getBoundingClientRect();
-        return rect.width > 1 && rect.height > 1;
+        if (rect.width <= 1 || rect.height <= 1) return false;
+        const text = (element.textContent ?? "").trim();
+        return text.length > 0 && !/^loading\b/i.test(text);
       });
     },
+    undefined,
     { timeout }
   );
 }
