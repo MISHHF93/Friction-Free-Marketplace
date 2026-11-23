@@ -2,8 +2,11 @@ const STRIPE_JS_SRC = "https://js.stripe.com/v3/";
 
 function documentNonce() {
   if (typeof document === "undefined") return "";
-  const tagged = document.querySelector("script[nonce]");
-  return (tagged instanceof HTMLScriptElement ? tagged.nonce : "") || tagged?.getAttribute("nonce") || "";
+  for (const script of Array.from(document.getElementsByTagName("script"))) {
+    const nonce = script.nonce || script.getAttribute("nonce") || "";
+    if (nonce) return nonce;
+  }
+  return "";
 }
 
 export function loadStripeJs(): Promise<void> {

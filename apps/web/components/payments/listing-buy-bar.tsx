@@ -134,7 +134,7 @@ export function ListingBuyBar({
         )}
       </div>
       {open && !isOwner ? (
-        <div className="fixed inset-0 z-40 bg-black/40">
+        <div className="fixed inset-0 z-50 bg-black/40">
           <div id="protected-checkout" role="dialog" aria-modal="true" aria-label="Protected checkout" className="absolute inset-x-0 bottom-0 mx-auto max-h-[85vh] w-full max-w-[480px] overflow-y-auto rounded-t-3xl bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             <Button type="button" variant="outline" className="mb-3 min-h-11" onClick={close}>Close checkout</Button>
             {children}

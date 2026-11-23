@@ -10,6 +10,7 @@ import { publicEnv } from "@/lib/env";
 import { brandChrome, brandProfile } from "@/lib/brand-profile";
 import { PwaRegistrar } from "@/components/pwa-registrar";
 import { NativeBridge } from "@/components/native-bridge-loader";
+import { CspNonceAnchor } from "@/components/security/nonce-script";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -85,6 +86,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html lang={locale.lang} dir={locale.dir} suppressHydrationWarning>
       <body>
         <SiteShell>{children}</SiteShell>
+        <CspNonceAnchor />
         <PwaRegistrar />
         <NativeBridge />
       </body>

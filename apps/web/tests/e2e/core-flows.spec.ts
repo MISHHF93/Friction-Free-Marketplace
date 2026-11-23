@@ -61,7 +61,7 @@ test.describe("core marketplace flows", () => {
     await page.getByRole("button", { name: "Submit review" }).click();
     await expect(page.getByText("Review saved for this order.")).toBeVisible();
     await page.getByText("Problem with this order?").first().click();
-    await page.getByLabel("What happened").fill("The item arrived with damage that was not in the listing.");
+    await page.locator("#dispute-55555555-5555-4555-8555-555555555555").fill("The item arrived with damage that was not in the listing.");
     await page.getByRole("button", { name: "Open dispute" }).click();
     await expect(page.getByText(/no new charge was made/i)).toBeVisible();
     await context.close();

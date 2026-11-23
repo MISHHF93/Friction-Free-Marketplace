@@ -8,7 +8,7 @@ test.describe("money actions", () => {
     await context.route("**/api/stripe/transactions/**/delivered", (route) => route.fulfill({ json: { status: "delivered" } }));
     const page = await context.newPage();
     await page.goto("/dashboard/purchases");
-    await page.getByRole("button", { name: "Release funds" }).click();
+    await page.getByRole("button", { name: "Release funds" }).first().click();
     await page.getByRole("button", { name: "Confirm release" }).click();
     await expect(page.getByText("Release submitted.")).toBeVisible();
     await context.close();
@@ -26,7 +26,7 @@ test.describe("money actions", () => {
     await page.getByLabel("Tracking number").fill("1Z999");
     await page.getByRole("button", { name: "Confirm shipment" }).click();
     await expect(page.getByText("Ship submitted.")).toBeVisible();
-    await page.getByRole("button", { name: "Refund buyer" }).click();
+    await page.getByRole("button", { name: "Refund buyer" }).first().click();
     await page.getByRole("button", { name: "Confirm refund" }).click();
     await expect(page.getByText("Refund submitted.")).toBeVisible();
     await context.close();
