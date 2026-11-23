@@ -64,6 +64,7 @@ Platform, `/api/stripe/webhooks`, secret `STRIPE_WEBHOOK_SECRET`:
 
 - `payment_intent.succeeded`
 - `payment_intent.amount_capturable_updated`
+- `checkout.session.completed` (r12, self-serve ad payments only)
 - `payment_intent.canceled`
 - `payment_intent.payment_failed`
 - `payment_intent.requires_action`
@@ -156,7 +157,7 @@ Checked on this branch before the pull request. The host still runs the suite ag
 - `npm run build --workspace apps/web` with `NEXT_DIST_DIR=.next-build`: Next.js 16.4.6 compiled successfully
 - `npm audit --omit=dev` after the non-breaking upgrades: 2 high (zod 3 and openai 4, which needs zod 3). Zod 4 is a breaking upgrade and was not applied. Dev-only Vitest 5, Vite, esbuild, tinypool, and the minimatch copy inside typescript-eslint also remain because their fixes are major bumps.
 
-## r10 lifecycle changes (local, not yet deployed)
+## r10 lifecycle changes (on main; apply migrations before deploying)
 
 - New cron `/api/payments/expire-checkouts` (every 30 min) cancels unpaid checkouts older than 45 minutes so the listing frees up. It uses the same `CRON_SECRET` / `SCHEDULED_JOB_SECRET`.
 - `/api/offers/expire` also closes offers on listings that are no longer available and lifts timed suspensions that have ended.
@@ -164,7 +165,7 @@ Checked on this branch before the pull request. The host still runs the suite ag
 - Database checks for these guards: `supabase/tests/r10_lifecycle.sql` (local database only; it rolls back).
 - Sellers must have payouts active before a listing can be published.
 
-## r11 lifecycle and performance (local, not yet deployed)
+## r11 lifecycle and performance (on main since 2026-11-22; apply migrations before deploying)
 
 - No new Vercel cron. `/api/payments/expire-checkouts` (every 30 minutes, already in `vercel.json`) now also reminds sellers 24 hours before the acceptance deadline and auto-cancels uncaptured `paid` authorizations at 72 hours, or sooner if Stripe's `capture_before` is earlier. Open disputes are left alone. It uses the same `CRON_SECRET` / `SCHEDULED_JOB_SECRET`.
 - Sales shows "Accept by {date}" on authorized orders. The "new order, accept by" notice is sent when payment is authorized, not when checkout first opens.
@@ -175,3 +176,13 @@ Checked on this branch before the pull request. The host still runs the suite ag
 - Local pickup uses a two-sided handoff: the seller marks the item handed over without a tracking number, the buyer confirms pickup, and funds still follow the existing delivered / release / auto-release path. No new cron or env var.
 - Dispute evidence (`20261122030000_r11_dispute_evidence.sql`) adds a private `dispute-evidence` bucket and `dispute_evidence` rows (notes and photos) with RLS for the two parties and `disputes.decide` admins. Admins review it at `/admin/disputes/[id]`. No new cron or env var.
 - Runtime errors are reported through a pluggable logger that writes JSON to the server logs only. There is no paid error service and no new env var.
+
+## r12 self-serve advertising (local, not yet pushed)
+
+- Anyone signed in can buy a sponsored placement at `/advertise` and track it at `/dashboard/ads`. Payment is a normal platform charge through Stripe Checkout (no Connect, no escrow). The ad only serves after payment and admin approval in `/admin/ads`. Rejecting refunds the payment through Stripe.
+- New migration `20261123000000_r12_self_serve_ads.sql`: lifecycle columns on `ad_campaigns` (existing house campaigns keep serving as `approved`), the admin-editable `ad_pricing` table with placeholder prices, advertiser-only RLS, event counting only for approved ads, and the `advance_ad_campaign_lifecycle()` sweep. No new bucket: creatives go to `advertisers/<user id>/` in the existing `ad-creatives` bucket. Apply with `supabase db push` after a backup.
+- Stripe: add `checkout.session.completed` to webhook endpoint A (the platform endpoint). It is the only new event. No new endpoint and no new secret.
+- No new env vars. Checkout uses `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_APP_URL` (success and cancel URLs).
+- No new Vercel cron. `/api/payments/expire-checkouts` (every 30 minutes, already in `vercel.json`) also runs the ad sweep: approved to active at start, to expired at end, and unpaid checkouts older than 2 hours back to draft.
+- Before launch: set real prices at `/admin/ads/pricing`. The defaults are placeholders and are labeled as such to advertisers.
+- Database checks: `supabase/tests/r12_self_serve_ads.sql` (local database only; it rolls back). See `docs/ADS.md`.
