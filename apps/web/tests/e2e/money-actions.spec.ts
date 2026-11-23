@@ -32,6 +32,37 @@ test.describe("money actions", () => {
     await context.close();
   });
 
+  test("seller confirms a local pickup handoff without tracking", async ({ browser }) => {
+    const context = await browser.newContext();
+    await context.addCookies([{ name: "ffm-e2e-user", value: "bob", url: "http://127.0.0.1:3001" }]);
+    await context.route("**/api/stripe/transactions/**/handoff", (route) => route.fulfill({ json: { status: "shipped", fulfillmentMethod: "pickup" } }));
+    const page = await context.newPage();
+    await page.goto("/dashboard/sales");
+    await expect(page.getByText(/Accept by /)).toBeVisible();
+    await page.getByRole("button", { name: "Mark handed over" }).click();
+    await expect(page.getByText("Do not enter a tracking number")).toBeVisible();
+    await page.getByRole("button", { name: "Confirm handoff" }).click();
+    await expect(page.getByText("Handoff submitted.")).toBeVisible();
+    await context.close();
+  });
+
+  test("buyer confirms pickup and can submit dispute evidence", async ({ browser }) => {
+    const context = await browser.newContext();
+    await context.addCookies([{ name: "ffm-e2e-user", value: "alice", url: "http://127.0.0.1:3001" }]);
+    await context.route("**/api/stripe/transactions/**/delivered", (route) => route.fulfill({ json: { status: "delivered" } }));
+    await context.route("**/api/disputes/**/evidence", (route) => route.fulfill({ json: { status: "saved", ids: ["ev1"] } }));
+    const page = await context.newPage();
+    await page.goto("/dashboard/purchases");
+    await page.getByRole("button", { name: "Confirm pickup" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Confirm pickup" }).click();
+    await expect(page.getByText("Delivery submitted.")).toBeVisible();
+    await expect(page.getByText("Add dispute evidence")).toBeVisible();
+    await page.getByLabel("What happened").last().fill("The frame had an undisclosed dent near the dropout.");
+    await page.getByRole("button", { name: "Submit evidence" }).click();
+    await expect(page.getByText("Evidence submitted.")).toBeVisible();
+    await context.close();
+  });
+
   test("admin dispute routes require a signed-in admin", async ({ request }) => {
     const response = await request.post("/api/admin/disputes", {
       data: { action: "close", target_id: "11111111-1111-4111-8111-111111111111", reason: "Split the held funds", outcome: "split" }

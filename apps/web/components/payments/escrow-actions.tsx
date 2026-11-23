@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/i18n/format";
+import { DisputeEvidenceForm } from "@/components/payments/dispute-evidence-form";
 
 type EscrowActionsProps = {
   transactionId: string;
@@ -11,6 +12,10 @@ type EscrowActionsProps = {
   status: string;
   amount?: number;
   currency?: string;
+  pickupAvailable?: boolean;
+  shipsAvailable?: boolean;
+  fulfillmentMethod?: "pickup" | "shipping" | null;
+  disputeId?: string | null;
 };
 
 async function postAction(path: string, body?: Record<string, unknown>) {
@@ -29,18 +34,32 @@ async function postAction(path: string, body?: Record<string, unknown>) {
   return payload;
 }
 
-export function EscrowActions({ transactionId, role, status, amount, currency = "USD" }: EscrowActionsProps) {
+export function EscrowActions({
+  transactionId,
+  role,
+  status,
+  amount,
+  currency = "USD",
+  pickupAvailable = false,
+  shipsAvailable,
+  fulfillmentMethod = null,
+  disputeId = null
+}: EscrowActionsProps) {
   const router = useRouter();
   const refundDialog = useRef<HTMLDialogElement>(null);
   const releaseDialog = useRef<HTMLDialogElement>(null);
   const shipDialog = useRef<HTMLDialogElement>(null);
+  const handoffDialog = useRef<HTMLDialogElement>(null);
   const deliverDialog = useRef<HTMLDialogElement>(null);
   const [carrier, setCarrier] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
+  const [openedDisputeId, setOpenedDisputeId] = useState<string | null>(null);
   const base = `/api/stripe/transactions/${transactionId}`;
   const refundLabel = typeof amount === "number" ? formatMoney(amount, currency) : "the remaining amount";
+  const canShipOrders = shipsAvailable ?? !pickupAvailable;
+  const isPickup = fulfillmentMethod === "pickup" || (pickupAvailable && !canShipOrders);
 
   async function run(label: string, path: string, body?: Record<string, unknown>) {
     setPending(label);
@@ -57,13 +76,16 @@ export function EscrowActions({ transactionId, role, status, amount, currency = 
   }
 
   const canCapture = role === "seller" && status === "paid";
-  const canShip = role === "seller" && status === "escrowed";
+  const canShip = role === "seller" && status === "escrowed" && canShipOrders;
+  const canHandoff = role === "seller" && status === "escrowed" && pickupAvailable;
   const canDeliver = role === "buyer" && status === "shipped";
   const canRelease = role === "buyer" && ["escrowed", "shipped", "delivered"].includes(status);
   const canRefund = role === "seller" && ["paid", "escrowed", "shipped", "delivered", "disputed"].includes(status);
   const canDispute = role === "buyer" && ["paid", "escrowed", "shipped", "delivered"].includes(status);
+  const evidenceId = disputeId || openedDisputeId;
+  const canAddEvidence = Boolean(evidenceId) && (role === "buyer" || role === "seller") && (status === "disputed" || Boolean(openedDisputeId));
 
-  if (!canCapture && !canShip && !canDeliver && !canRelease && !canRefund && !canDispute) return null;
+  if (!canCapture && !canShip && !canHandoff && !canDeliver && !canRelease && !canRefund && !canDispute && !canAddEvidence) return null;
 
   return (
     <div className="grid gap-2">
@@ -90,14 +112,27 @@ export function EscrowActions({ transactionId, role, status, amount, currency = 
           </dialog>
         </>
       ) : null}
+      {canHandoff ? (
+        <>
+          <Button type="button" size="sm" disabled={pending !== null} onClick={() => handoffDialog.current?.showModal()}>Mark handed over</Button>
+          <dialog ref={handoffDialog} className="w-[min(100%,28rem)] rounded-2xl border border-border bg-background p-5 text-foreground">
+            <h2 className="text-lg font-bold">Confirm local pickup handoff?</h2>
+            <p className="mt-2 text-sm">This tells the buyer the item was handed over. Do not enter a tracking number. The buyer then confirms pickup, and funds still follow the existing release path.</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button type="button" size="sm" disabled={pending !== null} onClick={() => { handoffDialog.current?.close(); void run("Handoff", `${base}/handoff`); }}>Confirm handoff</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => handoffDialog.current?.close()}>Cancel</Button>
+            </div>
+          </dialog>
+        </>
+      ) : null}
       {canDeliver ? (
         <>
-          <Button type="button" size="sm" disabled={pending !== null} onClick={() => deliverDialog.current?.showModal()}>Confirm delivery</Button>
+          <Button type="button" size="sm" disabled={pending !== null} onClick={() => deliverDialog.current?.showModal()}>{isPickup ? "Confirm pickup" : "Confirm delivery"}</Button>
           <dialog ref={deliverDialog} className="w-[min(100%,28rem)] rounded-2xl border border-border bg-background p-5 text-foreground">
-            <h2 className="text-lg font-bold">Confirm delivery?</h2>
-            <p className="mt-2 text-sm">This tells the seller the order arrived. You can release the held funds separately.</p>
+            <h2 className="text-lg font-bold">{isPickup ? "Confirm you received this pickup?" : "Confirm delivery?"}</h2>
+            <p className="mt-2 text-sm">{isPickup ? "This tells the seller you received the item. You can release the held funds separately." : "This tells the seller the order arrived. You can release the held funds separately."}</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button type="button" size="sm" disabled={pending !== null} onClick={() => { deliverDialog.current?.close(); void run("Delivery", `${base}/delivered`); }}>Confirm delivery</Button>
+              <Button type="button" size="sm" disabled={pending !== null} onClick={() => { deliverDialog.current?.close(); void run("Delivery", `${base}/delivered`); }}>{isPickup ? "Confirm pickup" : "Confirm delivery"}</Button>
               <Button type="button" size="sm" variant="outline" onClick={() => deliverDialog.current?.close()}>Cancel</Button>
             </div>
           </dialog>
@@ -146,6 +181,8 @@ export function EscrowActions({ transactionId, role, status, amount, currency = 
                 setMessage(null);
                 try {
                   const payload = await postAction(`${base}/dispute`, { reason });
+                  const id = typeof payload.disputeId === "string" ? payload.disputeId : null;
+                  if (id) setOpenedDisputeId(id);
                   setMessage(typeof payload.message === "string" && payload.message ? payload.message : "Dispute submitted.");
                 } catch (error) {
                   setMessage(error instanceof Error ? error.message : "The payment action did not complete.");
@@ -165,6 +202,7 @@ export function EscrowActions({ transactionId, role, status, amount, currency = 
           </form>
         </details>
       ) : null}
+      {canAddEvidence && evidenceId ? <DisputeEvidenceForm disputeId={evidenceId} /> : null}
       {message ? <p className="text-xs text-muted-foreground" role="status">{message}</p> : null}
     </div>
   );

@@ -20,6 +20,7 @@ describe("order lifecycle notifications", () => {
 
   it("renders shipped, delivered, auto-release and dispute-resolved templates", () => {
     expect(renderNotificationTemplate("order_shipped", { listingTitle: "Desk", carrier: "UPS", trackingNumber: "1Z99" }).body).toContain("UPS");
+    expect(renderNotificationTemplate("order_handed_over", { listingTitle: "Desk" }).body).toContain("local pickup");
     expect(renderNotificationTemplate("order_delivered", { listingTitle: "Desk" }).title).toBe("Delivery confirmed");
     expect(renderNotificationTemplate("order_auto_released", { listingTitle: "Desk", amount: 20, currency: "USD" }).body).toContain("$20.00");
     expect(renderNotificationTemplate("dispute_resolved", { listingTitle: "Desk", reason: "refund" }).topic).toBe("disputes");

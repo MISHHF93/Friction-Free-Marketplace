@@ -21,6 +21,7 @@ export type NotificationTemplateKey =
   | "dispute_updated"
   | "dispute_resolved"
   | "order_shipped"
+  | "order_handed_over"
   | "order_delivered"
   | "order_auto_released"
   | "saved_search_match";
@@ -132,6 +133,8 @@ export function renderNotificationTemplate(key: NotificationTemplateKey, input: 
       return render(key, "disputes", "Dispute resolved", `The dispute for ${listingTitle} was resolved${input.reason ? `: ${input.reason}` : "."}`, actionUrl);
     case "order_shipped":
       return render(key, "payments", "Your order shipped", `${listingTitle} is on its way${input.carrier ? ` with ${input.carrier}` : ""}${input.trackingNumber ? ` (tracking ${input.trackingNumber})` : ""}. Confirm delivery when it arrives.`, actionUrl);
+    case "order_handed_over":
+      return render(key, "payments", "Ready for pickup", `The seller marked ${listingTitle} as handed over for local pickup. Confirm you received it from Purchases. Held funds still follow the existing release path.`, actionUrl);
     case "order_delivered":
       return render(key, "payments", "Delivery confirmed", `The buyer confirmed delivery of ${listingTitle}. Held funds are released when the buyer releases them or automatically after 3 days without a dispute.`, actionUrl);
     case "order_auto_released":

@@ -237,12 +237,23 @@ function FinanceDetailTable({ section, data }: { section: FinanceSectionKey; dat
 
   if (section === "disputes") {
     return (
-      <ExecutiveTable
-        title="Dispute exposure"
-        description="Open and recently resolved disputes tied to transactions."
-        columns={["Dispute", "Status", "Reason", "Transaction", "Opened", "Resolved"]}
-        rows={data.tables.disputes.map((dispute) => [dispute.id, dispute.status, dispute.reason ?? "No reason captured", dispute.transaction_id, dispute.opened_at ? new Date(dispute.opened_at).toLocaleString() : "Unknown", dispute.resolved_at ? new Date(dispute.resolved_at).toLocaleString() : "Open"])}
-      />
+      <div className="grid gap-4">
+        <ExecutiveTable
+          title="Dispute exposure"
+          description="Open and recently resolved disputes tied to transactions."
+          columns={["Dispute", "Status", "Reason", "Transaction", "Opened", "Resolved"]}
+          rows={data.tables.disputes.map((dispute) => [dispute.id, dispute.status, dispute.reason ?? "No reason captured", dispute.transaction_id, dispute.opened_at ? new Date(dispute.opened_at).toLocaleString() : "Unknown", dispute.resolved_at ? new Date(dispute.resolved_at).toLocaleString() : "Open"])}
+        />
+        {data.tables.disputes.length ? (
+          <ul className="grid gap-2 text-sm">
+            {data.tables.disputes.map((dispute) => (
+              <li key={dispute.id}>
+                <Link className="font-semibold text-primary underline underline-offset-2" href={`/admin/disputes/${dispute.id}`}>Review evidence for {dispute.id}</Link>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
     );
   }
 
