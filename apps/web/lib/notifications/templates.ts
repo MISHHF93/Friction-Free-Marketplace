@@ -24,7 +24,10 @@ export type NotificationTemplateKey =
   | "order_handed_over"
   | "order_delivered"
   | "order_auto_released"
-  | "saved_search_match";
+  | "saved_search_match"
+  | "ad_payment_received"
+  | "ad_approved"
+  | "ad_rejected";
 
 export type NotificationTemplateInput = {
   actorName?: string | null;
@@ -38,6 +41,7 @@ export type NotificationTemplateInput = {
   carrier?: string | null;
   trackingNumber?: string | null;
   deadline?: string | null;
+  adTitle?: string | null;
 };
 
 export type RenderedNotification = {
@@ -139,6 +143,12 @@ export function renderNotificationTemplate(key: NotificationTemplateKey, input: 
       return render(key, "payments", "Delivery confirmed", `The buyer confirmed delivery of ${listingTitle}. Held funds are released when the buyer releases them or automatically after 3 days without a dispute.`, actionUrl);
     case "order_auto_released":
       return render(key, "payments", "Payment released automatically", `${money(input.amount, input.currency ?? "USD")} for ${listingTitle} was released to the seller because the review period ended without a dispute.`, actionUrl);
+    case "ad_payment_received":
+      return render(key, "payments", "Ad payment received", `We received ${money(input.amount, input.currency ?? "USD")} for your sponsored placement "${input.adTitle ?? "your ad"}". An admin reviews it before it goes live. If it is rejected, the payment is refunded in full.`, actionUrl);
+    case "ad_approved":
+      return render(key, "payments", "Your ad was approved", `"${input.adTitle ?? "Your ad"}" is approved and runs ${input.deadline ?? "on its scheduled dates"}. Impressions and clicks show on My ads.`, actionUrl);
+    case "ad_rejected":
+      return render(key, "payments", "Your ad was not approved", `"${input.adTitle ?? "Your ad"}" was not approved${input.reason ? `: ${input.reason}` : "."} A full refund of ${money(input.amount, input.currency ?? "USD")} was issued to your card.`, actionUrl);
     case "saved_search_match":
       return render(key, "saved_searches", `New match for ${input.savedSearchName ?? "your saved search"}`, `${listingTitle} matches one of your saved search alerts.`, actionUrl);
   }

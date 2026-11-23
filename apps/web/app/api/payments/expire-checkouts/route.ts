@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { env } from "@/lib/env.server";
+import { advanceAdLifecycle } from "@/lib/ads/lifecycle";
 import { expireAbandonedCheckouts } from "@/lib/payments/expire-checkout";
 import { remindAndCancelUncapturedOrders } from "@/lib/payments/uncaptured-order";
 import { authorizeJobRequest } from "@/lib/security/secrets";
@@ -14,7 +15,14 @@ async function run(request: Request) {
     const supabase = createAdminClient() as any;
     const result = await expireAbandonedCheckouts(supabase);
     const uncaptured = await remindAndCancelUncapturedOrders(supabase);
-    return NextResponse.json({ ok: true, ...result, uncaptured });
+    // Sponsored placements ride on this existing cron (no new Vercel cron for the Hobby plan).
+    let ads: Awaited<ReturnType<typeof advanceAdLifecycle>> | { error: string };
+    try {
+      ads = await advanceAdLifecycle(supabase);
+    } catch (error) {
+      ads = { error: error instanceof Error ? error.message : "Ad lifecycle sweep failed." };
+    }
+    return NextResponse.json({ ok: true, ...result, uncaptured, ads });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Checkout expiry failed." }, { status: 500 });
   }

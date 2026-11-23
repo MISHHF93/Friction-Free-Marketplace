@@ -22,8 +22,10 @@ async function loadTarget(id: string) {
   }
   try {
     const supabase = createAdminClient() as any;
-    const { data: campaign } = await supabase.from("ad_campaigns").select("id,target_url").eq("id", id).maybeSingle();
+    const { data: campaign } = await supabase.from("ad_campaigns").select("id,target_url,status").eq("id", id).maybeSingle();
     if (!campaign?.id || typeof campaign.target_url !== "string") return null;
+    // Unreviewed, unpaid or rejected self-serve ads never redirect.
+    if (!["approved", "active", "expired"].includes(String(campaign.status ?? "approved"))) return null;
     return { id: campaign.id as string, target_url: campaign.target_url };
   } catch {
     return null;

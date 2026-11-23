@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 const footerLinks = [
   { href: "/pricing", label: "Pricing" },
+  { href: "/advertise", label: "Advertise" },
   { href: "/safety", label: "Safety" },
   { href: "/privacy", label: "Privacy" },
   { href: "/terms", label: "Terms" },

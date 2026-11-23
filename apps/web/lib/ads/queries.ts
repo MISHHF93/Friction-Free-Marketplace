@@ -34,6 +34,8 @@ export async function getCampaignForSlot(placement: AdPlacementKey, context: AdT
       .select("id,placement,title,image_path,alt_text,target_url,advertiser_name,starts_at,ends_at,is_active,priority,weight,category_slug")
       .eq("placement", placement)
       .eq("is_active", true)
+      // RLS also lets advertisers and ads.manage admins read unapproved rows; never serve those.
+      .in("status", ["approved", "active"])
       .lte("starts_at", new Date().toISOString());
     if (error || !data) return null;
     const campaigns = (data as Record<string, unknown>[]).map(asCampaign).filter((row): row is AdCampaign => Boolean(row));

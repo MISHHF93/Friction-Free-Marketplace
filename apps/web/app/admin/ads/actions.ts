@@ -7,6 +7,9 @@ import { isAdPlacementKey } from "@/lib/ads/placements";
 import { isAllowedAdTarget } from "@/lib/ads/redirect";
 import { publicEnv } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { approveSelfServeAd, rejectSelfServeAd } from "@/lib/ads/payments";
+import { enqueueTemplateNotification } from "@/lib/notifications/service";
+import { getStripe } from "@/lib/stripe/server";
 
 export type AdCampaignFormState = { error: string | null };
 
@@ -134,3 +137,78 @@ export async function setAdCampaignActive(formData: FormData) {
   revalidatePath("/admin/ads");
 }
 
+
+function adPaymentDeps() {
+  return {
+    supabase: createAdminClient() as any,
+    stripe: getStripe(),
+    notify: ({ userId, template, input }: { userId: string; template: "ad_payment_received" | "ad_approved" | "ad_rejected"; input: Record<string, string | number | null> }) =>
+      enqueueTemplateNotification({ userId, template, input })
+  };
+}
+
+function reviewRedirect(kind: "ok" | "error", message: string): never {
+  redirect(`/admin/ads?${kind === "ok" ? "notice" : "error"}=${encodeURIComponent(message)}`);
+}
+
+export async function approveSelfServeAdAction(formData: FormData) {
+  const auth = await requireAdminPagePermission("ads.manage", { loginNext: "/admin/ads", deniedPath: "/admin" });
+  const id = field(formData, "id");
+  let failure: string | null = null;
+  try {
+    await approveSelfServeAd(adPaymentDeps(), id, auth.adminUser.id);
+  } catch (error) {
+    failure = error instanceof Error ? error.message : "Could not approve the ad.";
+  }
+  revalidatePath("/admin/ads");
+  if (failure) reviewRedirect("error", failure);
+  reviewRedirect("ok", "Ad approved. The advertiser was notified.");
+}
+
+export async function rejectSelfServeAdAction(formData: FormData) {
+  const auth = await requireAdminPagePermission("ads.manage", { loginNext: "/admin/ads", deniedPath: "/admin" });
+  const id = field(formData, "id");
+  const reason = field(formData, "reason");
+  let failure: string | null = null;
+  try {
+    await rejectSelfServeAd(adPaymentDeps(), id, auth.adminUser.id, reason);
+  } catch (error) {
+    const fromStripe = typeof (error as { type?: unknown })?.type === "string" && String((error as { type: string }).type).startsWith("Stripe");
+    failure = fromStripe
+      ? "Stripe could not refund this payment, so the ad is still waiting for review. Check the Stripe dashboard and try again."
+      : error instanceof Error ? error.message : "Could not reject the ad.";
+  }
+  revalidatePath("/admin/ads");
+  if (failure) reviewRedirect("error", failure);
+  reviewRedirect("ok", "Ad rejected and refunded. The advertiser was notified.");
+}
+
+export async function updateAdPricingAction(formData: FormData) {
+  const auth = await requireAdminPagePermission("ads.manage", { loginNext: "/admin/ads/pricing", deniedPath: "/admin" });
+  const placement = field(formData, "placement");
+  let failure: string | null = null;
+  try {
+    if (!isAdPlacementKey(placement)) throw new Error("Unknown placement.");
+    const dollars = Number(field(formData, "price_per_day"));
+    const minDays = Number(field(formData, "min_days") || "1");
+    const maxDays = Number(field(formData, "max_days") || "30");
+    const cents = Math.round(dollars * 100);
+    if (!Number.isFinite(dollars) || cents < 100 || cents > 10_000_000) throw new Error("Price per day must be between 1.00 and 100,000.00.");
+    if (!Number.isInteger(minDays) || !Number.isInteger(maxDays) || minDays < 1 || maxDays < minDays || maxDays > 90) throw new Error("Days must be whole numbers, 1 to 90, with min ≤ max.");
+    const supabase = auth.supabase as any;
+    const updated = await supabase.from("ad_pricing").update({
+      price_cents_per_day: cents,
+      min_days: minDays,
+      max_days: maxDays,
+      self_serve_enabled: field(formData, "self_serve_enabled") === "on",
+      is_placeholder: false,
+      updated_by: auth.adminUser.id
+    }).eq("placement", placement).select("placement");
+    if (updated.error || !updated.data?.length) throw new Error(updated.error?.message ?? "Could not save the price.");
+    await writeAudit(auth.adminUser.id, "ad_pricing.updated", null, { placement, price_cents_per_day: cents, min_days: minDays, max_days: maxDays });
+  } catch (error) {
+    failure = error instanceof Error ? error.message : "Could not save the price.";
+  }
+  revalidatePath("/admin/ads/pricing");
+  redirect(`/admin/ads/pricing?${failure ? `error=${encodeURIComponent(failure)}` : "saved=1"}`);
+}

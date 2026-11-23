@@ -11,6 +11,8 @@ import { closeDisputeForExpiredAuthorization, shouldCloseDisputeForExpiredAuthor
 import { notifyTransactionParties } from "@/lib/notifications/transaction-events";
 import { acceptByDeadline, formatAcceptBy } from "@/lib/payments/uncaptured-order";
 import { getStripe } from "@/lib/stripe/server";
+import { applyAdCheckoutCompleted } from "@/lib/ads/payments";
+import { enqueueTemplateNotification } from "@/lib/notifications/service";
 
 type Supabase = ReturnType<typeof createAdminClient>;
 
@@ -343,6 +345,14 @@ export async function ingestStripeEvent(event: Stripe.Event, source: "platform" 
       break;
     case "charge.refunded":
       await applyChargeRefund(event.data.object as Stripe.Charge);
+      break;
+    case "checkout.session.completed":
+      // Only self-serve ad purchases use Stripe Checkout; marketplace orders use PaymentIntents.
+      await applyAdCheckoutCompleted({
+        supabase,
+        stripe: getStripe(),
+        notify: ({ userId, template, input }) => enqueueTemplateNotification({ userId, template, input, supabase })
+      }, event.data.object as Stripe.Checkout.Session);
       break;
     case "transfer.created":
     case "transfer.updated":

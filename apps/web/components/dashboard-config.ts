@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import {
+  Megaphone,
   MessageSquare,
   Settings,
   ShoppingBag,
@@ -19,6 +20,7 @@ export const dashboardLinks: DashboardLink[] = [
   { href: "/dashboard/messages", label: "Messages", description: "Conversations and offers", icon: MessageSquare },
   { href: "/dashboard/orders", label: "Orders", description: "Purchases and sales", icon: ShoppingBag },
   { href: "/dashboard/payments", label: "Payments", description: "Checkout, payouts, and protected payments", icon: WalletCards },
+  { href: "/dashboard/ads", label: "Ads", description: "Sponsored placements you bought", icon: Megaphone },
   { href: "/account", label: "Account", description: "Profile, notifications, and security", icon: Settings }
 ];
 
