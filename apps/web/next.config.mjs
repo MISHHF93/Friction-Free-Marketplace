@@ -155,7 +155,7 @@ function validateStartupEnvironment() {
     throw new Error([
       "Invalid marketplace environment configuration.",
       ...errors,
-      "Copy apps/web/.env.example to apps/web/.env.local and fill in the required values before starting Next.js."
+      "Copy the repository root .env.example to apps/web/.env.local and fill in the required values before starting Next.js."
     ].join("\n"));
   }
 }
@@ -174,7 +174,8 @@ const shouldHydrateLocalDevelopmentEnvironment = process.env.NODE_ENV !== "produ
 
 if (!isProductionBuild && shouldHydrateLocalDevelopmentEnvironment) {
   for (const [key, value] of Object.entries(localDevelopmentEnvironment)) {
-    process.env[key] ??= value;
+    // Blank values (e.g. `KEY=` copied from .env.example) count as unset.
+    if (!process.env[key]?.trim()) process.env[key] = value;
   }
 }
 

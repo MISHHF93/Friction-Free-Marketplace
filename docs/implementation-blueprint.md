@@ -347,6 +347,8 @@ Required checks per pull request:
 
 The repository should be organized around deployable applications, independently owned services, shared contracts, reusable packages, infrastructure, data/AI assets, and operational runbooks.
 
+> **Status:** this is the long-term target layout. The empty placeholder folders for it were removed; the current repository is `apps/web`, `apps/mobile`, `packages/shared`, and `supabase/` (see the root README). Create these folders when real code for them exists.
+
 ```text
 .
 ├── apps/

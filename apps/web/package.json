@@ -6,14 +6,14 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "dev": "FFM_BIND_HOST=127.0.0.1 next dev --webpack --hostname 127.0.0.1 -p 3001",
+    "dev": "node scripts/dev.mjs",
     "build": "next build --webpack",
     "start": "next start",
     "web:build": "next build --webpack",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:unit": "NODE_ENV=test vitest run",
+    "test:unit": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
