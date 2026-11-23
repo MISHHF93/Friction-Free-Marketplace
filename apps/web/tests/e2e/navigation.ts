@@ -2,16 +2,16 @@ import type { Page } from "@playwright/test";
 
 /** Wait until the route loading shell is gone and a real heading is painted. */
 export async function waitForAppReady(page: Page, timeout = 10_000) {
-  await page.locator("[data-ffm-route-loading='true']").waitFor({ state: "hidden", timeout }).catch(() => undefined);
   await page.waitForFunction(
-    () =>
-      [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")].some((element) => {
-        if (element.closest("[data-ffm-route-loading='true']")) return false;
+    () => {
+      if (document.querySelector("[data-ffm-route-loading='true']")) return false;
+      return [...document.querySelectorAll("h1, h2, h3, h4, h5, h6")].some((element) => {
         const style = getComputedStyle(element);
         if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) return false;
         const rect = element.getBoundingClientRect();
         return rect.width > 1 && rect.height > 1;
-      }),
+      });
+    },
     { timeout }
   );
 }
@@ -29,7 +29,9 @@ export async function openPath(page: Page, path: string) {
     } catch (error) {
       lastError = error;
       const message = error instanceof Error ? error.message : String(error);
-      if (!/ERR_ABORTED|ERR_CONNECTION_RESET|frame was detached|interrupted|Timeout/i.test(message) || attempt === 2) throw error;
+      // Retry only transient navigation failures. A readiness timeout should fail
+      // once; retrying it for 10s at a time burns the 30s test budget.
+      if (!/ERR_ABORTED|ERR_CONNECTION_RESET|frame was detached|interrupted/i.test(message) || attempt === 2) throw error;
       await page.waitForTimeout(400 * (attempt + 1));
     }
   }

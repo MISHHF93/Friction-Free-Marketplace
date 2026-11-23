@@ -3,6 +3,10 @@ import { defineConfig, devices } from "@playwright/test";
 // chrome-headless-shell hangs on accessibility queries and axe evaluate in this environment.
 process.env.PLAYWRIGHT_CHROMIUM_USE_HEADLESS_SHELL ??= "0";
 
+// Stripe.js requests fonts that CSP font-src ('self' data:) will never load.
+// Playwright's screenshot path waits on document.fonts.ready unless this is set.
+process.env.PW_TEST_SCREENSHOT_NO_FONTS_READY ??= "1";
+
 // Chromium-only flags; WebKit rejects them.
 const chromiumLaunch = { args: ["--no-sandbox", "--disable-dev-shm-usage"] };
 

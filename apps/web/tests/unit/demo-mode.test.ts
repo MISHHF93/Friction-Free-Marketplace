@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isDemoMarketplaceDataEnabled } from "@/lib/marketplace/demo-mode";
+import { isDemoMarketplaceDataEnabled, isLiveDatabaseConfigured } from "@/lib/marketplace/demo-mode";
 
 describe("marketplace demo-data policy", () => {
   it("never silently enables demo inventory in production", () => {
@@ -25,6 +25,13 @@ describe("marketplace demo-data policy", () => {
     expect(isDemoMarketplaceDataEnabled({
       NODE_ENV: "development",
       SUPABASE_SERVICE_ROLE_KEY: "local-dev-placeholder",
+    })).toBe(false);
+  });
+
+  it("does not treat the e2e inert Supabase URL as a live database", () => {
+    expect(isLiveDatabaseConfigured({
+      NEXT_PUBLIC_SUPABASE_URL: "https://local-dev-inert.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "local-dev-inert",
     })).toBe(false);
   });
 });

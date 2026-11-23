@@ -28,9 +28,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import nextDynamic from "next/dynamic";
 import { MediaViewer } from "@/components/media/media-viewer-lazy";
 import type { MediaViewerItem } from "@/components/media/media-viewer-types";
+import { getMarketplaceSession } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
-import { isDemoMarketplaceDataEnabled } from "@/lib/marketplace/demo-mode";
+import { isDemoMarketplaceDataEnabled, isLiveDatabaseConfigured } from "@/lib/marketplace/demo-mode";
 import { quoteCheckoutAmounts } from "@/lib/payments/quote";
 import { normalizeCurrency } from "@/lib/payments/money";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -96,6 +97,7 @@ type DbListing = {
 };
 
 async function getDatabaseListing(id: string) {
+  if (!isLiveDatabaseConfigured()) return null;
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -259,8 +261,8 @@ async function loadPayableOffer(offerId: string | undefined, listingId: string |
 export default async function ListingDetailPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams?: Promise<{ offer?: string }> }) {
   const { id } = await params;
   const offerId = (await searchParams)?.offer;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const session = await getMarketplaceSession();
+  const user = session ? { id: session.id } : null;
   const [favoriteIds, dbListing, discoveryListing] = await Promise.all([
     user ? getFavoriteListingIds(user.id) : Promise.resolve(new Set<string>()),
     getDatabaseListing(id),

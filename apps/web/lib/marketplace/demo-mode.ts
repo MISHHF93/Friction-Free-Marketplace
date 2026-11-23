@@ -15,5 +15,5 @@ export function isLiveDatabaseConfigured(input: NodeJS.ProcessEnv = process.env)
   const url = input.NEXT_PUBLIC_SUPABASE_URL?.trim() ?? "";
   const key = input.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? "";
   if (!url || !key) return false;
-  return !/placeholder|example\.com/i.test(`${url} ${key}`);
+  return !/placeholder|example\.com|local-dev-inert/i.test(`${url} ${key}`);
 }
