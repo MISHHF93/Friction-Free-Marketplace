@@ -232,7 +232,11 @@ function buildSafetyWarnings(listing: DiscoveryDocument, fraudScore: number | nu
     "Confirm condition, serial numbers, accessories, and pickup details before the handoff."
   ];
 
-  if (!isLiveDatabaseListing) warnings.push("This sample listing cannot use live protected checkout.");
+  if (!isLiveDatabaseListing) {
+    warnings.push(isDemoMarketplaceDataEnabled()
+      ? "This sample listing cannot use live protected checkout."
+      : "Protected checkout is temporarily unavailable for this listing. Please refresh in a moment.");
+  }
   if (fraudScore !== null && fraudScore >= 70) warnings.push("Risk is elevated. Avoid deposits, shipping pressure, or off-platform payment requests.");
   if (listing.seller_fraud_risk_level !== "low") warnings.push(`Seller risk is marked ${listing.seller_fraud_risk_level}. Review trust signals carefully.`);
   if (!listing.pickup_available && !listing.ships_to.length) warnings.push("The seller has not selected pickup or shipping options yet.");
@@ -358,7 +362,7 @@ export default async function ListingDetailPage({ params, searchParams }: { para
               />
             }
             checkout={isLiveDatabaseListing ? { listingId: listing.id, offerId: payableOffer?.id, priceAmount: checkoutPrice, currency: listing.currency, shippingCents: checkoutQuote.shippingCents } : null}
-            demoListingId={isLiveDatabaseListing ? null : listing.id}
+            demoListingId={!isLiveDatabaseListing && isDemoMarketplaceDataEnabled() ? listing.id : null}
           >
             {payableOffer ? null : offerId ? <p className="mb-3 text-sm text-muted-foreground">That offer cannot be paid. Checkout uses the list price only when you are the buyer on an accepted, unexpired offer in the same currency.</p> : null}
           </ListingBuyBar>

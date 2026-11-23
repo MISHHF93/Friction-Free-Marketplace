@@ -1,6 +1,6 @@
 # Friction Free Marketplace roadmap
 
-Production repo: `garfieldgarwood45-collab/FrictionFree-production`. It deploys to frictionfree.co through Vercel.
+Production: frictionfree.co through Vercel, owned by `garfieldgarwood45-collab`. Account and service handover steps are in [HANDOVER.md](HANDOVER.md).
 Source audit: `ffm-reviews/r10-lifecycle-audit.md` (r10, Nov 20, 2026). The IDs below (P0-1 and so on) refer to that audit.
 Items tagged **$**, **RLS** or **MIG** touch money logic, row-level security or migrations. They need explicit sign-off before work starts.
 

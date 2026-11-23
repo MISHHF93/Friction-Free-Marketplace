@@ -48,6 +48,7 @@ jobs:
             NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
             NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.NEXT_PUBLIC_POSTHOG_KEY }}
             NEXT_PUBLIC_POSTHOG_HOST=${{ vars.NEXT_PUBLIC_POSTHOG_HOST }}
+            NEXT_PUBLIC_OAUTH_PROVIDERS=${{ vars.NEXT_PUBLIC_OAUTH_PROVIDERS }}
           tags: |
             ghcr.io/${{ github.repository }}:${{ github.sha }}
       - name: Smoke test immutable container
