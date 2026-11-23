@@ -2,6 +2,7 @@ import { mkdirSync } from "node:fs";
 import path from "node:path";
 import { expect, test, type TestInfo } from "@playwright/test";
 import { openPath } from "./navigation";
+import { screenshotPage } from "./screenshot";
 
 function screenshotFile(testInfo: TestInfo, name: string) {
   const configured = process.env.PLAYWRIGHT_SCREENSHOT_DIR;
@@ -27,20 +28,20 @@ test.describe("phone layout", () => {
   test("keeps checkout reachable on a listing", async ({ page }, testInfo) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await openPath(page, "/");
-    await page.screenshot({ path: screenshotFile(testInfo, "mobile-home-390.png"), fullPage: false });
+    await screenshotPage(page, { path: screenshotFile(testInfo, "mobile-home-390.png"), fullPage: false });
     await openPath(page, "/browse");
-    await page.screenshot({ path: screenshotFile(testInfo, "mobile-browse-390.png"), fullPage: false });
+    await screenshotPage(page, { path: screenshotFile(testInfo, "mobile-browse-390.png"), fullPage: false });
     await openPath(page, "/listings/verified-road-bike");
     await expect(page.getByRole("button", { name: "Back" })).toBeVisible();
-    await page.screenshot({ path: screenshotFile(testInfo, "mobile-listing-390.png"), fullPage: false });
+    await screenshotPage(page, { path: screenshotFile(testInfo, "mobile-listing-390.png"), fullPage: false });
     await page.getByRole("button", { name: "Buy", exact: true }).click();
     await expect(page.getByRole("button", { name: "Preview test authorization" })).toBeVisible();
-    await page.screenshot({ path: screenshotFile(testInfo, "mobile-checkout-390.png"), fullPage: false });
+    await screenshotPage(page, { path: screenshotFile(testInfo, "mobile-checkout-390.png"), fullPage: false });
     await page.context().addCookies([{ name: "ffm-e2e-user", value: "alice", url: "http://127.0.0.1:3001" }]);
     await openPath(page, "/dashboard/messages");
-    await page.screenshot({ path: screenshotFile(testInfo, "mobile-messages-390.png"), fullPage: false });
+    await screenshotPage(page, { path: screenshotFile(testInfo, "mobile-messages-390.png"), fullPage: false });
     await openPath(page, "/dashboard/purchases");
-    await page.screenshot({ path: screenshotFile(testInfo, "mobile-orders-390.png"), fullPage: false });
+    await screenshotPage(page, { path: screenshotFile(testInfo, "mobile-orders-390.png"), fullPage: false });
   });
 
   test("keeps the create listing steps reachable", async ({ page }, testInfo) => {
@@ -48,6 +49,6 @@ test.describe("phone layout", () => {
     await page.context().addCookies([{ name: "ffm-e2e-user", value: "bob", url: "http://127.0.0.1:3001" }]);
     await openPath(page, "/dashboard/listings/create");
     await expect(page.getByRole("button", { name: "Photos", exact: true })).toBeVisible();
-    await page.screenshot({ path: screenshotFile(testInfo, "mobile-sell-390.png"), fullPage: false });
+    await screenshotPage(page, { path: screenshotFile(testInfo, "mobile-sell-390.png"), fullPage: false });
   });
 });
