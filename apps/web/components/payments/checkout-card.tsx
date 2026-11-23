@@ -9,6 +9,7 @@ import { publicEnv } from "@/lib/env";
 import { centsToDollars } from "@/lib/payments/money";
 import { formatMoney } from "@/lib/i18n/format";
 import { quoteCheckoutAmounts } from "@/lib/payments/quote";
+import { loadStripeJs } from "@/lib/payments/load-stripe-js";
 
 type StripeJs = {
   elements: () => { create: (type: "card", options?: Record<string, unknown>) => { mount: (selector: string) => void; destroy: () => void } };
@@ -59,13 +60,7 @@ export function CheckoutCard({ listingId, priceAmount, currency, shippingCents =
     };
 
     if (window.Stripe) setupStripe();
-    else {
-      const script = document.createElement("script");
-      script.src = "https://js.stripe.com/v3/";
-      script.async = true;
-      script.onload = setupStripe;
-      document.body.appendChild(script);
-    }
+    else void loadStripeJs().then(setupStripe).catch(() => setStatus("Checkout could not load the payment form."));
 
     return () => cardRef.current?.destroy();
   }, [checkoutConfigured, stripeKey]);

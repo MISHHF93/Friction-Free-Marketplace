@@ -67,18 +67,21 @@ test.describe("core marketplace flows", () => {
     await context.close();
   });
 
-  test("stripe.js loads under the content security policy", async ({ page }) => {
-    const stripeScript = page.waitForResponse((response) => response.url().includes("https://js.stripe.com/v3/") && response.ok());
-    const response = await page.goto("/listings/verified-road-bike");
+  test("stripe.js loads under the content security policy when checkout opens", async ({ page }) => {
+    const response = await page.goto("/listings/verified-road-bike", { waitUntil: "domcontentloaded" });
     const policy = response?.headers()["content-security-policy"] ?? "";
     expect(policy).toContain("https://js.stripe.com");
     await expect(page.getByRole("heading", { name: /road bike/i })).toBeVisible();
     const script = page.locator("script[src='https://js.stripe.com/v3/']");
+    await expect(script).toHaveCount(0);
+    expect(await page.locator("html").getAttribute("data-nonce")).toBeNull();
+    const stripeScript = page.waitForResponse((resp) => resp.url().includes("https://js.stripe.com/v3/") && resp.ok());
+    await page.getByRole("button", { name: "Buy", exact: true }).click();
+    await expect(page.getByRole("dialog", { name: "Protected checkout" })).toBeVisible();
+    await stripeScript;
     await expect(script).toHaveCount(1);
     const nonce = await script.evaluate((element) => (element as HTMLScriptElement).nonce || element.getAttribute("nonce") || "");
     expect(nonce.length > 0).toBe(true);
-    expect(await page.locator("html").getAttribute("data-nonce")).toBeNull();
-    await stripeScript;
   });
 
   test("sample listing checkout preview uses the mocked Stripe test response", async ({ page }) => {

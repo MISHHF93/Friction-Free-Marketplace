@@ -13,7 +13,6 @@ import {
   Heart,
   ImagePlus,
   Info,
-  LockKeyhole,
   MapPin,
   ScanSearch,
   ShieldAlert,
@@ -32,13 +31,11 @@ import type { MediaViewerItem } from "@/components/media/media-viewer-types";
 import { createClient } from "@/lib/supabase/server";
 import { FavoriteToggleForm } from "@/components/favorites/favorite-toggle-form";
 import { isDemoMarketplaceDataEnabled } from "@/lib/marketplace/demo-mode";
-import { StripeJsScript } from "@/components/security/nonce-script";
 import { quoteCheckoutAmounts } from "@/lib/payments/quote";
 import { normalizeCurrency } from "@/lib/payments/money";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const ShareListingButton = nextDynamic(() => import("@/components/listings/share-listing-button").then((mod) => mod.ShareListingButton));
-const CheckoutCard = nextDynamic(() => import("@/components/payments/checkout-card").then((mod) => mod.CheckoutCard));
 const ListingBuyBar = nextDynamic(() => import("@/components/payments/listing-buy-bar").then((mod) => mod.ListingBuyBar));
 const StartConversationCard = nextDynamic(() => import("@/components/messaging/start-conversation-card").then((mod) => mod.StartConversationCard));
 const MakeOfferSheet = nextDynamic(() => import("@/components/offers/make-offer-sheet").then((mod) => mod.MakeOfferSheet));
@@ -226,20 +223,6 @@ function buildAiInsights(listing: DiscoveryDocument, aiListing: Record<string, u
   ];
 }
 
-async function DemoCheckout({ listingId }: { listingId: string }) {
-  if (process.env.NODE_ENV === "production" || !isDemoMarketplaceDataEnabled()) {
-    return <p className="text-sm text-muted-foreground">Checkout is available only for a live listing.</p>;
-  }
-  const { SampleCheckoutPreview } = await import("@/components/payments/demo-checkout");
-  return (
-    <Card className="border-primary/20 bg-primary/5">
-      <CardHeader><CardTitle className="flex items-center gap-2"><LockKeyhole className="h-5 w-5 text-primary" aria-hidden="true" /> Protected checkout</CardTitle></CardHeader>
-      <CardContent>
-        <SampleCheckoutPreview listingId={listingId} />
-      </CardContent>
-    </Card>
-  );
-}
 
 function buildSafetyWarnings(listing: DiscoveryDocument, fraudScore: number | null, isLiveDatabaseListing: boolean) {
   const warnings = [
@@ -309,7 +292,6 @@ export default async function ListingDetailPage({ params, searchParams }: { para
 
   return (
     <main className="app-container section-y pb-28">
-      <StripeJsScript />
       <div className="mb-5 hidden flex-wrap gap-2 sm:flex">
         <Badge variant="trust"><ShieldCheck className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Protected checkout eligible</Badge>
         <Badge variant="ai"><Sparkles className="mr-1 h-3.5 w-3.5" aria-hidden="true" /> Listing signals reviewed</Badge>
@@ -373,13 +355,10 @@ export default async function ListingDetailPage({ params, searchParams }: { para
                 className="min-h-11"
               />
             }
+            checkout={isLiveDatabaseListing ? { listingId: listing.id, offerId: payableOffer?.id, priceAmount: checkoutPrice, currency: listing.currency, shippingCents: checkoutQuote.shippingCents } : null}
+            demoListingId={isLiveDatabaseListing ? null : listing.id}
           >
             {payableOffer ? null : offerId ? <p className="mb-3 text-sm text-muted-foreground">That offer cannot be paid. Checkout uses the list price only when you are the buyer on an accepted, unexpired offer in the same currency.</p> : null}
-            {isLiveDatabaseListing ? (
-              <CheckoutCard listingId={listing.id} offerId={payableOffer?.id} priceAmount={checkoutPrice} currency={listing.currency} shippingCents={checkoutQuote.shippingCents} />
-            ) : (
-              <DemoCheckout listingId={listing.id} />
-            )}
           </ListingBuyBar>
 
           <Card id="message-seller">

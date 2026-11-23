@@ -1,10 +1,15 @@
 "use client";
 
-import { useCallback, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useSyncExternalStore, type ReactNode } from "react";
+import nextDynamic from "next/dynamic";
+import { loadStripeJs } from "@/lib/payments/load-stripe-js";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/i18n/format";
 
 export const OPEN_CHECKOUT_EVENT = "ffm:open-checkout";
+
+const CheckoutCard = nextDynamic(() => import("@/components/payments/checkout-card").then((mod) => mod.CheckoutCard), { ssr: false });
+const SampleCheckoutPreview = nextDynamic(() => import("@/components/payments/demo-checkout").then((mod) => mod.SampleCheckoutPreview), { ssr: false });
 
 let checkoutForcedOpen = false;
 const checkoutListeners = new Set<() => void>();
@@ -80,7 +85,9 @@ export function ListingBuyBar({
   offerAction,
   ownerEditHref,
   isOwner = false,
-  children
+  children,
+  checkout,
+  demoListingId
 }: {
   amount: number;
   currency: string;
@@ -89,10 +96,22 @@ export function ListingBuyBar({
   offerAction?: ReactNode;
   ownerEditHref?: string;
   isOwner?: boolean;
-  children: ReactNode;
+  children?: ReactNode;
+  checkout?: {
+    listingId: string;
+    priceAmount: number;
+    currency: string;
+    shippingCents?: number;
+    offerId?: string;
+  } | null;
+  demoListingId?: string | null;
 }) {
   const open = useSyncExternalStore(subscribeToCheckoutOpen, getCheckoutOpenSnapshot, () => false);
   const close = useCallback(() => closeCheckoutSheet(), []);
+
+  useEffect(() => {
+    if (open && !isOwner) void loadStripeJs().catch(() => undefined);
+  }, [open, isOwner]);
 
   return (
     <>
@@ -119,6 +138,7 @@ export function ListingBuyBar({
           <div id="protected-checkout" role="dialog" aria-modal="true" aria-label="Protected checkout" className="absolute inset-x-0 bottom-0 mx-auto max-h-[85vh] w-full max-w-[480px] overflow-y-auto rounded-t-3xl bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             <Button type="button" variant="outline" className="mb-3 min-h-11" onClick={close}>Close checkout</Button>
             {children}
+            {checkout ? <CheckoutCard {...checkout} /> : demoListingId ? <SampleCheckoutPreview listingId={demoListingId} /> : null}
           </div>
         </div>
       ) : null}
