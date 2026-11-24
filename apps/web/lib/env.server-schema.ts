@@ -2,7 +2,7 @@ import { z } from "zod";
 import { publicEnvSchema } from "@/lib/env.shared";
 
 const requiredString = (name: string) =>
-  z.string({ required_error: `${name} is required.` }).trim().min(1, `${name} is required.`);
+  z.string({ error: `${name} is required.` }).trim().min(1, `${name} is required.`);
 
 export const serverEnvSchema = publicEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: requiredString("SUPABASE_SERVICE_ROLE_KEY"),

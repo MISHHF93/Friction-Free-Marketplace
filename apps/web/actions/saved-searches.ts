@@ -14,7 +14,7 @@ const alertFrequencySchema = z.enum(["instant", "daily", "weekly", "never"]);
 const savedSearchSchema = z.object({
   name: z.string().trim().min(2, "Name this saved search.").max(120),
   query: z.string().trim().max(200).optional().nullable(),
-  filters: z.record(z.unknown()).default({}),
+  filters: z.record(z.string(), z.unknown()).default({}),
   alertEnabled: z.boolean().default(true),
   alertFrequency: alertFrequencySchema.default("instant")
 });

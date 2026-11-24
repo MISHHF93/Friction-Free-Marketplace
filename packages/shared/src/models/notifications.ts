@@ -27,7 +27,7 @@ export const NotificationSchema = BaseEntitySchema.extend({
   status: NotificationStatusSchema,
   title: z.string().trim().min(1).max(140),
   body: z.string().trim().min(1).max(1_000),
-  data: z.record(JsonValueSchema).default({}),
+  data: z.record(z.string(), JsonValueSchema).default({}),
   readAt: IsoDateTimeSchema.nullable(),
   sentAt: IsoDateTimeSchema.nullable(),
 });
@@ -39,7 +39,7 @@ export const CreateNotificationDtoSchema = z.object({
   channel: NotificationChannelSchema,
   title: NotificationSchema.shape.title,
   body: NotificationSchema.shape.body,
-  data: z.record(JsonValueSchema).optional(),
+  data: z.record(z.string(), JsonValueSchema).optional(),
 });
 export interface CreateNotificationDto extends z.infer<typeof CreateNotificationDtoSchema> {}
 

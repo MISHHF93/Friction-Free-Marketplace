@@ -47,7 +47,7 @@ export const ListingSchema = BaseEntitySchema.extend({
   price: PositiveMoneySchema,
   inventoryQuantity: z.number().int().min(0),
   images: z.array(ImageAssetSchema).min(1).max(16),
-  attributes: z.record(JsonValueSchema).default({}),
+  attributes: z.record(z.string(), JsonValueSchema).default({}),
   tags: z.array(z.string().trim().min(1).max(40)).max(30),
   shippingOptions: z.array(ListingShippingOptionSchema).min(1),
   aiMetadata: ListingAiMetadataSchema,

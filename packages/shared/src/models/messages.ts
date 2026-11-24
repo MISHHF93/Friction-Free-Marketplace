@@ -36,7 +36,7 @@ export const MessageSchema = BaseEntitySchema.extend({
   status: MessageStatusSchema,
   body: z.string().trim().max(5_000).nullable(),
   attachments: z.array(MessageAttachmentSchema).max(10),
-  metadata: z.record(JsonValueSchema).default({}),
+  metadata: z.record(z.string(), JsonValueSchema).default({}),
   readAt: IsoDateTimeSchema.nullable(),
 });
 export interface Message extends z.infer<typeof MessageSchema> {}
@@ -52,7 +52,7 @@ export const SendMessageDtoSchema = z.object({
   conversationId: EntityIdSchema,
   body: z.string().trim().min(1).max(5_000).optional(),
   attachments: z.array(MessageAttachmentSchema).max(10).default([]),
-  metadata: z.record(JsonValueSchema).optional(),
+  metadata: z.record(z.string(), JsonValueSchema).optional(),
 });
 export interface SendMessageDto extends z.infer<typeof SendMessageDtoSchema> {}
 

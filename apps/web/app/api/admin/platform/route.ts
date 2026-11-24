@@ -11,7 +11,7 @@ const platformActionSchema = z.object({
   targetType: z.string().trim().max(80).optional(),
   targetId: z.string().uuid().optional(),
   reason: z.string().trim().min(5).max(2000),
-  metadata: z.record(z.unknown()).default({}),
+  metadata: z.record(z.string(), z.unknown()).default({}),
 });
 
 export async function GET() {

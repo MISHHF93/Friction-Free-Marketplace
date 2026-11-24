@@ -167,7 +167,10 @@ export async function runMarketplaceAgent(input: AgentRunInput, executeTool?: To
     messages
   });
   const executedTools: AgentToolExecution[] = [];
-  const toolCalls = completion.choices[0]?.message.tool_calls?.slice(0, 3) ?? [];
+  // Agents only declare function tools (toOpenAITools); the SDK's union also covers custom tools.
+  const toolCalls = (completion.choices[0]?.message.tool_calls ?? [])
+    .filter((call): call is Extract<typeof call, { type: "function" }> => call.type === "function")
+    .slice(0, 3);
 
   if (toolCalls.length) {
     const toolMessages = [];

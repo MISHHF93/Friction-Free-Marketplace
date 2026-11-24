@@ -26,7 +26,7 @@ export const LedgerEntrySchema = BaseEntitySchema.extend({
   amount: PositiveMoneySchema,
   sourceType: LedgerSourceTypeSchema,
   sourceId: EntityIdSchema,
-  metadata: z.record(JsonValueSchema).default({}),
+  metadata: z.record(z.string(), JsonValueSchema).default({}),
   postedAt: IsoDateTimeSchema,
 });
 export interface LedgerEntry extends z.infer<typeof LedgerEntrySchema> {}
@@ -51,7 +51,7 @@ export const CreateLedgerTransactionDtoSchema = z.object({
         accountId: EntityIdSchema,
         direction: LedgerEntryDirectionSchema,
         amount: PositiveMoneySchema,
-        metadata: z.record(JsonValueSchema).optional(),
+        metadata: z.record(z.string(), JsonValueSchema).optional(),
       }),
     )
     .min(2),

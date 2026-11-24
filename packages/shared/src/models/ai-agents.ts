@@ -56,8 +56,8 @@ export interface AiAgent extends z.infer<typeof AiAgentSchema> {}
 export const AiToolCallSchema = z.object({
   id: EntityIdSchema,
   name: z.string().trim().min(1).max(120),
-  input: z.record(JsonValueSchema),
-  output: z.record(JsonValueSchema).nullable(),
+  input: z.record(z.string(), JsonValueSchema),
+  output: z.record(z.string(), JsonValueSchema).nullable(),
   startedAt: IsoDateTimeSchema,
   completedAt: IsoDateTimeSchema.nullable(),
 });
@@ -86,8 +86,8 @@ export const AiAgentRunSchema = BaseEntitySchema.extend({
   subjectType: z.enum(["listing", "conversation", "transaction", "report", "dispute", "search_query", "user"]),
   subjectId: EntityIdSchema.nullable(),
   status: AiRunStatusSchema,
-  input: z.record(JsonValueSchema),
-  output: z.record(JsonValueSchema).nullable(),
+  input: z.record(z.string(), JsonValueSchema),
+  output: z.record(z.string(), JsonValueSchema).nullable(),
   toolCalls: z.array(AiToolCallSchema),
   safetyReview: AiSafetyReviewSchema.nullable(),
   usage: AiUsageSchema.nullable(),
@@ -101,7 +101,7 @@ export const CreateAiAgentRunDtoSchema = z.object({
   agentId: EntityIdSchema,
   subjectType: AiAgentRunSchema.shape.subjectType,
   subjectId: EntityIdSchema.nullable().optional(),
-  input: z.record(JsonValueSchema),
+  input: z.record(z.string(), JsonValueSchema),
 });
 export interface CreateAiAgentRunDto extends z.infer<typeof CreateAiAgentRunDtoSchema> {}
 

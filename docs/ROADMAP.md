@@ -24,7 +24,6 @@ Competitor details below come from third-party guides and help pages read in Nov
 
 | Item | Why | Tags |
 | --- | --- | --- |
-| Upgrade zod 3 → 4 and openai 4 → 7 together (GHSA-mrhx-c7xc-m3w5: zod can exhaust memory validating oversized collections). `npm run security:audit` fails until done | High-severity advisory on request validation | |
 | Go-live prerequisites: production env vars, `supabase db push`, Stripe webhooks, Auth URLs, PITR backups | [LAUNCH.md](LAUNCH.md), [HANDOVER.md](HANDOVER.md) | ops |
 | Turn on Google sign-in (`NEXT_PUBLIC_OAUTH_PROVIDERS=google`) | Every competitor offers one-tap sign-up | ops |
 | Decide the cron host for the Vercel plan (Pro, or Supabase pg_cron) (P0-2) | Hourly jobs release payouts and expire checkouts | ops |
@@ -68,6 +67,7 @@ Competitor details below come from third-party guides and help pages read in Nov
 - Self-serve advertising: r12.
 - Repo cleanup of empty apps and stub services (P2-7, P2-8): Nov 23, 2026.
 - Phone-first UI on every device, honest pricing page matching checkout (5% buyer protection fee), post-login open-redirect fix: Nov 23, 2026.
+- zod 3 → 4 and openai 4 → 7 (closes GHSA-mrhx-c7xc-m3w5; `npm audit --omit=dev` is clean), with plain-language fallback validation messages: Nov 24, 2026.
 
 ### Sources (competitor research, November 2026)
 

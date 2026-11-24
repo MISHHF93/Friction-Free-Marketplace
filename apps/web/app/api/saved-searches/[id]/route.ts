@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 const patchSchema = z.object({
   name: z.string().min(2).max(120).optional(),
   query: z.string().max(200).nullable().optional(),
-  filters: z.record(z.unknown()).optional(),
+  filters: z.record(z.string(), z.unknown()).optional(),
   alertEnabled: z.boolean().optional(),
   alertFrequency: z.enum(["instant", "daily", "weekly", "never"]).optional()
 });

@@ -70,7 +70,7 @@ export const modelResponseSchema = z.object({
   toolPlan: z.array(z.object({
     tool: z.string().max(120),
     reason: z.string().max(500),
-    arguments: z.record(z.unknown()).optional(),
+    arguments: z.record(z.string(), z.unknown()).optional(),
   })).max(6).default([]),
   safetyFlags: z.array(z.string().max(500)).max(12).default([]),
   memoryUpdates: z.array(z.string().max(500)).max(8).default([]),

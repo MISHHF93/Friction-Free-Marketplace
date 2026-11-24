@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 const savedSearchSchema = z.object({
   name: z.string().min(2).max(120),
   query: z.string().optional(),
-  filters: z.record(z.unknown()).default({}),
+  filters: z.record(z.string(), z.unknown()).default({}),
   alertEnabled: z.boolean().default(true),
   alertFrequency: z.enum(["instant", "daily", "weekly", "never"]).default("instant")
 });

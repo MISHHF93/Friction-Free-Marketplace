@@ -17,7 +17,7 @@ export const ReportEvidenceSchema = z.object({
   id: EntityIdSchema,
   label: z.string().trim().min(1).max(120),
   url: UrlSchema.nullable().optional(),
-  metadata: z.record(JsonValueSchema).default({}),
+  metadata: z.record(z.string(), JsonValueSchema).default({}),
 });
 export interface ReportEvidence extends z.infer<typeof ReportEvidenceSchema> {}
 

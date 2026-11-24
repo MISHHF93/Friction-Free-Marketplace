@@ -273,7 +273,7 @@ export async function generateAiListing(input: unknown, actorId?: string | null)
   try {
     const openai = getOpenAI();
     const prompt = buildAiListingPrompt(payload);
-    const completion = await openai.beta.chat.completions.parse({
+    const completion = await openai.chat.completions.parse({
       model: AI_LISTING_GENERATION_MODEL,
       temperature: 0.2,
       response_format: zodResponseFormat(aiListingGenerationSchema, "marketplace_listing_generation"),

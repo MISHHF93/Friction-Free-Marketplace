@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const requiredString = (name: string) => z.string({ required_error: `${name} is required.` }).trim().min(1, `${name} is required.`);
+const requiredString = (name: string) => z.string({ error: `${name} is required.` }).trim().min(1, `${name} is required.`);
 const requiredUrl = (name: string) => requiredString(name).url(`${name} must be a valid URL.`);
 
 export const publicEnvSchema = z.object({

@@ -8,7 +8,7 @@ import { recordTransactionEvent } from "@/lib/payments/audit";
 import { enqueueTemplateNotification } from "@/lib/notifications/service";
 import { UNSETTLED_DISPUTE_STATUSES } from "@/lib/disputes/status";
 import { buildDisputeHoldJournal, postLedgerJournal } from "@/lib/financial/ledger";
-const disputeSchema = z.object({ reason: z.string().min(10), evidence: z.record(z.unknown()).default({}) });
+const disputeSchema = z.object({ reason: z.string().min(10), evidence: z.record(z.string(), z.unknown()).default({}) });
 const transactionIdSchema = z.string().uuid();
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import "@/lib/validation/zod-messages";
 
 export const LISTING_CATEGORIES = [
   "electronics",

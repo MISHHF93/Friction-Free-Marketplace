@@ -35,7 +35,7 @@ export const TrustSignalSchema = BaseEntitySchema.extend({
   subjectId: EntityIdSchema,
   signalType: z.string().trim().min(1).max(80),
   weight: z.number().min(-100).max(100),
-  evidence: z.record(JsonValueSchema).default({}),
+  evidence: z.record(z.string(), JsonValueSchema).default({}),
   observedAt: IsoDateTimeSchema,
 });
 export interface TrustSignal extends z.infer<typeof TrustSignalSchema> {}

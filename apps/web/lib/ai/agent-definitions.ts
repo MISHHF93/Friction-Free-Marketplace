@@ -22,7 +22,7 @@ export const agentRunInputSchema = z.object({
       conversationId: z.string().uuid().optional(),
       userRole: z.enum(["buyer", "seller", "admin", "guest"]).optional(),
       locale: z.string().max(40).optional(),
-      metadata: z.record(z.unknown()).optional()
+      metadata: z.record(z.string(), z.unknown()).optional()
     })
     .optional(),
   history: z.array(z.object({
