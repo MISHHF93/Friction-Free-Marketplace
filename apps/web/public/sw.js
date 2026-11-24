@@ -1,4 +1,4 @@
-const CACHE_NAME = "ffm-public-v2";
+const CACHE_NAME = "ffm-public-v3";
 const PUBLIC_ASSETS = ["/offline", "/icon.svg", "/icon-1024.png"];
 
 self.addEventListener("install", (event) => {

@@ -60,12 +60,18 @@ const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   ...(process.env.FFM_HIDE_DEV_INDICATOR === "true" ? { devIndicators: false } : {}),
   allowedDevOrigins: ["127.0.0.1"],
+  // Dev chunk names are not content-hashed (e.g. chunks/app/layout.js). A fresh id per dev
+  // server start appends ?dpl=<id> to every asset URL, so a browser or service worker that
+  // cached an older bundle can never run it against the current server (a stale bundle
+  // crashed the root layout with "Lazy element type must resolve to a class or function").
+  ...(isDevelopmentRuntime ? { deploymentId: `dev-${Date.now().toString(36)}` } : {}),
   async headers() {
     const staticAssetCache = [
       { key: "Cache-Control", value: "public, max-age=31536000, immutable" }
     ];
     return [
-      { source: "/_next/static/:path*", headers: staticAssetCache },
+      // Next already sends immutable caching for /_next/static in production. In dev those
+      // file names are not content-hashed, so a forced immutable header pins stale bundles.
       { source: "/icons/:path*", headers: staticAssetCache },
       { source: "/brand/:path*", headers: staticAssetCache },
       { source: "/icon-1024.png", headers: staticAssetCache },
