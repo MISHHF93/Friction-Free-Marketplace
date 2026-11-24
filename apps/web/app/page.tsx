@@ -32,6 +32,8 @@ export default async function HomePage() {
     getFeaturedListings(6),
     getPublicCategories(12),
   ]);
+  // The section promises live inventory, so empty categories stay on /categories, not here.
+  const liveCategories = categoryResult.categories.filter((category) => category.listingCount > 0);
 
   return (
     <>
@@ -59,14 +61,14 @@ export default async function HomePage() {
 
       <AdSlot placement="home_top_banner" belowFold={false} className="app-container" />
 
-      {categoryResult.categories.length ? (
+      {liveCategories.length ? (
         <section className="app-container section-y">
-          <div className="mb-6">
+          <div className="mb-6 flex items-end justify-between gap-3">
             <h2 className="text-section">Browse by category</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">Only categories with live marketplace inventory are shown.</p>
+            <Link href="/categories" className="shrink-0 text-sm font-bold text-primary hover:underline">All categories</Link>
           </div>
           <div className="adaptive-grid">
-            {categoryResult.categories.map((category) => (
+            {liveCategories.map((category) => (
               <Link key={category.slug} href={`/categories/${category.slug}`} className="card-base card-interactive p-5">
                 <h3 className="text-xl font-black tracking-tight">{category.name}</h3>
                 {category.description ? <p className="mt-2 line-clamp-3 text-sm leading-6 text-muted-foreground">{category.description}</p> : null}

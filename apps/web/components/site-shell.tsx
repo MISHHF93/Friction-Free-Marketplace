@@ -28,10 +28,10 @@ async function AuthNav() {
   if (!session) {
     return (
       <>
-        <Link href="/login" className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}>
+        <Link href="/login" className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "whitespace-nowrap")}>
           Log in
         </Link>
-        <Link href="/signup" className={cn(buttonVariants({ variant: "trust", size: "sm" }), "shadow-trust")}>
+        <Link href="/signup" className={cn(buttonVariants({ variant: "trust", size: "sm" }), "whitespace-nowrap shadow-trust")}>
           Sign up
         </Link>
       </>
@@ -82,7 +82,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
                 <PageTitleMirror />
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-1">
               <AuthNav />
             </div>
           </div>

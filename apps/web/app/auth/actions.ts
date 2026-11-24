@@ -7,6 +7,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEV_AUTH_BYPASS_COOKIE, devBypassCookieSecure, isDevAuthBypassEnabled } from "@/lib/auth/dev-bypass";
+import { isSafeRelativePath } from "@/lib/auth/protected-routes";
 import { publicEnv } from "@/lib/env";
 import { countOpenOrders, openOrdersDeletionMessage } from "@/lib/account/deletion";
 import { authSchema, memberDisplayName, profileSettingsSchema, signupSchema } from "@/lib/validations/auth";
@@ -25,11 +26,7 @@ function getFormString(formData: FormData, key: string) {
 }
 
 function getSafeRedirectPath(value: FormDataEntryValue | null) {
-  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
-    return defaultRedirectPath;
-  }
-
-  return value;
+  return isSafeRelativePath(value) ? value : defaultRedirectPath;
 }
 
 function formatValidationError(error: z.ZodError) {

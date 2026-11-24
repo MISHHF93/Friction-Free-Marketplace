@@ -252,7 +252,7 @@
   }
 
   .ai-assistant-layer {
-    @apply fixed inset-0 z-[90] flex items-end justify-end sm:p-4;
+    @apply fixed inset-0 z-[90] flex items-end justify-end;
   }
 
   .ai-assistant-backdrop {
@@ -260,7 +260,7 @@
   }
 
   .ai-assistant-panel {
-    @apply relative flex h-[min(46rem,calc(100dvh-1rem))] w-full flex-col overflow-hidden rounded-t-[2rem] border border-border bg-background shadow-admin sm:h-[min(46rem,calc(100dvh-2rem))] sm:max-w-md sm:rounded-[2rem];
+    @apply relative flex h-[min(46rem,calc(100dvh-1rem))] w-full flex-col overflow-hidden rounded-t-[2rem] border border-border bg-background shadow-admin;
   }
 
   .brand-surface {
@@ -444,7 +444,7 @@
   }
 
   .card-header {
-    @apply min-w-0 space-y-2 p-5 sm:p-6;
+    @apply min-w-0 space-y-2 p-5;
   }
 
   .card-title {
@@ -456,7 +456,7 @@
   }
 
   .card-content {
-    @apply min-w-0 p-5 pt-0 sm:p-6 sm:pt-0;
+    @apply min-w-0 p-5 pt-0;
   }
 
   .table-shell {
@@ -525,7 +525,7 @@
   }
 
   .form-section {
-    @apply rounded-panel border border-border bg-card p-4 shadow-card sm:p-6;
+    @apply rounded-panel border border-border bg-card p-4 shadow-card;
   }
 
   .search-control {
@@ -533,11 +533,11 @@
   }
 
   .dashboard-shell {
-    @apply space-y-5 sm:space-y-6;
+    @apply space-y-5;
   }
 
   .dashboard-hero {
-    @apply overflow-hidden rounded-shell border border-border bg-card p-4 text-foreground shadow-sm sm:p-6;
+    @apply overflow-hidden rounded-shell border border-border bg-card p-4 text-foreground shadow-sm;
     position: relative;
   }
 
@@ -551,11 +551,11 @@
   }
 
   .dashboard-grid {
-    @apply grid gap-4 sm:gap-5 lg:gap-6;
+    @apply grid gap-4;
   }
 
   .dashboard-grid-metrics {
-    @apply dashboard-grid sm:grid-cols-2 xl:grid-cols-4;
+    @apply dashboard-grid;
   }
 
   .dashboard-stat {
@@ -563,7 +563,7 @@
   }
 
   .dashboard-list-item {
-    @apply flex flex-col gap-3 rounded-card border border-border bg-card p-4 shadow-xs transition hover:border-primary hover:bg-commerce-soft sm:flex-row sm:items-center sm:justify-between;
+    @apply flex flex-col gap-3 rounded-card border border-border bg-card p-4 shadow-xs transition hover:border-primary hover:bg-commerce-soft;
   }
 
   .status-badge {
@@ -619,11 +619,11 @@
   }
 
   .app-container {
-    @apply mx-auto box-border w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+    @apply mx-auto box-border w-full max-w-7xl px-4;
   }
 
   .app-container-wide {
-    @apply mx-auto box-border w-full max-w-[90rem] px-4 sm:px-6 lg:px-8;
+    @apply mx-auto box-border w-full max-w-[90rem] px-4;
   }
 
   :where(.app-container, .app-container-wide, .card-base, .brand-panel, main) :where(.grid, .flex) > * {
@@ -657,41 +657,41 @@
   }
 
   .section-y {
-    @apply py-10 sm:py-14 lg:py-18;
+    @apply py-10;
   }
 
   .section-y-lg {
-    @apply py-12 sm:py-16 lg:py-22;
+    @apply py-12;
   }
 
   .panel-pad {
-    @apply p-4 sm:p-6 lg:p-8;
+    @apply p-4;
   }
 
   .adaptive-grid {
-    @apply grid gap-4 sm:gap-5 lg:gap-6;
+    @apply grid gap-4;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
   }
 
   .adaptive-grid-sm {
-    @apply grid gap-3 sm:gap-4;
+    @apply grid gap-3;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
   }
 
   .action-stack {
-    @apply grid gap-2 sm:flex sm:flex-wrap sm:items-center;
+    @apply grid gap-2;
   }
 
   .action-stack > * {
-    @apply w-full sm:w-auto;
+    @apply w-full;
   }
 
   .action-grid {
-    @apply grid grid-cols-1 gap-2 sm:grid-cols-2;
+    @apply grid grid-cols-1 gap-2;
   }
 
   .responsive-table-wrap {
-    @apply -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0;
+    @apply -mx-4 overflow-x-auto px-4;
   }
 
   .scroll-rail {

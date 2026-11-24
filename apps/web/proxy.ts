@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { DEV_AUTH_BYPASS_COOKIE, isDevAuthBypassCookieValue, isDevBypassBlockedPath } from "@/lib/auth/dev-bypass";
 import { E2E_USER_COOKIE, e2eUserFromCookie } from "@/lib/auth/e2e-session";
-import { isAuthRoute, isProtectedRoute } from "@/lib/auth/protected-routes";
+import { isAuthRoute, isProtectedRoute, isSafeRelativePath } from "@/lib/auth/protected-routes";
 import { contentSecurityPolicy } from "@/lib/security/csp";
 import { isTrustedMutationOrigin } from "@/lib/security/request-origin";
 
@@ -60,7 +60,7 @@ function continueRequest(request: NextRequest) {
 }
 
 export function getSafeRedirectPath(value: string | null, fallback = "/dashboard") {
-  return value && value.startsWith("/") && !value.startsWith("//") ? value : fallback;
+  return isSafeRelativePath(value) ? value : fallback;
 }
 
 function getLoginRedirectUrl(request: NextRequest) {

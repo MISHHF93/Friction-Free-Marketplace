@@ -12,8 +12,25 @@ export function isAuthRoute(pathname: string) {
   return authRoutePaths.some((route) => pathname === route);
 }
 
-export function getSafeRedirectPath(value: string | null, fallback = "/dashboard") {
-  return value && value.startsWith("/") && !value.startsWith("//") ? value : fallback;
+/**
+ * True only for a same-origin path such as "/dashboard?tab=1".
+ * Rejects "//host" and "/\host" (URL parsers treat "\" as "/", so both are
+ * protocol-relative and would redirect off-site), any backslash, and control characters.
+ */
+export function isSafeRelativePath(value: unknown): value is string {
+  if (typeof value !== "string" || value.length === 0 || value.length > 2048) return false;
+  if (!value.startsWith("/") || value.startsWith("//")) return false;
+  if (value.includes("\\") || /[\u0000-\u001f\u007f]/.test(value)) return false;
+  try {
+    const base = "https://same-origin.invalid";
+    return new URL(value, base).origin === base;
+  } catch {
+    return false;
+  }
+}
+
+export function getSafeRedirectPath(value: string | null | undefined, fallback = "/dashboard") {
+  return isSafeRelativePath(value) ? value : fallback;
 }
 
 export function getLoginRedirectUrl(request: NextRequest) {

@@ -8,7 +8,6 @@ import {
   ChevronRight,
   Clock,
   Flame,
-  Grid3X3,
   ListFilter,
   MapPin,
   PackageOpen,
@@ -17,7 +16,6 @@ import {
   SlidersHorizontal,
   Sparkles,
   Truck,
-  WalletCards,
   X
 } from "lucide-react";
 import { LoadMoreWhenVisible } from "@/components/search/load-more";
@@ -146,7 +144,6 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
           <div className="grid gap-3 rounded-3xl border border-border/80 bg-white/80 p-3 shadow-md backdrop-blur md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
             <div className="flex flex-wrap gap-2">
               <MobileFilterDrawer params={params} modeHref={modeHref} trustStats={trustStats} resultCount={results.total} />
-              <ListModeIndicator />
               <SavedSearchQuickAction params={params} userSignedIn={Boolean(user)} modeHref={modeHref} />
             </div>
             <SortMenu params={params} modeHref={modeHref} />
@@ -356,7 +353,7 @@ function SavedSearchQuickAction({ params, userSignedIn, modeHref }: { params: Di
 
 function SortMenu({ params, modeHref }: { params: DiscoverySearchParams; modeHref: string }) {
   return (
-    <form className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:flex sm:justify-end" action={modeHref}>
+    <form className="keep-grid grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2" action={modeHref}>
       {hiddenInputs(params, ["sort", "page"])}
       <label className="sr-only" htmlFor="discovery-sort">Sort listings</label>
       <select id="discovery-sort" name="sort" defaultValue={params.sort ?? "newest"} className="h-10 min-w-0 rounded-xl border border-input bg-card px-3 text-sm font-bold shadow-xs">
@@ -364,14 +361,6 @@ function SortMenu({ params, modeHref }: { params: DiscoverySearchParams; modeHre
       </select>
       <Button size="sm" variant="surface">Sort</Button>
     </form>
-  );
-}
-
-function ListModeIndicator() {
-  return (
-    <div className="inline-flex rounded-xl border border-border bg-card p-1 shadow-xs" aria-label="Current result view">
-      <Button type="button" size="sm" variant="trust" className="h-8 px-3"><Grid3X3 className="h-4 w-4" aria-hidden="true" /> List view</Button>
-    </div>
   );
 }
 
@@ -393,10 +382,10 @@ function DiscoveryListingCard({ listing, isFavorited, featured = false }: { list
         </div>
         <div className="grid gap-2 rounded-xl bg-secondary px-3 py-2 text-sm">
           <span className="flex items-center gap-1 font-medium"><ShieldCheck className="h-4 w-4 text-primary" aria-hidden="true" /> Trust {Math.round(listing.seller_trust_score)}</span>
-          <span className="text-muted-foreground">{listing.condition} · value {Math.round(listing.value_score)} · trending {Math.round(listing.trend_score)}</span>
-          <span className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-            {listing.pickup_available ? <span className="inline-flex items-center gap-1"><Truck className="h-3.5 w-3.5" aria-hidden="true" /> Pickup</span> : null}
-            {listing.ships_to.length ? <span className="inline-flex items-center gap-1"><WalletCards className="h-3.5 w-3.5" aria-hidden="true" /> Payment-ready seller</span> : null}
+          <span className="text-muted-foreground">{listing.condition}</span>
+          <span className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+            {listing.pickup_available ? <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" aria-hidden="true" /> Pickup</span> : null}
+            {listing.ships_to.length ? <span className="inline-flex items-center gap-1"><Truck className="h-3.5 w-3.5" aria-hidden="true" /> Shipping</span> : null}
           </span>
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
@@ -480,16 +469,21 @@ function PaginationControls({ currentPage, totalPages, total, params, modeHref }
   const previous = currentPage > 1 ? `${modeHref}?${currentSearchString(params, { page: currentPage - 1 })}` : null;
   const next = currentPage < totalPages ? `${modeHref}?${currentSearchString(params, { page: currentPage + 1 })}` : null;
 
+  // A single page needs no pager: two disabled buttons only add noise.
+  if (totalPages <= 1) {
+    return <p className="py-2 text-center text-sm text-muted-foreground">{total.toLocaleString()} {total === 1 ? "result" : "results"}</p>;
+  }
+
   return (
-    <nav className="flex flex-col gap-3 rounded-3xl border border-border bg-card/90 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between" aria-label="Search results pagination">
+    <nav className="flex flex-col gap-3 rounded-3xl border border-border bg-card/90 p-4 shadow-sm" aria-label="Search results pagination">
       <p className="text-sm text-muted-foreground">Page {currentPage} of {totalPages} · {total.toLocaleString()} results</p>
       <LoadMoreWhenVisible href={next} />
-      <div className="grid grid-cols-2 gap-2 sm:flex">
+      <div className="keep-grid grid grid-cols-2 gap-2">
         <Button asChild={Boolean(previous)} disabled={!previous} variant="outline">
-          {previous ? <Link href={previous}><ChevronLeft className="h-4 w-4" aria-hidden="true" /> Previous</Link> : <span><ChevronLeft className="h-4 w-4" aria-hidden="true" /> Previous</span>}
+          {previous ? <Link href={previous}><ChevronLeft className="h-4 w-4" aria-hidden="true" /> Previous</Link> : <span className="inline-flex items-center gap-1"><ChevronLeft className="h-4 w-4" aria-hidden="true" /> Previous</span>}
         </Button>
         <Button asChild={Boolean(next)} disabled={!next} variant="trust">
-          {next ? <Link href={next}>Load more <ChevronRight className="h-4 w-4" aria-hidden="true" /></Link> : <span>Load more <ChevronRight className="h-4 w-4" aria-hidden="true" /></span>}
+          {next ? <Link href={next}>Load more <ChevronRight className="h-4 w-4" aria-hidden="true" /></Link> : <span className="inline-flex items-center gap-1">Load more <ChevronRight className="h-4 w-4" aria-hidden="true" /></span>}
         </Button>
       </div>
     </nav>

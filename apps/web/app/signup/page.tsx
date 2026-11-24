@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/forms/auth-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDevBypassSession } from "@/lib/auth/dev-bypass-session";
+import { getSafeRedirectPath } from "@/lib/auth/protected-routes";
 import { createClient } from "@/lib/supabase/server";
 
 function getSafeNext(next?: string | string[]) {
   const value = Array.isArray(next) ? next[0] : next;
-  return value && value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
+  return getSafeRedirectPath(value, "/dashboard");
 }
 
 export default async function SignupPage({ searchParams }: { searchParams?: Promise<{ next?: string | string[] }> }) {

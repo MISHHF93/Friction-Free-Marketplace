@@ -20,6 +20,7 @@ function HeaderSearch({ id = "global-marketplace-search", placeholder = "Search 
 
 export function ConditionalHeaderSearch() {
   const pathname = usePathname();
-  if (pathname !== "/" && pathname !== "/search") return null;
+  // /search renders its own search form with filters; a second box there is redundant.
+  if (pathname !== "/") return null;
   return <HeaderSearch />;
 }

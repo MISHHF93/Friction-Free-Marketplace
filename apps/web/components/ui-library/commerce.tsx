@@ -4,9 +4,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
-  CreditCard,
   DollarSign,
-  Eye,
   Heart,
   ImagePlus,
   MapPin,
@@ -140,24 +138,12 @@ export function ListingCard({ listing, ctaLabel = "View details", favoriteAction
 
           <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-3">
         {listing.category ? <Badge variant="premium" className="bg-card shadow-sm">{listing.category}</Badge> : <span />}
-            {favoriteAction ?? (
-              <button
-                type="button"
-          className="brand-focus inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-md transition hover:-translate-y-0.5 hover:text-safety-risk"
-                aria-label={`${listing.isFavorite ? "Remove" : "Save"} ${listing.title}`}
-                aria-pressed={listing.isFavorite}
-              >
-                <Heart className={cn("h-4 w-4", listing.isFavorite && "fill-rose-500 text-rose-600")} aria-hidden="true" />
-              </button>
-            )}
-          </div>
-
-          <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-2">
-        {listing.isVerified ? <TrustBadge label="Verified payment" icon={<CreditCard className="h-3.5 w-3.5" aria-hidden="true" />} className="bg-card" /> : null}
-        <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-bold text-foreground shadow-sm">
-              <Eye className="h-3.5 w-3.5" aria-hidden="true" />
-              Quick view
-            </span>
+            {/* Only render a save control when the caller wires one up; a bare heart that does nothing is a dead tap. */}
+            {favoriteAction ?? (listing.isFavorite ? (
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card shadow-md" aria-label="Saved">
+                <Heart className="h-4 w-4 fill-rose-500 text-rose-600" aria-hidden="true" />
+              </span>
+            ) : null)}
           </div>
         </div>
 
@@ -188,16 +174,9 @@ export function ListingCard({ listing, ctaLabel = "View details", favoriteAction
 
           {listing.sellerName ? <p className="text-sm text-muted-foreground">Listed by {listing.sellerName}</p> : null}
 
-          <div className="grid grid-cols-[1fr_auto] gap-2">
-            <Button asChild className="w-full" variant="trust">
-              <Link href={href}>{ctaLabel}</Link>
-            </Button>
-            <Button asChild variant="outline" size="icon">
-              <Link href={href} aria-label={`Quick view ${listing.title}`}>
-                <Eye className="h-4 w-4" aria-hidden="true" />
-              </Link>
-            </Button>
-          </div>
+          <Button asChild className="w-full" variant="trust">
+            <Link href={href}>{ctaLabel}</Link>
+          </Button>
         </CardContent>
       </Card>
     </article>

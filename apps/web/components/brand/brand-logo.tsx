@@ -90,7 +90,7 @@ export function BrandLogo({
         <BrandMark size={dimensions.mark} tone={tone === "onDark" ? "onDark" : tone === "inverse" ? "inverse" : "default"} className={markClassName} />
       ) : null}
       {variant !== "mark" ? (
-        <span className="hidden min-w-0 leading-tight sm:block">
+        <span className="block min-w-0 leading-tight">
           <span className={cn("block font-display leading-none", dimensions.title, titleColor)}>
             {brandProfile.productName}
           </span>
@@ -99,12 +99,6 @@ export function BrandLogo({
               {brandProfile.tagline}
             </span>
           ) : null}
-        </span>
-      ) : null}
-      {/* Always show compact name on very small screens when full logo */}
-      {variant === "full" ? (
-        <span className={cn("font-display leading-none sm:hidden", dimensions.title, titleColor)}>
-          {brandProfile.monogram}
         </span>
       ) : null}
     </span>

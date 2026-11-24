@@ -86,7 +86,9 @@ export function PageTitleMirror() {
     observer.observe(document.body, { subtree: true, childList: true, characterData: true });
     return () => observer.disconnect();
   }, [pathname]);
-  return <p ref={titleRef} className="truncate text-sm font-black" aria-hidden="true" />;
+  // Home and search lead with their own large heading; repeating it under the logo is noise.
+  const hidden = pathname === "/" || pathname === "/search";
+  return <p ref={titleRef} className={cn("truncate text-sm font-black", hidden && "hidden")} aria-hidden="true" />;
 }
 
 export function MobileTabBar() {
