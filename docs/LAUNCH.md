@@ -177,7 +177,7 @@ Checked on this branch before the pull request. The host still runs the suite ag
 - Dispute evidence (`20261122030000_r11_dispute_evidence.sql`) adds a private `dispute-evidence` bucket and `dispute_evidence` rows (notes and photos) with RLS for the two parties and `disputes.decide` admins. Admins review it at `/admin/disputes/[id]`. No new cron or env var.
 - Runtime errors are reported through a pluggable logger that writes JSON to the server logs only. There is no paid error service and no new env var.
 
-## r12 self-serve advertising (local, not yet pushed)
+## r12 self-serve advertising (on main since 2026-11-23; apply migrations before deploying)
 
 - Anyone signed in can buy a sponsored placement at `/advertise` and track it at `/dashboard/ads`. Payment is a normal platform charge through Stripe Checkout (no Connect, no escrow). The ad only serves after payment and admin approval in `/admin/ads`. Rejecting refunds the payment through Stripe.
 - New migration `20261123000000_r12_self_serve_ads.sql`: lifecycle columns on `ad_campaigns` (existing house campaigns keep serving as `approved`), the admin-editable `ad_pricing` table with placeholder prices, advertiser-only RLS, event counting only for approved ads, and the `advance_ad_campaign_lifecycle()` sweep. No new bucket: creatives go to `advertisers/<user id>/` in the existing `ad-creatives` bucket. Apply with `supabase db push` after a backup.

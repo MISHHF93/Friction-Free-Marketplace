@@ -109,7 +109,12 @@ export function BrandLogo({
   }
 
   return (
-    <Link href={href} className="brand-focus rounded-xl">
+    <Link
+      href={href}
+      className="brand-focus rounded-xl"
+      // The mark alone is an aria-hidden SVG, so the link needs its own accessible name.
+      aria-label={variant === "mark" ? `${brandProfile.productName} home` : undefined}
+    >
       {content}
     </Link>
   );
