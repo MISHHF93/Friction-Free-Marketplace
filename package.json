@@ -37,7 +37,8 @@
     "database:verify": "node scripts/guard-legacy-migrations.mjs && node scripts/verify-migrations.mjs",
     "security:api": "node scripts/verify-api-security.mjs",
     "release:check": "npm run platform:verify && npm run text:check && npm run security:audit && npm run security:api && npm run database:verify && npm run shared:typecheck && npm run web:lint && npm run web:typecheck && npm run web:test && npm run web:build && node scripts/scan-artifact-secrets.mjs apps/web/.next/static && npm --workspace @ffm/mobile run build",
-    "production:smoke": "node scripts/production-smoke.mjs"
+    "production:smoke": "node scripts/production-smoke.mjs",
+    "qa:crawl": "node scripts/qa-crawl.mjs"
   },
   "devDependencies": {
     "react": "19.2.0",

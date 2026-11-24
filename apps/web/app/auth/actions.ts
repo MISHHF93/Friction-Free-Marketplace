@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { DEV_AUTH_BYPASS_COOKIE, devBypassCookieSecure, isDevAuthBypassEnabled } from "@/lib/auth/dev-bypass";
 import { isSafeRelativePath } from "@/lib/auth/protected-routes";
+import { isLiveDatabaseConfigured } from "@/lib/marketplace/demo-mode";
 import { publicEnv } from "@/lib/env";
 import { countOpenOrders, openOrdersDeletionMessage } from "@/lib/account/deletion";
 import { authSchema, memberDisplayName, profileSettingsSchema, signupSchema } from "@/lib/validations/auth";
@@ -140,6 +141,13 @@ export async function oauthSignInAction(formData: FormData) {
     redirect(`/login?next=${encodeURIComponent(next)}&authError=${encodeURIComponent("Unsupported sign-on provider.")}`);
   }
 
+  const providerName = provider.data === "google" ? "Google" : "Apple";
+  const notConnected = `${providerName} sign-in isn't connected yet. Please use email for now.`;
+  // Without a real Supabase project the provider URL would point at a placeholder host.
+  if (!isLiveDatabaseConfigured()) {
+    redirect(`/login?next=${encodeURIComponent(next)}&authError=${encodeURIComponent(notConnected)}`);
+  }
+
   const supabase = await createClient();
   const redirectTo = new URL(`/auth/callback?next=${encodeURIComponent(next)}`, publicEnv.NEXT_PUBLIC_APP_URL).toString();
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -148,7 +156,9 @@ export async function oauthSignInAction(formData: FormData) {
   });
 
   if (error || !data.url) {
-    redirect(`/login?next=${encodeURIComponent(next)}&authError=${encodeURIComponent(error?.message ?? "Unable to start sign-on.")}`);
+    // Supabase answers "provider is not enabled" until the provider is switched on in its dashboard.
+    const message = error && /not enabled|unsupported provider/i.test(error.message) ? notConnected : error?.message ?? "Unable to start sign-on.";
+    redirect(`/login?next=${encodeURIComponent(next)}&authError=${encodeURIComponent(message)}`);
   }
 
   redirect(data.url);

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthForm } from "@/components/forms/auth-form";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { getDevBypassSession } from "@/lib/auth/dev-bypass-session";
 import { getSafeRedirectPath } from "@/lib/auth/protected-routes";
 import { createClient } from "@/lib/supabase/server";
@@ -29,7 +29,7 @@ export default async function SignupPage({ searchParams }: { searchParams?: Prom
     <section className="mx-auto grid min-h-[70vh] max-w-6xl place-items-center px-4 py-12 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md shadow-soft">
         <CardHeader>
-          <CardTitle className="text-2xl">Create account</CardTitle>
+          <h1 className="card-title text-2xl">Create account</h1>
           <CardDescription>Start buying, selling, and managing protected marketplace workflows.</CardDescription>
         </CardHeader>
         <CardContent>

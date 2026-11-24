@@ -40,12 +40,6 @@ function parentPath(pathname: string, search = "") {
   return parts.length > 1 ? `/${parts.slice(0, -1).join("/")}` : "/";
 }
 
-/** Full logo on top-level screens; on inner screens only the mark, so Back + title get the row. */
-export function HeaderBrand({ full, compact }: { full: ReactNode; compact: ReactNode }) {
-  const pathname = usePathname();
-  return <>{rootPaths.has(pathname) ? full : compact}</>;
-}
-
 export function MobileBackBar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -92,8 +86,8 @@ export function PageTitleMirror() {
     observer.observe(document.body, { subtree: true, childList: true, characterData: true });
     return () => observer.disconnect();
   }, [pathname]);
-  // Home and search lead with their own large heading; repeating it under the logo is noise.
-  const hidden = pathname === "/" || pathname === "/search";
+  // Top-level screens show the full logo and lead with their own heading; repeating it is noise.
+  const hidden = rootPaths.has(pathname);
   return <p ref={titleRef} className={cn("truncate text-sm font-black", hidden && "hidden")} aria-hidden="true" />;
 }
 

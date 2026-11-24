@@ -9,7 +9,8 @@ import { ToastCenter } from "@/components/ui/toast-center";
 import { ConditionalHeaderSearch } from "@/components/header-search";
 import { brandProfile } from "@/lib/brand-profile";
 import { getMarketplaceSession } from "@/lib/auth/session";
-import { HeaderBrand, MobileBackBar, MobileTabBar, PageTitleMirror, PhoneFrame } from "@/components/mobile/mobile-chrome";
+import { MobileBackBar, MobileTabBar, PageTitleMirror, PhoneFrame } from "@/components/mobile/mobile-chrome";
+import { HeaderBrand } from "@/components/mobile/header-brand";
 import { MenuDisclosure } from "@/components/menu-disclosure";
 import { cn } from "@/lib/utils";
 
