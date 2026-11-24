@@ -9,7 +9,7 @@ import { ToastCenter } from "@/components/ui/toast-center";
 import { ConditionalHeaderSearch } from "@/components/header-search";
 import { brandProfile } from "@/lib/brand-profile";
 import { getMarketplaceSession } from "@/lib/auth/session";
-import { MobileBackBar, MobileTabBar, PageTitleMirror, PhoneFrame } from "@/components/mobile/mobile-chrome";
+import { HeaderBrand, MobileBackBar, MobileTabBar, PageTitleMirror, PhoneFrame } from "@/components/mobile/mobile-chrome";
 import { MenuDisclosure } from "@/components/menu-disclosure";
 import { cn } from "@/lib/utils";
 
@@ -44,12 +44,13 @@ async function AuthNav() {
       <MenuDisclosure
         className="group relative"
         label={`Open user menu for ${session.displayName}`}
-        summaryClassName="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden"
+        summaryClassName="flex h-10 cursor-pointer list-none items-center gap-1 rounded-full border border-border bg-card px-2.5 text-sm font-bold shadow-sm transition hover:bg-secondary [&::-webkit-details-marker]:hidden"
         summary={
           <>
-            <UserRound className="h-4 w-4" />
-            <span className="max-w-24 truncate">{session.displayName}</span>
-            <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" />
+            {/* The signed-in name stays visible so people always know which account they are acting as. */}
+            <UserRound className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="max-w-[5.5rem] truncate">{session.displayName}</span>
+            <ChevronDown className="h-3.5 w-3.5 transition group-open:rotate-180" aria-hidden="true" />
           </>
         }
       >
@@ -77,10 +78,20 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-1">
               <MobileBackBar />
-              <div className="min-w-0">
-                <BrandLogo href="/" size="sm" showTagline={false} className="min-w-0" />
-                <PageTitleMirror />
-              </div>
+              <HeaderBrand
+                full={
+                  <div className="min-w-0">
+                    <BrandLogo href="/" size="sm" showTagline={false} className="min-w-0 whitespace-nowrap" />
+                    <PageTitleMirror />
+                  </div>
+                }
+                compact={
+                  <div className="flex min-w-0 items-center gap-2">
+                    <BrandLogo href="/" size="sm" variant="mark" showTagline={false} />
+                    <div className="min-w-0"><PageTitleMirror /></div>
+                  </div>
+                }
+              />
             </div>
             <div className="flex shrink-0 items-center gap-1">
               <AuthNav />

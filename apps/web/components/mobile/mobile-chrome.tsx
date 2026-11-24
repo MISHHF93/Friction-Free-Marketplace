@@ -40,6 +40,12 @@ function parentPath(pathname: string, search = "") {
   return parts.length > 1 ? `/${parts.slice(0, -1).join("/")}` : "/";
 }
 
+/** Full logo on top-level screens; on inner screens only the mark, so Back + title get the row. */
+export function HeaderBrand({ full, compact }: { full: ReactNode; compact: ReactNode }) {
+  const pathname = usePathname();
+  return <>{rootPaths.has(pathname) ? full : compact}</>;
+}
+
 export function MobileBackBar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -47,14 +53,14 @@ export function MobileBackBar() {
   return (
     <button
       type="button"
-      className="inline-flex h-11 min-w-11 items-center gap-1 rounded-xl px-2 text-sm font-bold active:scale-[0.98]"
+      className="inline-flex h-11 min-w-11 shrink-0 items-center gap-1 rounded-xl px-2 text-sm font-bold active:scale-[0.98]"
       aria-label="Back"
       onClick={() => {
         if (window.history.length > 1) router.back();
         else router.push(parentPath(pathname, window.location.search));
       }}
     >
-      <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+      <ArrowLeft className="h-5 w-5 shrink-0" aria-hidden="true" />
       Back
     </button>
   );

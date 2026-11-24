@@ -615,8 +615,9 @@ export function ListingForm({
       }}
     >
       <div className="space-y-6">
+        <h1 className="text-title">{listing ? "Edit listing" : "Sell an item"}</h1>
         <div className="grid grid-cols-5 gap-1" aria-label="Listing steps">
-          {["Photos", "Details", "Price", "Fulfillment", "Review"].map((label, index) => {
+          {["Photos", "Details", "Price", "Delivery", "Review"].map((label, index) => {
             const stepHasError = firstStepWithError(errors) === index && Object.keys(errors).length > 0;
             return (
             <button key={label} type="button" className={cn("min-h-11 rounded-xl px-1 text-xs font-bold", sellStep === index ? "bg-[#0c3f66] text-white" : stepHasError ? "bg-destructive/15 text-destructive" : "bg-secondary text-foreground")} aria-current={sellStep === index ? "step" : undefined} onClick={() => setSellStep(index)}>{label}{stepHasError ? " !" : ""}</button>
@@ -636,12 +637,9 @@ export function ListingForm({
           <CardHeader className="p-4 sm:p-6">
             <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
               <div>
-                <CardTitle>
-                  {listing ? "Edit listing" : "Create a listing"}
-                </CardTitle>
+                <CardTitle>Item details</CardTitle>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Create, draft, publish, mark sold, and manage every listing
-                  field with validated server actions.
+                  A clear title, honest condition, and a fair price sell fastest.
                 </p>
               </div>
               <Badge>{currentStatus}</Badge>
@@ -764,7 +762,7 @@ export function ListingForm({
             >
               <UploadCloud className="mb-3 h-8 w-8 text-primary" />
               <span className="font-semibold">
-                Upload multiple listing photos to Supabase Storage
+                Add photos of your item
               </span>
               <span className="mt-1 text-sm text-muted-foreground">
                 JPEG, PNG, WebP, HEIC, or HEIF. Up to {MAX_IMAGES} photos.

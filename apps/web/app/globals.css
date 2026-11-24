@@ -602,13 +602,8 @@
     background: #d7e0ea;
   }
 
-  .app-shell .grid:not(.keep-grid) {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  .app-shell .listing-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
+  /* Breakpoints are disabled (tailwind.config.ts), so only phone grid columns remain;
+     they are intentional (steppers, min/max pairs) and are no longer forced to one column. */
 
   html.keyboard-open .app-tabs {
     display: none;

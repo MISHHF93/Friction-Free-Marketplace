@@ -9,6 +9,8 @@ import { PayoutSetupPrompt } from "@/components/payments/payout-setup-prompt";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "Sell an item" };
+
 async function getCategoryOptions(): Promise<ListingCategoryOption[]> {
   if (!isLiveDatabaseConfigured()) {
     return LISTING_CATEGORIES.map((slug) => ({

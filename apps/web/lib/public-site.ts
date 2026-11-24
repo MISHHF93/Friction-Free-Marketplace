@@ -163,17 +163,17 @@ export const safetyPillars = [
 export const pricingPlans = [
   {
     name: "Buyer",
-    price: "Free",
-    description: "Search, compare, save, message, and buy with transparent seller and listing signals.",
-    features: ["AI-assisted search", "Saved searches", "Seller trust signals", "Protected checkout on eligible listings"],
+    price: "5% at checkout",
+    description: "Browsing, messaging, and offers are free. When you pay in the app, a 5% buyer protection fee (minimum $0.99) is added at checkout.",
+    features: ["Free search and saved searches", "Message sellers and make offers", "Payment held until you confirm you got the item", "Dispute support if something goes wrong"],
     cta: "Start browsing",
     href: "/browse",
   },
   {
     name: "Seller",
-    price: "Success-based",
-    description: "Publish higher-quality listings, handle offers, and use payment-ready selling workflows.",
-    features: ["Listing assistant", "Offer management", "Seller analytics", "Stripe Connect payouts"],
+    price: "Free to list",
+    description: "No listing or selling fees. You receive your full sale price plus any shipping you charge; the buyer covers the protection fee.",
+    features: ["Free listings with an AI listing assistant", "Offers and messaging in one place", "Payout after the buyer confirms receipt", "Card processing included at no cost to you"],
     cta: "Start selling",
     href: "/dashboard/listings/create",
     highlighted: true,

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CheckCircle2, CreditCard, FileText, ShieldCheck, WalletCards } from "lucide-react";
+import { CheckCircle2, CreditCard, ShieldCheck, WalletCards } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { marketplaceJsonLd, pricingPlans } from "@/lib/public-site";
 
 export const metadata: Metadata = {
   title: "Pricing | Friction-Free Marketplace",
-  description: "Transparent marketplace pricing for buyers, individual sellers, and growing seller teams.",
+  description: "Free to list and browse. Buyers pay a 5% protection fee at checkout; sellers keep their full price.",
   alternates: { canonical: "/pricing" },
   openGraph: {
     title: "Pricing | Friction-Free Marketplace",
@@ -27,9 +27,9 @@ export default function PricingPage() {
       <section className="app-container py-section-sm">
         <div className="rounded-shell border border-border bg-card p-6 shadow-panel sm:p-8 lg:p-10">
           <Badge variant="premium" className="w-fit">Pricing</Badge>
-          <h1 className="mt-5 max-w-4xl text-hero">Marketplace pricing designed around successful transactions.</h1>
+          <h1 className="mt-5 max-w-4xl text-hero">Simple, upfront pricing.</h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-muted-foreground">
-            Buyers can discover and compare for free. Sellers pay when an eligible transaction succeeds, so the marketplace earns alongside them—not before they make a sale.
+            Listing, browsing, and messaging are free. When a buyer pays in the app, a 5% buyer protection fee (minimum $0.99) is added at checkout, and the seller keeps their full price.
           </p>
         </div>
       </section>
@@ -65,25 +65,24 @@ export default function PricingPage() {
       <section className="app-container section-y">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
           <div>
-            <p className="brand-kicker">Financial model</p>
-            <h2 className="mt-3 text-section">Simple fees, tied to successful commerce.</h2>
+            <p className="brand-kicker">Example</p>
+            <h2 className="mt-3 text-section">A $100 item, start to finish.</h2>
             <p className="mt-4 text-lg leading-8 text-muted-foreground">
-              Seller fees help support payment processing, trust and safety, dispute handling, payouts, and the tools used to complete a transaction.
+              The protection fee pays for card processing, holding the payment until handoff, dispute handling, and trust and safety review.
             </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FinanceCard title="Seller proceeds" amount={92500} detail="Example net payout on a $1,000 eligible order after platform and processing fees." items={[{ label: "Gross sale", amount: 100000 }, { label: "Platform fee", amount: -4500 }, { label: "Processing", amount: -3000 }]} />
-            <FinanceCard title="Buyer discovery" amount={0} detail="Browsing, search, saved searches, and seller comparison remain free for buyers." tone="premium" />
+          <div className="grid gap-4">
+            <FinanceCard title="Buyer pays" amount={105} detail="Item price plus the 5% buyer protection fee. Held until the buyer confirms they got the item." items={[{ label: "Item price", amount: 100 }, { label: "Buyer protection fee (5%)", amount: 5 }]} />
+            <FinanceCard title="Seller receives" amount={100} detail="The full item price (plus any shipping the seller charged), paid out after the buyer confirms receipt." tone="premium" />
           </div>
         </div>
       </section>
 
       <section className="app-container section-y">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard label="Payments" value="Stripe" detail="Connect-ready seller onboarding, checkout, and payout flows." icon={CreditCard} tone="premium" />
-          <MetricCard label="Reporting" value="Ledger" detail="Financial reporting and reconciliation-friendly data structures." icon={FileText} tone="commerce" />
-          <MetricCard label="Trust" value="Review" detail="Moderation, disputes, risk checks, and support workflows." icon={ShieldCheck} tone="trust" />
-          <MetricCard label="Payouts" value="Track" detail="Seller payout status and payment lifecycle visibility." icon={WalletCards} tone="ai" />
+        <div className="grid gap-4">
+          <MetricCard label="Secure payments" value="Stripe" detail="Cards are processed by Stripe; Friction-Free never stores card numbers." icon={CreditCard} tone="premium" />
+          <MetricCard label="Payment held" value="Until handoff" detail="The seller is paid only after the buyer confirms they received the item." icon={WalletCards} tone="ai" />
+          <MetricCard label="Disputes" value="Reviewed" detail="If something goes wrong, our team reviews the order and can refund the buyer." icon={ShieldCheck} tone="trust" />
         </div>
       </section>
 
