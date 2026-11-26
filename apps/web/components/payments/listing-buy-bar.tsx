@@ -115,7 +115,8 @@ export function ListingBuyBar({
 
   return (
     <>
-      <div className="fixed inset-x-0 z-30 mx-auto flex w-full max-w-[480px] items-center justify-between gap-3 border-t border-border bg-background px-4 py-2" style={{ bottom: "calc(4.25rem + env(safe-area-inset-bottom))" }}>
+      <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-30 border-t border-border bg-background/95 backdrop-blur md:bottom-0">
+        <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-3 px-4 py-2.5">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{isOwner ? "Your listing" : label}</p>
           <p className="text-lg font-black">{formatMoney(amount, currency)}</p>
@@ -132,10 +133,11 @@ export function ListingBuyBar({
             <Button type="button" className="min-h-11" onClick={() => openCheckoutSheet()}>{label === "Accepted offer" ? "Pay offer" : "Buy"}</Button>
           </div>
         )}
+        </div>
       </div>
       {open && !isOwner ? (
         <div className="fixed inset-0 z-50 bg-black/40">
-          <div id="protected-checkout" role="dialog" aria-modal="true" aria-label="Protected checkout" className="absolute inset-x-0 bottom-0 mx-auto max-h-[85vh] w-full max-w-[480px] overflow-y-auto rounded-t-3xl bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          <div id="protected-checkout" role="dialog" aria-modal="true" aria-label="Protected checkout" className="absolute inset-x-0 bottom-0 mx-auto max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:inset-auto md:left-1/2 md:top-1/2 md:max-w-xl md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl md:p-6 md:shadow-admin">
             <Button type="button" variant="outline" className="mb-3 min-h-11" onClick={close}>Close checkout</Button>
             {children}
             {checkout ? <CheckoutCard {...checkout} /> : demoListingId ? <SampleCheckoutPreview listingId={demoListingId} /> : null}

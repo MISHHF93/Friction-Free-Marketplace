@@ -9,8 +9,8 @@ The repository can be deployed globally from one codebase, but worldwide technic
 - ISO 4217 currency normalization
 - Right-to-left direction utilities and layout foundations
 - Unicode isolation for monetary values
-- Responsive web, Android, and iOS targets from one repository
-- Hosted HTTPS backend with native Capacitor shells
+- Mobile-first installable PWA for current mobile browsers
+- Hosted Railway HTTPS application serving the PWA and backend APIs
 
 ## Required before claiming support for a country
 
@@ -21,7 +21,7 @@ The repository can be deployed globally from one codebase, but worldwide technic
 - Replace fixed address assumptions with country, administrative area, locality, postal code, and international phone structures.
 - Define prohibited and regulated-goods rules by jurisdiction.
 - Configure regional data residency and subprocessors where legally required.
-- Localize App Store and Google Play listings, screenshots, privacy declarations, and age/content ratings.
+- Localize PWA install guidance, privacy disclosures, and support content.
 - Test low-bandwidth, high-latency, older-device, screen-reader, large-text, RTL, and non-Latin input behavior.
 
 ## Rollout model

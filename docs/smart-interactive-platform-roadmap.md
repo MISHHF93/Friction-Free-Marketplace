@@ -1,7 +1,7 @@
 # Smart and interactive platform roadmap
 
 **Prepared:** 2026-07-28  
-**Scope:** Web, Android, iOS, marketplace intelligence, interaction quality, and production operations  
+**Scope:** Mobile-first PWA, marketplace intelligence, interaction quality, and production operations
 **Objective:** Turn the current marketplace from a polished collection of workflows into a responsive commerce product that understands context, proposes useful next steps, and safely helps users complete them.
 
 ## Executive assessment
@@ -11,7 +11,7 @@ The repository already has an unusually strong foundation:
 - Buyer, seller, administrator, search, messaging, offer, payment, trust, and listing workflows exist.
 - The AI layer has eight scoped agents, authenticated execution, rate limiting, read-only marketplace tools, audit events, safety rules, and a local fallback.
 - Search supports Meilisearch with a database and demonstration-data fallback.
-- Stripe Connect, Supabase, PostHog, Resend, native Capacitor shells, CI, release workflows, and health checks are represented.
+- Stripe Connect, Supabase, PostHog, Resend, the installable PWA, CI, Railway release workflows, and health checks are represented.
 - The global AI assistant is available from the header and changes its default agent based on the current route.
 
 The main limitation is that intelligence is still presented mostly as text. Recommendations are not consistently rendered as marketplace objects, suggested actions are not executable, context is shallow, preference memory is not productized, and success is not measured through a unified event model.
@@ -44,7 +44,7 @@ Guard against mojibake and replacement characters across source-controlled UI an
 
 **Acceptance**
 
-- No corrupted characters appear in web, Android, or iOS views.
+- No corrupted characters appear in mobile-browser or installed-PWA views.
 - CI fails when known mojibake sequences are introduced.
 
 #### 2. Introduce a typed AI response contract
@@ -249,17 +249,17 @@ Create preference-aware notifications for saved-search matches, meaningful price
 
 Blend relevance, freshness, listing completeness, seller trust, fulfillment fit, and value signals while avoiding circular popularity bias. Document rank features, monitor exposure fairness, and give sellers actionable explanations.
 
-#### 16. Native intelligence
+#### 16. Mobile PWA intelligence
 
-Use Capacitor capabilities where they add real value:
+Use browser capabilities where they add real value:
 
-- Camera-to-listing flow
-- Native share into listing creation
-- Deep links to specific AI-supported tasks
+- Camera and photo selection in listing and message flows
+- Web Share API for listing links
+- Shareable URLs to specific AI-supported tasks
 - Connectivity-aware queued drafts
-- Push notification routing
+- PWA notifications where supported by the browser
 
-The hosted server remains authoritative and no server secret enters the native package.
+The hosted server remains authoritative and no server secret enters the PWA bundle.
 
 ## Technical workstreams
 

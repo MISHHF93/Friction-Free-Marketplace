@@ -134,7 +134,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
       <SearchHeader mode={mode} params={params} resultsTotal={results.total} source={results.source} priceStats={priceStats} categories={categoryResult.categories} />
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(15rem,17rem)_minmax(0,1fr)] xl:gap-6 2xl:grid-cols-[18rem_minmax(0,1fr)]">
-        <aside className="hidden">
+        <aside className="hidden space-y-5 lg:block">
           <FilterSidebar params={params} modeHref={modeHref} trustStats={trustStats} />
           <FacetPanel facets={results.facets} currentHref={currentHref.toString()} />
           <SavedSearchPanel params={params} userSignedIn={Boolean(user)} modeHref={modeHref} />
@@ -143,7 +143,9 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
         <div className="space-y-6">
           <div className="grid gap-3 rounded-3xl border border-border/80 bg-white/80 p-3 shadow-md backdrop-blur md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
             <div className="flex flex-wrap gap-2">
-              <MobileFilterDrawer params={params} modeHref={modeHref} trustStats={trustStats} resultCount={results.total} />
+              <div className="lg:hidden">
+                <MobileFilterDrawer params={params} modeHref={modeHref} trustStats={trustStats} resultCount={results.total} />
+              </div>
               <SavedSearchQuickAction params={params} userSignedIn={Boolean(user)} modeHref={modeHref} />
             </div>
             <SortMenu params={params} modeHref={modeHref} />
@@ -153,7 +155,7 @@ export async function DiscoveryPage({ searchParams, mode = "browse" }: { searchP
 
           {results.listings.length ? (
             <>
-              <div className="listing-grid grid gap-2" aria-label="Listing grid">
+              <div className="listing-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Listing grid">
                 {results.listings.flatMap((listing, index) => {
                   const items = [<DiscoveryListingCard key={listing.id} listing={listing} isFavorited={favoriteIds.has(listing.id)} featured={index === 0 && currentPage === 1} />];
                   if ((index + 1) % SEARCH_INLINE_EVERY === 0) {
@@ -368,7 +370,7 @@ function DiscoveryListingCard({ listing, isFavorited, featured = false }: { list
   return (
     <Card className={cn("group overflow-hidden shadow-md transition hover:-translate-y-1 hover:shadow-soft", featured && "border-premium bg-premium-soft/60")}>
       <div className="relative">
-            {listing.image_url ? <Image src={listing.image_url} alt={listing.title} width={240} height={180} sizes="(max-width: 480px) 50vw" unoptimized className="h-40 w-full object-cover sm:h-44" /> : <div className="flex h-40 items-center justify-center bg-secondary sm:h-44"><PackageOpen className="h-10 w-10 text-primary" aria-hidden="true" /></div>}
+            {listing.image_url ? <Image src={listing.image_url} alt={listing.title} width={240} height={180} sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" unoptimized className="h-40 w-full object-cover sm:h-44" /> : <div className="flex h-40 items-center justify-center bg-secondary sm:h-44"><PackageOpen className="h-10 w-10 text-primary" aria-hidden="true" /></div>}
         {featured ? <Badge variant="premium" className="absolute left-3 top-3 shadow-md">Top match</Badge> : null}
       </div>
       <CardContent className="space-y-4 p-4 sm:p-5">

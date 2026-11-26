@@ -75,20 +75,13 @@ await fetchCheck("/manifest.webmanifest", (response, body) => {
   return "PWA manifest valid";
 });
 
-await fetchCheck("/.well-known/apple-app-site-association", (response, body) => {
+await fetchCheck("/.well-known/mcp", (response, body) => {
   expectSuccess(response);
-  const association = JSON.parse(body);
-  if (!association.applinks?.details?.length) throw new Error("Apple associated-domain details are empty.");
-  return "Apple universal links configured";
-});
-
-await fetchCheck("/.well-known/assetlinks.json", (response, body) => {
-  expectSuccess(response);
-  const association = JSON.parse(body);
-  if (!Array.isArray(association) || !association[0]?.target?.sha256_cert_fingerprints?.length) {
-    throw new Error("Android signing fingerprints are empty.");
+  const discovery = JSON.parse(body);
+  if (discovery.endpoint !== "/api/mcp" || discovery.transport !== "streamable-http") {
+    throw new Error("MCP discovery metadata is invalid.");
   }
-  return "Android app links configured";
+  return discovery.enabled ? "MCP discovery enabled" : "MCP discovery reachable (disabled)";
 });
 
 for (const [path, marker] of [

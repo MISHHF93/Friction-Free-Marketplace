@@ -5,10 +5,13 @@ const config: Config = {
   darkMode: ["class"],
   content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
-    // The product is a phone app on every device: SiteShell renders all routes inside a
-    // 480px PhoneFrame. Viewport breakpoints would switch on tablet/desktop layouts inside
-    // that phone column on wide screens, so none are defined; sm:/md:/lg: classes are inert.
-    screens: {},
+    screens: {
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1536px"
+    },
     extend: {
       colors: {
         border: "hsl(var(--border))",
@@ -112,10 +115,9 @@ const config: Config = {
         mono: ["JetBrains Mono", "SFMono-Regular", "Cascadia Code", "Consolas", "Liberation Mono", "monospace"]
       },
       fontSize: {
-        // Fixed phone sizes: vw-based clamps grew to desktop sizes inside the 480px phone shell.
-        display: ["3rem", { lineHeight: "0.95", letterSpacing: "-0.05em", fontWeight: "900" }],
-        hero: ["2.5rem", { lineHeight: "1", letterSpacing: "-0.04em", fontWeight: "900" }],
-        section: ["2rem", { lineHeight: "1.08", letterSpacing: "-0.03em", fontWeight: "900" }],
+        display: ["clamp(2.5rem,6vw,4.75rem)", { lineHeight: "0.94", letterSpacing: "-0.05em", fontWeight: "900" }],
+        hero: ["clamp(2.25rem,4.5vw,3.75rem)", { lineHeight: "0.98", letterSpacing: "-0.04em", fontWeight: "900" }],
+        section: ["clamp(1.75rem,3vw,2.75rem)", { lineHeight: "1.05", letterSpacing: "-0.03em", fontWeight: "900" }],
         title: ["1.5rem", { lineHeight: "1.15", letterSpacing: "-0.03em", fontWeight: "850" }],
         body: ["1rem", { lineHeight: "1.7", letterSpacing: "-0.011em" }],
         "body-sm": ["0.875rem", { lineHeight: "1.6", letterSpacing: "-0.006em" }],
@@ -131,10 +133,10 @@ const config: Config = {
         22: "5.5rem",
         26: "6.5rem",
         30: "7.5rem",
-        gutter: "1rem",
-        "section-sm": "2rem",
-        section: "2.5rem",
-        "section-lg": "3rem",
+        gutter: "clamp(1rem, 2.4vw, 2rem)",
+        "section-sm": "clamp(2rem, 4vw, 3.25rem)",
+        section: "clamp(2.5rem, 5vw, 4.5rem)",
+        "section-lg": "clamp(3rem, 7vw, 6rem)",
         touch: "2.75rem"
       },
       borderRadius: {

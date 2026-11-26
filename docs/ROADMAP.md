@@ -1,6 +1,6 @@
 # Friction-Free Marketplace roadmap
 
-Production: frictionfree.co through Vercel, owned by `garfieldgarwood45-collab`. Account and service handover steps are in [HANDOVER.md](HANDOVER.md).
+Production: frictionfree.co through Railway, owned by `garfieldgarwood45-collab`. Account and service handover steps are in [HANDOVER.md](HANDOVER.md).
 Audit IDs (P0-1 and so on) refer to `ffm-reviews/r10-lifecycle-audit.md` (r10, Nov 20, 2026).
 Items tagged **$**, **RLS** or **MIG** touch money logic, row-level security or migrations. They need explicit sign-off before work starts.
 
@@ -26,9 +26,9 @@ Competitor details below come from third-party guides and help pages read in Nov
 | --- | --- | --- |
 | Go-live prerequisites: production env vars, `supabase db push`, Stripe webhooks, Auth URLs, PITR backups | [LAUNCH.md](LAUNCH.md), [HANDOVER.md](HANDOVER.md) | ops |
 | Turn on Google sign-in (`NEXT_PUBLIC_OAUTH_PROVIDERS=google`) | Every competitor offers one-tap sign-up | ops |
-| Decide the cron host for the Vercel plan (Pro, or Supabase pg_cron) (P0-2) | Hourly jobs release payouts and expire checkouts | ops |
+| Configure Railway scheduled services for hourly jobs and 30-minute checkout expiry (P0-2) | Reconcile payments, release eligible payouts, and expire checkouts | ops |
 | Merge the duplicate release paths, partial-refund cap (P1-4) | Payout correctness | $ |
-| Sales tax on shipped orders (tax is fixed at 0 in `lib/payments/quote.ts`) | Most US states require marketplaces to collect it (marketplace-facilitator laws). Get legal advice, then add a tax provider | $ |
+| Sales tax on shipped orders remains 0 pending legal advice and a tax provider | Owner decision: defer tax collection for now; revisit before expanding shipped sales | $ |
 | Error monitoring and uptime alerts (P1-15) | Errors only go to server logs today | ops |
 | Set real ad prices at `/admin/ads/pricing` | Defaults are placeholders | ops |
 
@@ -40,7 +40,7 @@ Competitor details below come from third-party guides and help pages read in Nov
 | Safe meetup guidance: suggested public spots and a pickup checklist inside the handoff flow | OfferUp promotes community meetup spots | |
 | ID verification badge (Stripe Identity) layered on the existing verification page | OfferUp TruYou | $ |
 | Prepaid shipping labels and tracking (e.g. Shippo or EasyPost) | Mercari, eBay | $, MIG |
-| Push notifications in the Capacitor app for messages, offers, and order steps | All competitor apps | |
+| PWA notifications for messages, offers, and order steps | All competitor apps | |
 | Price-drop and new-match alerts from saved searches and favorites | Mercari likes, eBay watchlist | |
 | Notifications for shipped, delivered, auto-released, refunded, dispute resolved, payout (P1-2, P1-13) | Order clarity | |
 | Admin "request info" on disputes (P1-14) | Dispute completeness | $ |
@@ -57,7 +57,7 @@ Competitor details below come from third-party guides and help pages read in Nov
 | Drop unused tables and enum values (P2-2, P2-3, P2-5) | MIG |
 | Build-time guard against dev and test flags in production (P2-11) | |
 | Remove the archived `database/migrations` tree (P1-12) | |
-| Mobile store release (Android, iOS) | ops |
+| PWA install and offline experience on iOS Safari and Android Chrome | ops |
 
 ## Done
 

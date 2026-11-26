@@ -27,12 +27,16 @@ test.describe("public route smoke", () => {
     await expect(page.getByRole("heading", { name: /log in/i })).toBeVisible();
   });
 
-  test("a wide viewport still uses the phone shell", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
+  test("adapts cleanly between phone and wide desktop viewports", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
     await expect(page.getByRole("navigation", { name: "App sections" })).toBeVisible();
-    await expect(page.getByRole("navigation", { name: "Primary" })).toHaveCount(0);
-    const width = await page.locator(".app-shell").evaluate((element) => element.getBoundingClientRect().width);
-    expect(width).toBeLessThanOrEqual(480);
+    const mobileWidth = await page.locator(".app-shell").evaluate((element) => element.getBoundingClientRect().width);
+    expect(mobileWidth).toBeLessThanOrEqual(390);
+
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expect(page.getByRole("navigation", { name: "App sections" })).toBeVisible();
+    const desktopWidth = await page.locator(".app-shell").evaluate((element) => element.getBoundingClientRect().width);
+    expect(desktopWidth).toBeGreaterThan(480);
   });
 });

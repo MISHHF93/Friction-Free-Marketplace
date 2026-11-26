@@ -255,12 +255,24 @@
     @apply fixed inset-0 z-[90] flex items-end justify-end;
   }
 
+  @screen sm {
+    .ai-assistant-layer {
+      @apply p-4;
+    }
+  }
+
   .ai-assistant-backdrop {
     @apply absolute inset-0 bg-slate-950/45 backdrop-blur-sm;
   }
 
   .ai-assistant-panel {
     @apply relative flex h-[min(46rem,calc(100dvh-1rem))] w-full flex-col overflow-hidden rounded-t-[2rem] border border-border bg-background shadow-admin;
+  }
+
+  @screen sm {
+    .ai-assistant-panel {
+      @apply h-[min(46rem,calc(100dvh-2rem))] max-w-md rounded-[2rem];
+    }
   }
 
   .brand-surface {
@@ -447,6 +459,12 @@
     @apply min-w-0 space-y-2 p-5;
   }
 
+  @screen sm {
+    .card-header {
+      @apply p-6;
+    }
+  }
+
   .card-title {
     @apply text-title font-black leading-tight tracking-[-0.025em];
   }
@@ -457,6 +475,12 @@
 
   .card-content {
     @apply min-w-0 p-5 pt-0;
+  }
+
+  @screen sm {
+    .card-content {
+      @apply p-6 pt-0;
+    }
   }
 
   .table-shell {
@@ -528,6 +552,12 @@
     @apply rounded-panel border border-border bg-card p-4 shadow-card;
   }
 
+  @screen sm {
+    .form-section {
+      @apply p-6;
+    }
+  }
+
   .search-control {
     @apply form-control border-ai-border bg-ai-soft/50 pl-11 shadow-ai;
   }
@@ -536,9 +566,21 @@
     @apply space-y-5;
   }
 
+  @screen sm {
+    .dashboard-shell {
+      @apply space-y-6;
+    }
+  }
+
   .dashboard-hero {
     @apply overflow-hidden rounded-shell border border-border bg-card p-4 text-foreground shadow-sm;
     position: relative;
+  }
+
+  @screen sm {
+    .dashboard-hero {
+      @apply p-6;
+    }
   }
 
   .dashboard-compact .dashboard-banner,
@@ -554,8 +596,32 @@
     @apply grid gap-4;
   }
 
+  @screen sm {
+    .dashboard-grid {
+      @apply gap-5;
+    }
+  }
+
+  @screen lg {
+    .dashboard-grid {
+      @apply gap-6;
+    }
+  }
+
   .dashboard-grid-metrics {
     @apply dashboard-grid;
+  }
+
+  @screen sm {
+    .dashboard-grid-metrics {
+      @apply grid-cols-2;
+    }
+  }
+
+  @screen xl {
+    .dashboard-grid-metrics {
+      @apply grid-cols-4;
+    }
   }
 
   .dashboard-stat {
@@ -564,6 +630,12 @@
 
   .dashboard-list-item {
     @apply flex flex-col gap-3 rounded-card border border-border bg-card p-4 shadow-xs transition hover:border-primary hover:bg-commerce-soft;
+  }
+
+  @screen sm {
+    .dashboard-list-item {
+      @apply flex-row items-center justify-between;
+    }
   }
 
   .status-badge {
@@ -599,11 +671,8 @@
   }
 
   .app-backdrop {
-    background: #d7e0ea;
+    background: hsl(var(--background));
   }
-
-  /* Breakpoints are disabled (tailwind.config.ts), so only phone grid columns remain;
-     they are intentional (steppers, min/max pairs) and are no longer forced to one column. */
 
   html.keyboard-open .app-tabs {
     display: none;
@@ -617,8 +686,32 @@
     @apply mx-auto box-border w-full max-w-7xl px-4;
   }
 
+  @screen sm {
+    .app-container {
+      @apply px-6;
+    }
+  }
+
+  @screen lg {
+    .app-container {
+      @apply px-8;
+    }
+  }
+
   .app-container-wide {
     @apply mx-auto box-border w-full max-w-[90rem] px-4;
+  }
+
+  @screen sm {
+    .app-container-wide {
+      @apply px-6;
+    }
+  }
+
+  @screen lg {
+    .app-container-wide {
+      @apply px-8;
+    }
   }
 
   :where(.app-container, .app-container-wide, .card-base, .brand-panel, main) :where(.grid, .flex) > * {
@@ -652,15 +745,45 @@
   }
 
   .section-y {
-    @apply py-10;
+    @apply py-8;
+  }
+
+  @screen sm {
+    .section-y {
+      @apply py-12;
+    }
+  }
+
+  @screen lg {
+    .section-y {
+      @apply py-16;
+    }
   }
 
   .section-y-lg {
-    @apply py-12;
+    @apply py-10;
+  }
+
+  @screen sm {
+    .section-y-lg {
+      @apply py-14;
+    }
+  }
+
+  @screen lg {
+    .section-y-lg {
+      @apply py-20;
+    }
   }
 
   .panel-pad {
     @apply p-4;
+  }
+
+  @screen sm {
+    .panel-pad {
+      @apply p-6;
+    }
   }
 
   .adaptive-grid {
@@ -683,6 +806,12 @@
 
   .action-grid {
     @apply grid grid-cols-1 gap-2;
+  }
+
+  @screen sm {
+    .action-grid {
+      @apply flex flex-wrap;
+    }
   }
 
   .responsive-table-wrap {

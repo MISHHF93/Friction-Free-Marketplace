@@ -14,6 +14,24 @@ const idInput = z.object({ id: z.string().trim().min(1).max(80) });
 
 export const mcpTools = ["search_listings", "get_listing", "get_seller_public_profile", "list_categories"] as const;
 
+export function isMcpEnabled(env: NodeJS.ProcessEnv = process.env) {
+  const flag = env.FFM_MCP_ENABLED?.trim().toLowerCase();
+  return flag !== "0" && flag !== "false";
+}
+
+export function getMcpDiscoveryPayload(env: NodeJS.ProcessEnv = process.env) {
+  const enabled = isMcpEnabled(env);
+  return {
+    name: "Friction-Free Marketplace",
+    transport: "streamable-http",
+    endpoint: "/api/mcp",
+    enabled,
+    tools: enabled ? mcpTools : [],
+    authentication: "Read-only tools are public. Per-user tools are not enabled. The planned path is a Supabase user bearer token enforced by row-level security, never the service-role key.",
+    payments: "Payment, refund, and payout actions are not available through MCP."
+  };
+}
+
 function publicListing(listing: {
   id: string;
   title: string;

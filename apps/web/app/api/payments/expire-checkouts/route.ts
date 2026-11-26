@@ -15,7 +15,7 @@ async function run(request: Request) {
     const supabase = createAdminClient() as any;
     const result = await expireAbandonedCheckouts(supabase);
     const uncaptured = await remindAndCancelUncapturedOrders(supabase);
-    // Sponsored placements ride on this existing cron (no new Vercel cron for the Hobby plan).
+    // Sponsored placements ride on this existing scheduled job.
     let ads: Awaited<ReturnType<typeof advanceAdLifecycle>> | { error: string };
     try {
       ads = await advanceAdLifecycle(supabase);

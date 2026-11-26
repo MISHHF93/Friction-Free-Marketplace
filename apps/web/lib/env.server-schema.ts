@@ -20,8 +20,6 @@ export const serverEnvSchema = publicEnvSchema.extend({
   SUPPORT_EMAIL: requiredString("SUPPORT_EMAIL"),
   POSTHOG_KEY: z.string().trim().min(1).optional(),
   POSTHOG_HOST: z.string().trim().url().default("https://app.posthog.com"),
-  APPLE_TEAM_ID: z.string().trim().min(1).optional(),
-  ANDROID_SHA256_CERT_FINGERPRINTS: z.string().trim().min(1).optional(),
   MARKETPLACE_DEMO_MODE: z.enum(["true", "false"]).optional()
 });
 

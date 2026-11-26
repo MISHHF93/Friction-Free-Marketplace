@@ -9,8 +9,8 @@ import { SiteShell } from "@/components/site-shell";
 import { publicEnv } from "@/lib/env";
 import { brandChrome, brandProfile } from "@/lib/brand-profile";
 import { PwaRegistrar } from "@/components/pwa-registrar";
-import { NativeBridge } from "@/components/native-bridge-loader";
 import { CspNonceAnchor } from "@/components/security/nonce-script";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -82,13 +82,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const headerStore = await headers();
   const session = await getMarketplaceSession().catch(() => null);
   const locale = documentLocale(session?.locale, headerStore.get("accept-language"));
+  const pathname = headerStore.get("x-pathname") ?? "";
+  const authPage = pathname === "/login" || pathname === "/signup" || pathname.startsWith("/auth/");
   return (
     <html lang={locale.lang} dir={locale.dir} suppressHydrationWarning>
       <body>
-        <SiteShell>{children}</SiteShell>
+        {authPage ? <AuthShell>{children}</AuthShell> : <SiteShell>{children}</SiteShell>}
         <CspNonceAnchor />
         <PwaRegistrar />
-        <NativeBridge />
       </body>
     </html>
   );

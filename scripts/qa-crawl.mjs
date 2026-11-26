@@ -39,7 +39,7 @@ const routes = arg("routes")?.split(",") ?? [
 ];
 const ignore = [/status of (401|403|404)/, /favicon/, /React DevTools/, /\[HMR\]/, /posthog/i];
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH || undefined });
 let problems = 0;
 for (const mode of ["signed-out", "signed-in"]) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 }, serviceWorkers: "block" });

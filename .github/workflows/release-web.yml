@@ -2,12 +2,6 @@ name: Release web
 
 on:
   workflow_dispatch:
-    inputs:
-      deploy_vercel:
-        description: Deploy production to Vercel
-        required: true
-        type: boolean
-        default: true
 
 permissions:
   contents: read
@@ -61,8 +55,6 @@ jobs:
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
           SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          ANDROID_FINGERPRINTS: ${{ secrets.ANDROID_SHA256_CERT_FINGERPRINTS }}
         run: |
           docker run -d --name marketplace-release -p 3000:3000 \
             -e NEXT_PUBLIC_APP_URL="$APP_URL" \
@@ -73,8 +65,6 @@ jobs:
             -e STRIPE_WEBHOOK_SECRET="$STRIPE_WEBHOOK_SECRET" \
             -e NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="$STRIPE_PUBLISHABLE_KEY" \
             -e SUPPORT_EMAIL="$SUPPORT_EMAIL" \
-            -e APPLE_TEAM_ID="$APPLE_TEAM_ID" \
-            -e ANDROID_SHA256_CERT_FINGERPRINTS="$ANDROID_FINGERPRINTS" \
             -e RELEASE_SHA="${{ github.sha }}" \
             ghcr.io/${{ github.repository }}:${{ github.sha }}
           for attempt in {1..30}; do
@@ -87,47 +77,4 @@ jobs:
         with:
           name: container-release-proof-${{ github.sha }}
           path: container-smoke-evidence.json
-          if-no-files-found: warn
-
-  vercel:
-    if: inputs.deploy_vercel
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Validate Vercel release configuration
-        shell: bash
-        env:
-          TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-        run: |
-          test -n "$TOKEN"
-          test -n "$ORG_ID"
-          test -n "$PROJECT_ID"
-      - run: npm install --global vercel@latest
-      - run: vercel pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      - run: vercel build --prod --token="${{ secrets.VERCEL_TOKEN }}"
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      - run: vercel deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}"
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      - name: Verify deployed production origin
-        env:
-          PRODUCTION_URL: ${{ vars.PRODUCTION_APP_URL }}
-          SMOKE_OUTPUT: production-smoke-evidence.json
-        run: node scripts/production-smoke.mjs
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: web-release-proof-${{ github.sha }}
-          path: production-smoke-evidence.json
           if-no-files-found: warn

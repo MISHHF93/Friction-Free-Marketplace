@@ -21,11 +21,6 @@
     "brand:icons": "node scripts/generate-brand-icons.mjs"
   },
   "dependencies": {
-    "@capacitor/app": "^7.1.2",
-    "@capacitor/browser": "^7.0.5",
-    "@capacitor/core": "^7.6.10",
-    "@capacitor/network": "^7.0.4",
-    "@capacitor/share": "^7.0.4",
     "@hookform/resolvers": "^3.9.1",
     "@modelcontextprotocol/sdk": "^1.32.2",
     "@radix-ui/react-label": "^2.1.0",

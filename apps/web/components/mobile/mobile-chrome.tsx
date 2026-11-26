@@ -6,22 +6,24 @@ import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, Home, MessageSquare, Plus, Search, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function PhoneFrame({ children }: { children: ReactNode }) {
+export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="app-backdrop min-h-screen">
-      <div className="app-shell relative mx-auto min-h-screen w-full max-w-[480px] bg-background pt-[env(safe-area-inset-top)] shadow-[0_0_24px_rgba(16,21,28,0.06)]">
+      <div className="app-shell relative min-h-screen w-full bg-background pt-[env(safe-area-inset-top)]">
         {children}
       </div>
     </div>
   );
 }
 
+export const PhoneFrame = AppShell;
+
 const tabs = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/search", label: "Search", icon: Search },
-  { href: "/dashboard/listings/create", label: "Sell", icon: Plus, emphasize: true },
-  { href: "/dashboard/messages", label: "Messages", icon: MessageSquare, badge: "messages" },
-  { href: "/account", label: "Me", icon: UserRound }
+  { href: "/", label: "Home", desktopLabel: "Home", icon: Home },
+  { href: "/search", label: "Search", desktopLabel: "Search", icon: Search },
+  { href: "/dashboard/listings/create", label: "Sell", desktopLabel: "Sell", icon: Plus, emphasize: true },
+  { href: "/dashboard/messages", label: "Messages", desktopLabel: "Messages", icon: MessageSquare, badge: "messages" },
+  { href: "/account", label: "Me", desktopLabel: "Account", icon: UserRound }
 ] as const;
 
 const rootPaths = new Set(["/", "/browse", "/search", "/login", "/signup"]);
@@ -40,6 +42,27 @@ function parentPath(pathname: string, search = "") {
   return parts.length > 1 ? `/${parts.slice(0, -1).join("/")}` : "/";
 }
 
+function isTabActive(pathname: string, href: string) {
+  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+}
+
+function useNavCounts(pathname: string) {
+  const [counts, setCounts] = useState({ messages: 0, offers: 0 });
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/nav-counts")
+      .then((response) => response.ok ? response.json() : { messages: 0, offers: 0 })
+      .then((payload) => {
+        if (!cancelled) setCounts({ messages: Number(payload.messages ?? 0), offers: Number(payload.offers ?? 0) });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+  return counts;
+}
+
 export function MobileBackBar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -47,7 +70,7 @@ export function MobileBackBar() {
   return (
     <button
       type="button"
-      className="inline-flex h-11 min-w-11 shrink-0 items-center gap-1 rounded-xl px-2 text-sm font-bold active:scale-[0.98]"
+      className="inline-flex h-11 min-w-11 shrink-0 items-center gap-1 rounded-xl px-2 text-sm font-bold active:scale-[0.98] md:hidden"
       aria-label="Back"
       onClick={() => {
         if (window.history.length > 1) router.back();
@@ -88,12 +111,50 @@ export function PageTitleMirror() {
   }, [pathname]);
   // Top-level screens show the full logo and lead with their own heading; repeating it is noise.
   const hidden = rootPaths.has(pathname);
-  return <p ref={titleRef} className={cn("truncate text-sm font-black", hidden && "hidden")} aria-hidden="true" />;
+  return <p ref={titleRef} className={cn("truncate text-sm font-black md:hidden", hidden && "hidden")} aria-hidden="true" />;
+}
+
+export function DesktopNav() {
+  const pathname = usePathname();
+  const counts = useNavCounts(pathname);
+  if (pathname === "/login" || pathname === "/signup" || pathname.startsWith("/auth/")) return null;
+
+  return (
+    <nav aria-label="App sections" className="hidden items-center gap-1 md:flex">
+      {tabs.map((tab) => {
+        const active = isTabActive(pathname, tab.href);
+        const count = "badge" in tab ? counts[tab.badge] : 0;
+        const emphasize = "emphasize" in tab && tab.emphasize;
+        return (
+          <Link
+            key={tab.href}
+            href={tab.href}
+            aria-current={active ? "page" : undefined}
+            className={cn(
+              "inline-flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-bold transition",
+              emphasize
+                ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                : active
+                  ? "bg-secondary text-primary"
+                  : "text-foreground hover:bg-secondary"
+            )}
+          >
+            {tab.desktopLabel}
+            {count > 0 ? (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-black text-white">
+                {count > 9 ? "9+" : count}
+              </span>
+            ) : null}
+          </Link>
+        );
+      })}
+    </nav>
+  );
 }
 
 export function MobileTabBar() {
   const pathname = usePathname();
-  const [counts, setCounts] = useState({ messages: 0, offers: 0 });
+  const counts = useNavCounts(pathname);
   useEffect(() => {
     const viewport = window.visualViewport;
     const onResize = () => {
@@ -104,28 +165,18 @@ export function MobileTabBar() {
     viewport?.addEventListener("resize", onResize);
     return () => viewport?.removeEventListener("resize", onResize);
   }, []);
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/nav-counts")
-      .then((response) => response.ok ? response.json() : { messages: 0, offers: 0 })
-      .then((payload) => {
-        if (!cancelled) setCounts({ messages: Number(payload.messages ?? 0), offers: Number(payload.offers ?? 0) });
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [pathname]);
+
+  if (pathname === "/login" || pathname === "/signup" || pathname.startsWith("/auth/")) return null;
 
   return (
     <nav
       aria-label="App sections"
-      className="app-tabs fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 border-t border-border bg-background/95 backdrop-blur"
+      className="app-tabs fixed inset-x-0 bottom-0 z-40 w-full border-t border-border bg-background/95 backdrop-blur md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ul className="keep-grid grid grid-cols-5">
+      <ul className="keep-grid mx-auto grid max-w-md grid-cols-5">
         {tabs.map((tab) => {
-          const active = tab.href === "/" ? pathname === "/" : pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+          const active = isTabActive(pathname, tab.href);
           const Icon = tab.icon;
           const count = "badge" in tab ? counts[tab.badge] : 0;
           return (

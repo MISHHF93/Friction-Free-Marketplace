@@ -347,13 +347,12 @@ Required checks per pull request:
 
 The repository should be organized around deployable applications, independently owned services, shared contracts, reusable packages, infrastructure, data/AI assets, and operational runbooks.
 
-> **Status:** this is the long-term target layout. The empty placeholder folders for it were removed; the current repository is `apps/web`, `apps/mobile`, `packages/shared`, and `supabase/` (see the root README). Create these folders when real code for them exists.
+> **Status:** this is the long-term target layout. The current repository is a single PWA/backend in `apps/web`, Railway scheduled jobs in `apps/cron`, shared code in `packages/shared`, and Supabase migrations in `supabase/` (see the root README). Create additional deployable apps only when the product requires them.
 
 ```text
 .
 ├── apps/
 │   ├── web/                    # Buyer/seller marketplace web application
-│   ├── mobile/                 # React Native mobile application
 │   ├── admin/                  # Trust, support, finance, and operations console
 │   └── partner-portal/         # Developer and merchant portal
 ├── services/

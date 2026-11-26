@@ -35,7 +35,7 @@ export function PublicListingGrid({ listings, emptyTitle = "No listings availabl
   }
 
   return (
-    <div className="listing-grid grid gap-2">
+    <div className="listing-grid grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {listings.map((listing) => <DesignListingCard key={listing.id} listing={toDesignListing(listing)} />)}
     </div>
   );

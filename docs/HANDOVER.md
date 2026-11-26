@@ -4,7 +4,7 @@ Moves Friction-Free Marketplace from its current owner to the new owner's accoun
 
 The new owner signs in to each service in this list. Nothing here can be created on their behalf: every provider requires its own account, login, and billing. This file says **what** to create and **where each value goes**. The full production rules (required variables, webhook events, cron schedules, migrations) are in [LAUNCH.md](LAUNCH.md).
 
-Order matters: GitHub first, then the database, then the services that need its URL, then Vercel last.
+Order matters: GitHub first, then the database, then the services that need its URL, then Railway last.
 
 ## Owner and accounts
 
@@ -25,12 +25,10 @@ Sign up (or sign in) with that email at each service below, then follow the numb
 | OpenAI | <https://platform.openai.com/signup> | AI listing and assistant features (optional) | 6 |
 | Meilisearch Cloud | <https://cloud.meilisearch.com/register> | Fast search (optional) | 6 |
 | PostHog | <https://app.posthog.com/signup> | Analytics (optional) | 6 |
-| Vercel | <https://vercel.com/signup> | Hosting at frictionfree.co | 7, 8 |
-| Domain registrar | wherever `frictionfree.co` is registered | DNS to Vercel and Resend; transfer the domain to Garfield there | 8 |
-| Apple Developer | <https://developer.apple.com/programs/enroll/> | iOS app (later) | 10 |
-| Google Play Console | <https://play.google.com/console/signup> | Android app (later) | 10 |
+| Railway | <https://railway.com/> | Hosting and scheduled jobs at frictionfree.co | 7, 8 |
+| Domain registrar | wherever `frictionfree.co` is registered | DNS to Railway and Resend; transfer the domain to Garfield there | 8 |
 
-Use `garfieldgarwood45@gmail.com` as the Google OAuth consent-screen support email and developer contact (section 3), the Stripe account owner (section 4), and the Vercel account (section 8). For customer-facing `SUPPORT_EMAIL` and `RESEND_FROM_EMAIL`, prefer `support@frictionfree.co` / `no-reply@frictionfree.co` once the domain is verified in Resend; until then `SUPPORT_EMAIL` can be the Gmail address.
+Use `garfieldgarwood45@gmail.com` as the Google OAuth consent-screen support email and developer contact (section 3), the Stripe account owner (section 4), and the Railway account (section 8). For customer-facing `SUPPORT_EMAIL` and `RESEND_FROM_EMAIL`, prefer `support@frictionfree.co` / `no-reply@frictionfree.co` once the domain is verified in Resend; until then `SUPPORT_EMAIL` can be the Gmail address.
 
 ## 1. GitHub repository
 
@@ -57,7 +55,7 @@ The login and signup pages show a "Continue with Google" button when `NEXT_PUBLI
    - Authorized JavaScript origins: `https://frictionfree.co`
    - Authorized redirect URI: `https://<supabase-project-ref>.supabase.co/auth/v1/callback` (copy it from Supabase **Authentication → Providers → Google**)
 4. In Supabase **Authentication → Providers → Google**: enable it and paste the Client ID and Client Secret.
-5. Set `NEXT_PUBLIC_OAUTH_PROVIDERS=google` in Vercel (step 8) and as a GitHub variable (step 9). It is baked in at build time, so redeploy after changing it.
+5. Set `NEXT_PUBLIC_OAUTH_PROVIDERS=google` in Railway (step 8) and as a GitHub variable (step 9). It is baked in at build time, so redeploy after changing it.
 6. Test: open `https://frictionfree.co/login`, choose Google, and confirm you land back signed in. The first Google sign-in also creates the account (signup).
 
 Apple sign-in works the same way (`NEXT_PUBLIC_OAUTH_PROVIDERS=google,apple`) but needs an Apple Developer account and a Services ID.
@@ -85,19 +83,19 @@ Each degrades safely when unset.
 
 Also generate random values for `CRON_SECRET` and `ADMIN_WORKER_SECRET` (`node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`).
 
-## 7. Retire the old deployment
+## 7. Retire the previous deployment
 
-1. Current owner's Vercel: **Project → Settings → Domains** → remove `frictionfree.co` and `www.frictionfree.co` so the new project can claim them.
-2. Then delete (or pause) the old Vercel project, and revoke its old API keys in Stripe, Supabase, Resend, and OpenAI once the new deployment is live.
+1. If the domain is still attached to the previous host, remove `frictionfree.co` and `www.frictionfree.co` there after confirming the Railway service is ready to claim them.
+2. Pause the previous deployment only after Railway is healthy. Revoke old API keys in Stripe, Supabase, Resend, and OpenAI once the Railway deployment is live.
 
-## 8. Vercel (new deployment at frictionfree.co)
+## 8. Railway (production at frictionfree.co)
 
-1. New owner's Vercel → **Add New → Project** → import `<new-owner>/Friction-Free-Marketplace`.
-2. **Root Directory: repository root** (the root `vercel.json` runs `npm ci`, `npm run web:build`, and the crons). Framework: Next.js.
-3. **Settings → Environment Variables (Production)**: every variable from steps 2–6 with real values, plus `NEXT_PUBLIC_APP_URL=https://frictionfree.co` and `NEXT_PUBLIC_OAUTH_PROVIDERS=google`. Leave `ALLOW_DEV_AUTH_BYPASS`, `FFM_E2E_AUTH`, `MARKETPLACE_DEMO_MODE`, and `FFM_MCP_ENABLED` **unset**; demo data and the local sign-in bypass are hard-disabled in production builds.
-4. **Settings → Domains**: add `frictionfree.co` (and `www.frictionfree.co` redirecting to it). At the domain registrar, point DNS to Vercel as shown (A `76.76.21.21` for the apex, CNAME `cname.vercel-dns.com` for `www`), or move the nameservers to Vercel.
-5. Hourly crons need Vercel Pro; see [LAUNCH.md → Hosting](LAUNCH.md#hosting) for the Hobby schedule.
-6. **Account settings → Tokens**: create `VERCEL_TOKEN`. From **Project → Settings → General** copy `VERCEL_PROJECT_ID`, and from team settings `VERCEL_ORG_ID`. These let the *Release web* workflow deploy.
+1. Sign in to Railway with Garfield's account, create a project, and connect `garfieldgarwood45-collab/Friction-Free-Marketplace` from GitHub. Deploy the `main` branch.
+2. Keep the service root at the repository root so Railway detects the root `Dockerfile`. Add the production environment variables from [LAUNCH.md → Production environment](LAUNCH.md#production-environment) before the first deployment. The `NEXT_PUBLIC_*` values are needed at Docker build time as well as runtime.
+3. Set `NEXT_PUBLIC_APP_URL=https://frictionfree.co` and `NEXT_PUBLIC_OAUTH_PROVIDERS=google`. Leave `ALLOW_DEV_AUTH_BYPASS`, `FFM_E2E_AUTH`, and `MARKETPLACE_DEMO_MODE` unset. Keep demo data and local sign-in bypass disabled in production. (`/api/mcp` is enabled by default for public read-only tools; set `FFM_MCP_ENABLED=0` if you want it off.)
+4. In the web service settings, set the healthcheck path to `/api/health/ready`. Add `frictionfree.co` as a custom domain and follow the exact DNS records Railway displays for the project. Add `www.frictionfree.co` only if its redirect to the apex is configured at the registrar or DNS provider.
+5. Create one scheduled service per route listed in [LAUNCH.md → Railway hosting](LAUNCH.md#railway-hosting). Point each service to this repository, set `RAILWAY_DOCKERFILE_PATH=/apps/cron/Dockerfile`, and configure its route, origin, bearer secret, and UTC schedule as listed there. The shared `CRON_SECRET` must also be set on the web service.
+6. Link the Railway project to GitHub and verify that pushes to `main` create deployments. No Vercel token or Vercel project IDs are used.
 
 ## 9. GitHub Actions secrets and variables
 
@@ -111,9 +109,9 @@ node scripts/handover/apply-github-config.mjs <new-owner>/Friction-Free-Marketpl
 
 The script sets public values as Actions *variables* and the rest as *secrets*, skips empty lines, and refuses placeholder values. Mobile-store values can be added later.
 
-## 10. Mobile apps (when publishing)
+## 10. Installable PWA
 
-Same identity everywhere: `com.frictionfreemarketplace.app`. The new owner needs an Apple Developer account (`APPLE_TEAM_ID`, App Store Connect API key) and a Google Play Console account (upload keystore, service-account JSON, SHA-256 fingerprints). Set `CAPACITOR_SERVER_URL=https://frictionfree.co`. Details: [production-release.md](production-release.md).
+There is no native Android/iOS app or store release. The Railway-hosted Next.js app is the mobile-first PWA. Verify its manifest, icons, offline page, and install flow on current iOS Safari and Android Chrome after deployment. No Apple Developer or Google Play account is required.
 
 ## 11. Verify
 

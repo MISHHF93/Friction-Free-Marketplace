@@ -56,7 +56,7 @@ export function AdminRowActionMenu({ slug, targetId, subject, actions, heldCents
         <MoreHorizontal className="h-4 w-4" />
         Actions
       </summary>
-      <div role="dialog" aria-label={`Actions for ${subject}`} className="fixed inset-x-0 bottom-0 z-[80] mx-auto grid w-full max-w-[480px] gap-3 rounded-t-3xl border border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-soft">
+      <div role="dialog" aria-label={`Actions for ${subject}`} className="fixed inset-x-0 bottom-0 z-[80] mx-auto grid w-full gap-3 rounded-t-3xl border border-border bg-card p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-soft md:inset-auto md:left-1/2 md:top-1/2 md:max-w-md md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-3xl md:p-6">
         <p className="font-bold">{subject}</p>
         <label className="grid gap-1 text-sm font-semibold" htmlFor={`reason-${targetId ?? subject}`}>
           Reason

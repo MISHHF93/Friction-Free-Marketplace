@@ -43,16 +43,15 @@ Optional, with the behavior when unset:
 - `OPENAI_API_KEY` (assistant features fail closed)
 - `MEILISEARCH_HOST`, `MEILISEARCH_API_KEY`, and `MEILISEARCH_LISTINGS_INDEX` (search falls back to the database)
 - `ADMIN_WORKER_SECRET` and `HEALTH_CHECK_SECRET` (readiness can also use the worker secret)
-- `APPLE_TEAM_ID` and `ANDROID_SHA256_CERT_FINGERPRINTS` (native association files)
+- `FFM_MCP_ENABLED` (MCP at `/api/mcp` and `/.well-known/mcp` is enabled by default; set to `0` to disable)
 - `FFM_BIND_HOST` and `FFM_TRUSTED_PROXY_HOPS` (local bind and proxy hop count; leave unset in production)
-- `RELEASE_SHA` (health output falls back to the Vercel git SHA)
+- `RELEASE_SHA` (health output falls back to the Railway git SHA)
 
 Flags that must stay unset:
 
 - `ALLOW_DEV_AUTH_BYPASS`
 - `FFM_E2E_AUTH`
 - `MARKETPLACE_DEMO_MODE`
-- `FFM_MCP_ENABLED`
 
 Use live Stripe keys (`sk_live_` and `pk_live_`) together. Checkout uses the real PaymentIntent flow when those keys are present. Placeholder keys leave checkout unconfigured.
 
@@ -104,19 +103,22 @@ Connect onboarding returns to `{NEXT_PUBLIC_APP_URL}/dashboard/payments?onboardi
 
 Meilisearch is called from the server, not the browser. Mutating routes accept only the `Origin` of `NEXT_PUBLIC_APP_URL`.
 
-## Hosting
+## Railway hosting
 
-Set the Vercel project Root Directory to the repository root so the root `vercel.json` runs `npm ci`, `npm run web:build`, and the cron paths. `apps/web/vercel.json` repeats those crons only if the project root is `apps/web`.
+Connect the repository's `main` branch to a persistent web service with the repository root as its source directory. Railway detects the root `Dockerfile`; set `/api/health` as its healthcheck path. Provide the required production variables to the web service. Docker build-time `NEXT_PUBLIC_*` values are read through the `ARG` declarations in the Dockerfile and must also remain available at runtime.
 
-Hourly crons need Vercel Pro. The committed schedules are:
+Create six scheduled services from the same repository root. For each, set `RAILWAY_DOCKERFILE_PATH=/apps/cron/Dockerfile`, `RAILWAY_APP_URL=https://frictionfree.co`, the listed `RAILWAY_JOB_PATH`, and the same strong `CRON_SECRET` configured on the web service. The runner sends an authenticated GET request, fails the run on non-2xx responses, and exits when the request completes.
 
-- `/api/notifications/dispatch` at minute 0
-- `/api/payments/reconcile` at minute 10
-- `/api/offers/expire` at minute 15
-- `/api/search/sync` at minute 30
-- `/api/payments/auto-release` at minute 40
+| Route | Schedule (UTC) |
+| --- | --- |
+| `/api/notifications/dispatch` | `0 * * * *` |
+| `/api/payments/reconcile` | `10 * * * *` |
+| `/api/offers/expire` | `15 * * * *` |
+| `/api/search/sync` | `30 * * * *` |
+| `/api/payments/expire-checkouts` | `5,35 * * * *` |
+| `/api/payments/auto-release` | `40 * * * *` |
 
-On Hobby, Vercel only allows daily cron. Use one daily pass instead, for example `0 3 * * *`, `10 3 * * *`, `15 3 * * *`, `30 3 * * *`, and `40 3 * * *`, and expect offers, search, reconcile, and auto-release to wait until that hour.
+Railway schedules use UTC, can start a few minutes later than scheduled, and skip a run if its prior execution is still active. Monitor every scheduled service's run logs; these jobs perform payment reconciliation and automatic fund release as well as routine cleanup. Railway's cron services must use the `apps/cron/Dockerfile`, not the web Dockerfile.
 
 Enable database backups and point-in-time recovery before the first live charge. Rollback steps are in [docs/rollback-runbook.md](rollback-runbook.md). Watch `/api/health` and `/api/health/ready`, and send application errors to the host's error and uptime monitors. This repository does not configure those monitors.
 
@@ -167,12 +169,12 @@ Checked on this branch before the pull request. The host still runs the suite ag
 
 ## r11 lifecycle and performance (on main since 2026-11-22; apply migrations before deploying)
 
-- No new Vercel cron. `/api/payments/expire-checkouts` (every 30 minutes, already in `vercel.json`) now also reminds sellers 24 hours before the acceptance deadline and auto-cancels uncaptured `paid` authorizations at 72 hours, or sooner if Stripe's `capture_before` is earlier. Open disputes are left alone. It uses the same `CRON_SECRET` / `SCHEDULED_JOB_SECRET`.
+- `/api/payments/expire-checkouts` (every 30 minutes) also reminds sellers 24 hours before the acceptance deadline and auto-cancels uncaptured `paid` authorizations at 72 hours, or sooner if Stripe's `capture_before` is earlier. Open disputes are left alone. It uses the same `CRON_SECRET` / `SCHEDULED_JOB_SECRET`.
 - Sales shows "Accept by {date}" on authorized orders. The "new order, accept by" notice is sent when payment is authorized, not when checkout first opens.
 - Migration `20261122000000_r11_drop_duplicate_notification_triggers.sql` removes the duplicate message and offer notification triggers. Apply with `supabase db push` after a backup.
 - Two more migrations for sponsored placements: `20261122010000_r11_ads_manage_permission.sql` (adds the `ads.manage` permission) and `20261122020000_r11_ads.sql` (placements, campaigns, daily event totals, and the public `ad-creatives` bucket). No new cron or env var. See `docs/ADS.md`.
 - `/admin/ads` is the admin UI. Public pages hide empty slots, label live units “Sponsored”, and count clicks through `/api/ads/click/[id]` after an https-or-internal allow-list check.
-- Transactional email is sent as soon as the notification is created. `/api/notifications/dispatch` (hourly, already in `vercel.json`) only retries rows that are still `queued` after a transport failure. No new cron or env var.
+- Transactional email is sent as soon as the notification is created. `/api/notifications/dispatch` (hourly) only retries rows that are still `queued` after a transport failure. No new job or env var.
 - Local pickup uses a two-sided handoff: the seller marks the item handed over without a tracking number, the buyer confirms pickup, and funds still follow the existing delivered / release / auto-release path. No new cron or env var.
 - Dispute evidence (`20261122030000_r11_dispute_evidence.sql`) adds a private `dispute-evidence` bucket and `dispute_evidence` rows (notes and photos) with RLS for the two parties and `disputes.decide` admins. Admins review it at `/admin/disputes/[id]`. No new cron or env var.
 - Runtime errors are reported through a pluggable logger that writes JSON to the server logs only. There is no paid error service and no new env var.
@@ -183,6 +185,6 @@ Checked on this branch before the pull request. The host still runs the suite ag
 - New migration `20261123000000_r12_self_serve_ads.sql`: lifecycle columns on `ad_campaigns` (existing house campaigns keep serving as `approved`), the admin-editable `ad_pricing` table with placeholder prices, advertiser-only RLS, event counting only for approved ads, and the `advance_ad_campaign_lifecycle()` sweep. No new bucket: creatives go to `advertisers/<user id>/` in the existing `ad-creatives` bucket. Apply with `supabase db push` after a backup.
 - Stripe: add `checkout.session.completed` to webhook endpoint A (the platform endpoint). It is the only new event. No new endpoint and no new secret.
 - No new env vars. Checkout uses `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_APP_URL` (success and cancel URLs).
-- No new Vercel cron. `/api/payments/expire-checkouts` (every 30 minutes, already in `vercel.json`) also runs the ad sweep: approved to active at start, to expired at end, and unpaid checkouts older than 2 hours back to draft.
+- `/api/payments/expire-checkouts` (every 30 minutes) also runs the ad sweep: approved to active at start, to expired at end, and unpaid checkouts older than 2 hours back to draft.
 - Before launch: set real prices at `/admin/ads/pricing`. The defaults are placeholders and are labeled as such to advertisers.
 - Database checks: `supabase/tests/r12_self_serve_ads.sql` (local database only; it rolls back). See `docs/ADS.md`.

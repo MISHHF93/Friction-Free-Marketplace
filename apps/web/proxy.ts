@@ -53,6 +53,7 @@ function continueRequest(request: NextRequest) {
   const policy = contentSecurityPolicy({ development, nonce: development ? undefined : nonce });
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
   if (!development) requestHeaders.set("Content-Security-Policy", policy);
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", policy);

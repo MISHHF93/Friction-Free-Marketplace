@@ -2,14 +2,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import { z } from "zod";
 import { NextResponse } from "next/server";
-import { mcpTools, runMcpTool } from "@/lib/mcp/tools";
+import { getMcpDiscoveryPayload, isMcpEnabled, runMcpTool } from "@/lib/mcp/tools";
 import { consumeRateLimit, RateLimitUnavailableError } from "@/lib/security/rate-limit";
 
 export const dynamic = "force-dynamic";
-
-function mcpEnabled() {
-  return process.env.FFM_MCP_ENABLED === "1";
-}
 
 function toolResult(value: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(value) }] };
@@ -35,7 +31,7 @@ function createServer() {
 }
 
 async function handle(request: Request) {
-  if (!mcpEnabled()) {
+  if (!isMcpEnabled()) {
     return NextResponse.json({ error: "Marketplace MCP is disabled." }, { status: 404 });
   }
   const hops = Number(process.env.FFM_TRUSTED_PROXY_HOPS ?? "0");
@@ -56,6 +52,13 @@ async function handle(request: Request) {
 }
 
 export async function GET(request: Request) {
+  if (!isMcpEnabled()) {
+    return NextResponse.json({ error: "Marketplace MCP is disabled." }, { status: 404 });
+  }
+  const accept = request.headers.get("accept") ?? "";
+  if (!accept.includes("text/event-stream")) {
+    return NextResponse.json(getMcpDiscoveryPayload());
+  }
   return handle(request);
 }
 
@@ -64,6 +67,6 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE() {
-  if (!mcpEnabled()) return NextResponse.json({ error: "Marketplace MCP is disabled." }, { status: 404 });
+  if (!isMcpEnabled()) return NextResponse.json({ error: "Marketplace MCP is disabled." }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

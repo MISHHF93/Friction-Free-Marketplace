@@ -47,7 +47,7 @@ async function expireOffers(request: Request) {
   const { data, error } = await supabase.rpc("expire_due_offers_returning");
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const expiredOffers = (data ?? []) as ExpiredOffer[];
-  // Hourly housekeeping that rides on this cron so the Vercel cron count stays the same.
+  // Hourly housekeeping rides on this scheduled route to avoid a separate job.
   const unavailable = await supabase.rpc("expire_offers_on_unavailable_listings_returning");
   const unavailableOffers = unavailable.error ? [] : (unavailable.data ?? []) as ExpiredOffer[];
   const lifted = await supabase.rpc("lift_expired_suspensions");

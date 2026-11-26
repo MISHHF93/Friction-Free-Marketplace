@@ -7,7 +7,7 @@ export async function GET() {
     {
       status: "ok",
       service: "friction-free-marketplace",
-      release: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.RELEASE_SHA ?? "development",
+      release: process.env.RAILWAY_GIT_COMMIT_SHA ?? process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.RELEASE_SHA ?? "development",
       timestamp: new Date().toISOString()
     },
     {
