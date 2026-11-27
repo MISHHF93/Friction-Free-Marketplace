@@ -1,11 +1,4 @@
 # syntax=docker/dockerfile:1
-FROM node:22-alpine AS dependencies
-WORKDIR /app
-COPY package.json package-lock.json ./
-COPY apps/web/package.json apps/web/package.json
-COPY packages/shared/package.json packages/shared/package.json
-RUN npm ci
-
 FROM node:22-alpine AS builder
 WORKDIR /app
 ARG NEXT_PUBLIC_APP_URL
@@ -29,9 +22,10 @@ ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
     NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY \
     NEXT_PUBLIC_POSTHOG_HOST=$NEXT_PUBLIC_POSTHOG_HOST \
     NEXT_PUBLIC_OAUTH_PROVIDERS=$NEXT_PUBLIC_OAUTH_PROVIDERS
-COPY --from=dependencies /app/node_modules ./node_modules
-COPY --from=dependencies /app/apps/web/node_modules ./apps/web/node_modules
-COPY --from=dependencies /app/packages/shared/node_modules ./packages/shared/node_modules
+COPY package.json package-lock.json ./
+COPY apps/web/package.json apps/web/package.json
+COPY packages/shared/package.json packages/shared/package.json
+RUN npm ci --include=dev
 COPY . .
 RUN npm run web:build
 
