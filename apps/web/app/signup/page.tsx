@@ -45,21 +45,7 @@ export default async function SignupPage({ searchParams }: { searchParams?: Prom
           <CardDescription>Start buying, selling, and managing protected marketplace workflows.</CardDescription>
         </CardHeader>
         <CardContent>
-          <AuthForm mode="signup" next={next} showDevBypass={devBypass.enabled} oauthProviders={getOAuthProviders()} />
-          {isLiveDatabaseConfigured() && oauthProviders.includes("google") && (
-            <div className="mt-4">
-              <Link href={`/api/auth/signin/google?next=${encodeURIComponent(next)}`} className="inline-flex w-full justify-center rounded-md border border-transparent bg-google-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-google-600 focus:outline-none focus:ring-2 focus:ring-google-500 focus:ring-offset-2">
-                Sign up with Google
-              </Link>
-            </div>
-          )}
-          {oauthProviders.includes("apple") && (
-            <div className="mt-4">
-              <Link href={`/api/auth/signin/apple?next=${encodeURIComponent(next)}`} className="inline-flex w-full justify-center rounded-md border border-transparent bg-apple-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-apple-600 focus:outline-none focus:ring-2 focus:ring-apple-500 focus:ring-offset-2">
-                Sign up with Apple
-              </Link>
-            </div>
-          )}
+          <AuthForm mode="signup" next={next} showDevBypass={devBypass.enabled} oauthProviders={oauthProviders} />
           <p className="mt-5 text-center text-sm text-muted-foreground">
             Already have an account? <Link className="font-semibold text-primary" href={`/login?next=${encodeURIComponent(next)}`}>Log in</Link>
           </p>

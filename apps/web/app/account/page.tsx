@@ -17,7 +17,7 @@ export default async function MeHubPage() {
   if (!session) redirect("/login?next=/account");
 
   return (
-    <section className="app-container py-6">
+    <section className="mx-auto grid max-w-4xl gap-6 px-4 py-6 sm:px-6 lg:px-8">
       <h1 className="text-hero">Me</h1>
       <p className="mt-2 text-sm text-muted-foreground">Signed in as {session.displayName}{session.email ? ` · ${session.email}` : ""}.</p>
       <nav className="mt-6 grid gap-2" aria-label="Account">

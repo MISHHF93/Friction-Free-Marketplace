@@ -103,7 +103,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
         </div>
       </header>
       {/* min-h keeps the footer below the fold on short pages, so it never fills the screen above the tab bar. */}
-      <main id="main-content" className="min-h-[100dvh] px-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-4 md:pb-12" tabIndex={-1}>{children}</main>
+      <main id="main-content" className="min-h-[100dvh] pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:pb-12" tabIndex={-1}>{children}</main>
       <MobileTabBar />
       <footer className="border-t border-border bg-secondary pb-24 pt-6 text-foreground md:pb-8">
         <div className="app-container space-y-3">

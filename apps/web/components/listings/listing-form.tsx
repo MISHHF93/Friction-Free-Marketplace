@@ -609,7 +609,7 @@ export function ListingForm({
 
   return (
     <form
-      className="app-container-wide grid gap-5 py-6 sm:py-8 xl:grid-cols-[minmax(0,1fr)_22rem]"
+      className="mx-auto box-border grid w-full max-w-7xl gap-5 py-6 sm:py-8 xl:grid-cols-[minmax(0,1fr)_22rem]"
       onSubmit={(event) => {
         event.preventDefault();
         submitListing(false);

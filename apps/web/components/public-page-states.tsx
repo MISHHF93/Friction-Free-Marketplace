@@ -55,11 +55,12 @@ type PublicPageErrorProps = {
   title: string;
   error: Error & { digest?: string };
   reset: () => void;
+  wide?: boolean;
 };
 
-export function PublicPageError({ title, error, reset }: PublicPageErrorProps) {
+export function PublicPageError({ title, error, reset, wide = false }: PublicPageErrorProps) {
   return (
-    <div className="mx-auto flex min-h-[55vh] max-w-3xl items-center justify-center px-4 py-16 sm:px-6 lg:px-8">
+    <div className={`${wide ? "app-container-wide" : "app-container"} flex min-h-[55vh] items-center justify-center py-16`}>
       <ErrorMessage
         title={title}
         message={error.message || "Refresh the page or try again in a moment."}

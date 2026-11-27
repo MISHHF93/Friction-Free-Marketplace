@@ -107,7 +107,7 @@ Meilisearch is called from the server, not the browser. Mutating routes accept o
 
 Connect the repository's `main` branch to a persistent web service with the repository root as its source directory. Railway detects the root `Dockerfile`; set `/api/health` as its healthcheck path. Provide the required production variables to the web service. Docker build-time `NEXT_PUBLIC_*` values are read through the `ARG` declarations in the Dockerfile and must also remain available at runtime.
 
-Create six scheduled services from the same repository root. For each, set `RAILWAY_DOCKERFILE_PATH=/apps/cron/Dockerfile`, `RAILWAY_APP_URL=https://frictionfree.co`, the listed `RAILWAY_JOB_PATH`, and the same strong `CRON_SECRET` configured on the web service. The runner sends an authenticated GET request, fails the run on non-2xx responses, and exits when the request completes.
+Create six scheduled services from the same repository root. For each, set `RAILWAY_DOCKERFILE_PATH=/apps/cron/Dockerfile`, `RAILWAY_APP_URL=https://www.frictionfree.co`, the listed `RAILWAY_JOB_PATH`, and the same strong `CRON_SECRET` configured on the web service. The runner sends an authenticated GET request, fails the run on non-2xx responses, and exits when the request completes.
 
 | Route | Schedule (UTC) |
 | --- | --- |

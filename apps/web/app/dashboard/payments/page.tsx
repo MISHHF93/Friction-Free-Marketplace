@@ -10,7 +10,7 @@ export default async function PaymentsDashboardPage() {
   if (!user) redirect("/login?next=/dashboard/payments");
 
   return (
-    <section className="mx-auto max-w-6xl space-y-6 px-4 py-10 sm:px-6 lg:px-8">
+    <section className="mx-auto w-full max-w-6xl space-y-6 py-10">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary">Payments</p>
         <h1 className="mt-2 text-3xl font-black tracking-tight">Protected payments and payouts</h1>

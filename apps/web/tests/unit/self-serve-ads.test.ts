@@ -125,14 +125,14 @@ describe("self-serve ad checkout", () => {
       id: CAMPAIGN, advertiser_id: ADV, placement: "search_inline", title: "Sale", status: "draft",
       starts_at: "2026-11-25T00:00:00.000Z", ends_at: "2026-12-02T00:00:00.000Z", run_days: 7, price_cents: 10500, currency: "usd",
       stripe_checkout_session_id: null, paid_at: null
-    }, "a@example.com", "https://frictionfree.co/", new Date("2026-11-22T00:00:00.000Z"));
+    }, "a@example.com", "https://www.frictionfree.co/", new Date("2026-11-22T00:00:00.000Z"));
     expect(params.mode).toBe("payment");
     expect(params.line_items?.[0]?.price_data?.unit_amount).toBe(10500);
     expect(params.metadata).toEqual({ kind: "ad_campaign", ad_campaign_id: CAMPAIGN, advertiser_id: ADV });
     expect(params.payment_intent_data?.metadata).not.toHaveProperty("transaction_id");
     expect(params.payment_intent_data).not.toHaveProperty("transfer_data");
     expect(params.payment_intent_data).not.toHaveProperty("application_fee_amount");
-    expect(params.success_url).toBe(`https://frictionfree.co/dashboard/ads?checkout=success&ad=${CAMPAIGN}`);
+    expect(params.success_url).toBe(`https://www.frictionfree.co/dashboard/ads?checkout=success&ad=${CAMPAIGN}`);
   });
 
   it("prices from the server table and stores a pending_payment ad with the session", async () => {
@@ -141,7 +141,7 @@ describe("self-serve ad checkout", () => {
     const result = await startNewAdCheckout({
       supabase: db,
       stripe: { checkout: { sessions: { create, retrieve: vi.fn() } } } as any,
-      appUrl: "https://frictionfree.co",
+      appUrl: "https://www.frictionfree.co",
       loadPricing: async () => ({ ...PLACEHOLDER_AD_PRICING.dashboard_card, price_cents_per_day: 700 }),
       now: new Date("2026-11-22T12:00:00.000Z")
     }, { id: ADV, email: "a@example.com" }, {
@@ -158,7 +158,7 @@ describe("self-serve ad checkout", () => {
     const db = fakeDb({ ad_campaigns: [] });
     await expect(startNewAdCheckout({
       supabase: db, stripe: { checkout: { sessions: { create: vi.fn(), retrieve: vi.fn() } } } as any,
-      appUrl: "https://frictionfree.co", loadPricing: async () => PLACEHOLDER_AD_PRICING.home_inline
+      appUrl: "https://www.frictionfree.co", loadPricing: async () => PLACEHOLDER_AD_PRICING.home_inline
     }, { id: ADV, email: null }, {
       placement: "home_inline", title: "x", advertiserName: "A", targetUrl: "https://a.example.com",
       imagePath: "advertisers/someone-else/img.png", startDate: "2026-11-23", runDays: 3

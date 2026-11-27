@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSafeRedirectPath } from "@/lib/auth/protected-routes";
+import { publicEnv } from "@/lib/env";
 
 function getSafeNext(value: string | null) {
   return getSafeRedirectPath(value, "/dashboard");
@@ -16,9 +17,9 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      return NextResponse.redirect(new URL(next, requestUrl.origin));
+      return NextResponse.redirect(new URL(next, publicEnv.NEXT_PUBLIC_APP_URL));
     }
   }
 
-  return NextResponse.redirect(new URL("/login?authError=Unable%20to%20confirm%20your%20session", requestUrl.origin));
+  return NextResponse.redirect(new URL("/login?authError=Unable%20to%20confirm%20your%20session", publicEnv.NEXT_PUBLIC_APP_URL));
 }

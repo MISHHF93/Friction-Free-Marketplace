@@ -1,6 +1,6 @@
 export function DiscoveryLoadingSkeleton() {
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8" aria-label="Loading marketplace listings">
+    <section className="app-container-wide py-10" aria-label="Loading marketplace listings">
       <div className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-soft">
         <div className="bg-premium-dark p-6 sm:p-8">
           <div className="h-6 w-32 animate-pulse rounded-full bg-white/15" />

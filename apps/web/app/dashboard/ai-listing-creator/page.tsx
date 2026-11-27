@@ -32,7 +32,7 @@ export default async function AiListingCreatorPage() {
 
   return (
     <div className="bg-background">
-      <section className="mx-auto max-w-7xl px-4 pt-10">
+      <section className="mx-auto w-full max-w-7xl pt-10">
         <div className="rounded-3xl border border-primary/20 bg-card p-6 shadow-soft">
           <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">
             AI listing generation

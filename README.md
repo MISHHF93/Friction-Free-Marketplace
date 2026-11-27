@@ -30,7 +30,7 @@ GitHub repository
 └── .github         Web CI/release workflows
 ```
 
-Production launch steps, required environment names, and the host-only reset scripts are in [docs/LAUNCH.md](docs/LAUNCH.md). Moving the project and every third-party account to the new owner, and redeploying at frictionfree.co, is in [docs/HANDOVER.md](docs/HANDOVER.md).
+Production launch steps, required environment names, and the host-only reset scripts are in [docs/LAUNCH.md](docs/LAUNCH.md). Moving the project and every third-party account to the new owner, and redeploying at www.frictionfree.co, is in [docs/HANDOVER.md](docs/HANDOVER.md).
 
 ## Repository structure
 

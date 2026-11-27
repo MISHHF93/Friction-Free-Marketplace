@@ -38,7 +38,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   if (!category) notFound();
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <section className="app-container py-10">
       <div className="rounded-[2rem] border border-border bg-card p-6 shadow-soft sm:p-8">
         <Badge>Category · {source}</Badge>
         <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_320px] lg:items-end">

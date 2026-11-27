@@ -51,7 +51,7 @@ export default async function CreateListingPage() {
   const categories = await getCategoryOptions();
   return (
     <>
-      <div className="mx-auto w-full max-w-5xl px-4 pt-4 empty:hidden"><PayoutSetupPrompt /></div>
+      <div className="mx-auto w-full max-w-5xl pt-4 empty:hidden"><PayoutSetupPrompt /></div>
       <ListingForm categories={categories} />
     </>
   );

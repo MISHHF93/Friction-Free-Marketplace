@@ -1,6 +1,6 @@
 # Friction-Free Marketplace roadmap
 
-Production: frictionfree.co through Railway, owned by `garfieldgarwood45-collab`. Account and service handover steps are in [HANDOVER.md](HANDOVER.md).
+Production: www.frictionfree.co through Railway, owned by `garfieldgarwood45-collab`. Account and service handover steps are in [HANDOVER.md](HANDOVER.md).
 Audit IDs (P0-1 and so on) refer to `ffm-reviews/r10-lifecycle-audit.md` (r10, Nov 20, 2026).
 Items tagged **$**, **RLS** or **MIG** touch money logic, row-level security or migrations. They need explicit sign-off before work starts.
 

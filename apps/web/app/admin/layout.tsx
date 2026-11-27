@@ -21,7 +21,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   ].filter((link) => can(auth.role, link.permission));
 
   return (
-    <section className="grid gap-5 py-4" aria-label="Admin dashboard">
+    <section className="app-container grid gap-5 py-4" aria-label="Admin dashboard">
       <a className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-background focus:px-4 focus:py-2 focus:shadow" href="#admin-content">
         Skip to admin content
       </a>

@@ -56,7 +56,7 @@ export default async function SellerProfilePage({ params }: { params: Promise<{ 
   const inventoryValue = listings.reduce((sum, listing) => sum + Number(listing.price_amount), 0);
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <section className="app-container py-10">
       <div className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-soft">
       <div className="h-44 bg-trust-soft sm:h-56">
           {seller.bannerUrl ? <RemoteImage src={seller.bannerUrl} alt={`${seller.displayName} store banner`} className="h-full w-full object-cover" /> : null}

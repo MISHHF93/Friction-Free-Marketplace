@@ -34,7 +34,7 @@ export default async function AdminDisputeEvidencePage({ params }: { params: Pro
   }));
 
   return (
-    <main className="mx-auto grid w-full max-w-4xl gap-5 px-4 py-8">
+    <main className="mx-auto grid w-full max-w-4xl gap-5 py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Dispute evidence</p>

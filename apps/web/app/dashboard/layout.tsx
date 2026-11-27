@@ -17,7 +17,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <DashboardDensity>
-      <section className="grid gap-5 py-4" aria-label="Authenticated user dashboard">
+      <section className="app-container grid gap-5 py-4" aria-label="Authenticated user dashboard">
         <a className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-xl focus:bg-background focus:px-4 focus:py-2 focus:shadow" href="#dashboard-content">
           Skip to dashboard content
         </a>
