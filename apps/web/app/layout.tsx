@@ -5,12 +5,10 @@ import { getMarketplaceSession } from "@/lib/auth/session";
 import { documentLocale } from "@/lib/i18n/document-locale";
 import type { ReactNode } from "react";
 import "./globals.css";
-import { SiteShell } from "@/components/site-shell";
 import { publicEnv } from "@/lib/env";
 import { brandChrome, brandProfile } from "@/lib/brand-profile";
 import { PwaRegistrar } from "@/components/pwa-registrar";
 import { CspNonceAnchor } from "@/components/security/nonce-script";
-import { AuthShell } from "@/components/auth/auth-shell";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -82,12 +80,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const headerStore = await headers();
   const session = await getMarketplaceSession().catch(() => null);
   const locale = documentLocale(session?.locale, headerStore.get("accept-language"));
-  const pathname = headerStore.get("x-pathname") ?? "";
-  const authPage = pathname === "/login" || pathname === "/signup" || pathname.startsWith("/auth/");
   return (
     <html lang={locale.lang} dir={locale.dir} suppressHydrationWarning>
       <body>
-        {authPage ? <AuthShell>{children}</AuthShell> : <SiteShell>{children}</SiteShell>}
+        {children}
         <CspNonceAnchor />
         <PwaRegistrar />
       </body>
