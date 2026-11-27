@@ -20,6 +20,7 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: requiredString("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: requiredString("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"),
   NEXT_PUBLIC_POSTHOG_KEY: optionalString("NEXT_PUBLIC_POSTHOG_KEY"),
+  NEXT_PUBLIC_OAUTH_PROVIDERS: optionalString("NEXT_PUBLIC_OAUTH_PROVIDERS"),
   NEXT_PUBLIC_POSTHOG_HOST: z.preprocess(
     (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
     z.string().trim().url().default("https://app.posthog.com")

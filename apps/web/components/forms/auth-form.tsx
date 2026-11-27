@@ -10,11 +10,7 @@ import { Label } from "@/components/ui/label";
 
 const initialState: AuthActionState = { status: "idle", message: null };
 
-const oauthProviders = (process.env.NEXT_PUBLIC_OAUTH_PROVIDERS ?? "")
-  .split(",")
-  .map((value) => value.trim().toLowerCase())
-  .filter((value): value is "google" | "apple" => value === "google" || value === "apple");
-
+type OAuthProvider = "google" | "apple";
 
 function SubmitButton({ mode }: { mode: "login" | "signup" }) {
   const { pending } = useFormStatus();
@@ -38,7 +34,7 @@ function GoogleMark() {
   );
 }
 
-export function AuthForm({ mode, next, showDevBypass = false }: { mode: "login" | "signup"; next?: string; showDevBypass?: boolean }) {
+export function AuthForm({ mode, next, showDevBypass = false, oauthProviders = [] }: { mode: "login" | "signup"; next?: string; showDevBypass?: boolean; oauthProviders?: OAuthProvider[] }) {
   const action = mode === "login" ? loginAction : signupAction;
   const [state, formAction] = useActionState(action, initialState);
 
