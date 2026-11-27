@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { publicEnvSchema } from "@/lib/env.shared";
+import { optionalString, optionalUrl, publicEnvSchema } from "@/lib/env.shared";
 
 const requiredString = (name: string) =>
   z.string({ error: `${name} is required.` }).trim().min(1, `${name} is required.`);
@@ -8,18 +8,21 @@ export const serverEnvSchema = publicEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: requiredString("SUPABASE_SERVICE_ROLE_KEY"),
   STRIPE_SECRET_KEY: requiredString("STRIPE_SECRET_KEY"),
   STRIPE_WEBHOOK_SECRET: requiredString("STRIPE_WEBHOOK_SECRET"),
-  STRIPE_CONNECT_WEBHOOK_SECRET: z.string().trim().min(1).optional(),
-  OPENAI_API_KEY: z.string().trim().min(1).optional(),
-  MEILISEARCH_HOST: z.string().trim().url().optional(),
-  MEILISEARCH_API_KEY: z.string().trim().min(1).optional(),
-  SEARCH_SYNC_SECRET: z.string().trim().min(1).optional(),
-  ADMIN_WORKER_SECRET: z.string().trim().min(1).optional(),
-  SCHEDULED_JOB_SECRET: z.string().trim().min(1).optional(),
-  RESEND_API_KEY: z.string().trim().min(1).optional(),
+  STRIPE_CONNECT_WEBHOOK_SECRET: optionalString("STRIPE_CONNECT_WEBHOOK_SECRET"),
+  OPENAI_API_KEY: optionalString("OPENAI_API_KEY"),
+  MEILISEARCH_HOST: optionalUrl("MEILISEARCH_HOST"),
+  MEILISEARCH_API_KEY: optionalString("MEILISEARCH_API_KEY"),
+  SEARCH_SYNC_SECRET: optionalString("SEARCH_SYNC_SECRET"),
+  ADMIN_WORKER_SECRET: optionalString("ADMIN_WORKER_SECRET"),
+  SCHEDULED_JOB_SECRET: optionalString("SCHEDULED_JOB_SECRET"),
+  RESEND_API_KEY: optionalString("RESEND_API_KEY"),
   RESEND_FROM_EMAIL: requiredString("RESEND_FROM_EMAIL"),
   SUPPORT_EMAIL: requiredString("SUPPORT_EMAIL"),
-  POSTHOG_KEY: z.string().trim().min(1).optional(),
-  POSTHOG_HOST: z.string().trim().url().default("https://app.posthog.com"),
+  POSTHOG_KEY: optionalString("POSTHOG_KEY"),
+  POSTHOG_HOST: z.preprocess(
+    (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().trim().url().default("https://app.posthog.com")
+  ),
   MARKETPLACE_DEMO_MODE: z.enum(["true", "false"]).optional()
 });
 

@@ -22,6 +22,22 @@ describe("environment validation", () => {
     expect(() => validatePublicEnv({ ...productionRuntime })).toThrow(/required/i);
   });
 
+  it("allows blank optional analytics configuration", () => {
+    const parsed = validatePublicEnv({
+      ...productionRuntime,
+      NEXT_PUBLIC_APP_URL: "https://market.example",
+      NEXT_PUBLIC_APP_NAME: "Friction-Free Marketplace",
+      NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon-key",
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_example",
+      NEXT_PUBLIC_POSTHOG_KEY: "",
+      NEXT_PUBLIC_POSTHOG_HOST: ""
+    });
+
+    expect(parsed.NEXT_PUBLIC_POSTHOG_KEY).toBeUndefined();
+    expect(parsed.NEXT_PUBLIC_POSTHOG_HOST).toBe("https://app.posthog.com");
+  });
+
   it("rejects placeholder secrets in a production runtime", () => {
     expect(() => validateServerEnv({
       ...productionRuntime,

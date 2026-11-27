@@ -3,14 +3,27 @@ import { z } from "zod";
 const requiredString = (name: string) => z.string({ error: `${name} is required.` }).trim().min(1, `${name} is required.`);
 const requiredUrl = (name: string) => requiredString(name).url(`${name} must be a valid URL.`);
 
+export const optionalString = (name: string) => z.preprocess(
+  (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+  z.string({ error: `${name} must be a string.` }).trim().min(1).optional()
+);
+
+export const optionalUrl = (name: string) => z.preprocess(
+  (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+  z.string({ error: `${name} must be a string.` }).trim().url(`${name} must be a valid URL.`).optional()
+);
+
 export const publicEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: requiredUrl("NEXT_PUBLIC_APP_URL"),
   NEXT_PUBLIC_APP_NAME: z.string().trim().min(1).default("Friction-Free Marketplace"),
   NEXT_PUBLIC_SUPABASE_URL: requiredUrl("NEXT_PUBLIC_SUPABASE_URL"),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: requiredString("NEXT_PUBLIC_SUPABASE_ANON_KEY"),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: requiredString("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"),
-  NEXT_PUBLIC_POSTHOG_KEY: z.string().trim().min(1).optional(),
-  NEXT_PUBLIC_POSTHOG_HOST: z.string().trim().url().default("https://app.posthog.com")
+  NEXT_PUBLIC_POSTHOG_KEY: optionalString("NEXT_PUBLIC_POSTHOG_KEY"),
+  NEXT_PUBLIC_POSTHOG_HOST: z.preprocess(
+    (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().trim().url().default("https://app.posthog.com")
+  ),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
@@ -30,10 +43,7 @@ export function isNextBuildPhase(env: NodeJS.ProcessEnv = process.env) {
   return phase === "phase-production-build" || phase === "phase-export";
 }
 
-/**
- * Local and unit-test runs can use inert development values.
- * Production, Vercel, and non-test CI must supply real configuration.
- */
+/** Local and unit-test runs can use inert development values. */
 export function shouldUseLocalDevelopmentEnv(env: NodeJS.ProcessEnv = process.env) {
   if (env.VERCEL === "1") return false;
   if (env.NODE_ENV === "production") return false;
