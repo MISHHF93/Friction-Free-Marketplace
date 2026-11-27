@@ -8,12 +8,14 @@ import { e2eUserFromCookie } from "@/lib/auth/e2e-session";
 import { getSafeRedirectPath } from "@/lib/auth/protected-routes";
 import { createClient } from "@/lib/supabase/server";
 import { publicEnv } from "@/lib/env";
+import { isLiveDatabaseConfigured } from "@/lib/marketplace/demo-mode";
 
 function getOAuthProviders(): ("google" | "apple")[] {
-  return (publicEnv.NEXT_PUBLIC_OAUTH_PROVIDERS ?? "")
+  const configured = (publicEnv.NEXT_PUBLIC_OAUTH_PROVIDERS ?? "")
     .split(",")
     .map((value) => value.trim().toLowerCase())
     .filter((value): value is "google" | "apple" => value === "google" || value === "apple");
+  return configured.length ? configured : isLiveDatabaseConfigured() ? ["google"] : [];
 }
 
 function getSafeNext(next?: string | string[]) {
